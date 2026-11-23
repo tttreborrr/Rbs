@@ -9,11 +9,14 @@ Usa os dados gratuitos da [Open-Meteo](https://open-meteo.com/), a mesma fonte d
 2. Dê dois cliques nele: ele abre no navegador (Edge ou Chrome).
 3. Clique em **Configurar talhões e regras**, cole as colunas do Excel e clique em **Salvar e atualizar**.
 
-As colunas são estas (a primeira linha pode ser o cabeçalho):
+O painel já vem com as 16 fazendas (id, fazenda, coordenadas). Formatos aceitos ao colar:
 
-| Talhão | Latitude | Longitude | Área (ha) | Prioridade (1–5) |
+| id | fazenda | Coordenadas | Área (ha) *opcional* | Prioridade 1–5 *opcional* |
 |---|---|---|---|---|
-| T01 | -21,170 | -47,810 | 45 | 5 |
+| 1133 | HORTO BONITO | 19°52'39.33"S 53°01'08.98"W | | |
+
+Também aceita latitude e longitude decimais em duas colunas (`-19,8776` e `-53,0192`).
+A região (RRP, CPG, ACL...) é lida do que vem depois do " - " no nome e vira um filtro no topo.
 
 A configuração fica salva no navegador. O painel se atualiza sozinho a cada 1 hora; também dá para clicar em **Atualizar agora**.
 

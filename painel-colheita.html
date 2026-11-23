@@ -105,6 +105,8 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
 .plan-day .d small { display: block; color: var(--muted); font-weight: 400; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { padding: 3px 10px; border-radius: 6px; background: var(--good-bg); font-size: 12.5px; }
+.fbtn.on { background: var(--accent); color: #fff; border-color: transparent; }
+.rank .id { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 6px; }
 .chip.none { background: var(--past-bg); color: var(--ink-2); }
 </style>
 </head>
@@ -112,7 +114,7 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
 <header>
   <div>
     <h1>Painel de Colheita × Chuva</h1>
-    <div class="sub" id="sub">Previsão e histórico Open-Meteo por talhão</div>
+    <div class="sub" id="sub">Previsão e histórico Open-Meteo por fazenda</div>
   </div>
   <div class="row">
     <span class="sub" id="updated"></span>
@@ -121,24 +123,25 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
 </header>
 <main>
   <div id="msg"></div>
+  <div class="row" id="filters"></div>
 
   <section class="kpis" id="kpis"></section>
 
   <section class="two">
     <div class="card">
       <h2>O que colher hoje</h2>
-      <p class="hint">Ordem sugerida: talhões aptos hoje vêm primeiro, com mais urgência quando a chuva está chegando. Clique para ver o gráfico.</p>
+      <p class="hint">Ordem sugerida: locais aptos hoje vêm primeiro, com mais urgência quando a chuva está chegando. Clique para ver o gráfico.</p>
       <ul class="rank" id="rank"></ul>
     </div>
     <div class="card">
-      <h2>Mapa dos talhões (hoje)</h2>
-      <p class="hint">Posição relativa pelas coordenadas. Cor = situação de hoje. Clique em um ponto para ver o gráfico.</p>
+      <h2>Mapa das fazendas (hoje)</h2>
+      <p class="hint">Posição relativa pelas coordenadas. Cor = situação de hoje. Passe o mouse para ver o nome; clique para ver o gráfico. Filtre por região para ampliar.</p>
       <div id="map"></div>
     </div>
   </section>
 
   <section class="card">
-    <h2>Chuva por talhão e por dia</h2>
+    <h2>Chuva por fazenda e por dia</h2>
     <p class="hint">À esquerda da linha, chuva que já caiu (mm). À direita, previsão: mm e chance de chuva (%). Passe o mouse para detalhes.</p>
     <div class="scroll"><table id="grid"></table></div>
     <div class="legend">
@@ -165,7 +168,7 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
   <section class="card">
     <details id="cfg">
       <summary>Configurar talhões e regras</summary>
-      <p class="hint" style="margin-top:10px">Cole aqui direto do Excel (copiar as colunas e colar). Colunas: <b>Talhão, Latitude, Longitude, Área (ha), Prioridade (1 a 5, 5 = mais urgente/mais maduro)</b>. Separador pode ser tabulação ou ponto e vírgula. Vírgula ou ponto como decimal.</p>
+      <p class="hint" style="margin-top:10px">Selecione as colunas no Excel, copie (Ctrl+C) e cole aqui (Ctrl+V). Formato: <b>id, fazenda, Coordenadas</b> (como <i>19°52'39.33"S 53°01'08.98"W</i>) ou latitude e longitude decimais em duas colunas. Opcional, depois das coordenadas: <b>Área (ha)</b> e <b>Prioridade (1 a 5, 5 = mais urgente)</b>. A região é o que vem depois do " - " no nome (RRP, CPG...).</p>
       <textarea id="txtTalhoes" spellcheck="false"></textarea>
       <div class="params">
         <label>Chuva que impede colheita no dia (mm)<input type="number" step="0.5" id="pMm"></label>
@@ -173,7 +176,8 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
         <label>Chance de chuva para "atenção" (%)<input type="number" step="5" id="pProbMid"></label>
         <label>Dias para o solo secar após chuva<input type="number" step="1" min="0" id="pDias"></label>
         <label>Chuva acumulada nesses dias que deixa o solo úmido (mm)<input type="number" step="1" id="pAcum"></label>
-        <label>Capacidade de colheita (ha/dia)<input type="number" step="1" id="pCap"></label>
+        <label>Capacidade de colheita (ha/dia, se tiver área)<input type="number" step="1" id="pCap"></label>
+        <label>Fazendas por dia (se não tiver área)<input type="number" step="1" min="1" id="pFrentes"></label>
         <label>Dias de previsão<select id="pFc"><option>7</option><option>10</option><option>14</option><option>16</option></select></label>
         <label>Dias de histórico<select id="pPast"><option>7</option><option>14</option><option>30</option></select></label>
       </div>
@@ -192,18 +196,28 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
   "use strict";
 
   var DEFAULT_TALHOES = [
-    "Talhão;Latitude;Longitude;Área (ha);Prioridade",
-    "T01;-21,170;-47,810;45;5",
-    "T02;-21,185;-47,840;60;4",
-    "T03;-21,210;-47,790;38;3",
-    "T04;-21,230;-47,860;52;5",
-    "T05;-21,150;-47,880;70;2",
-    "T06;-21,260;-47,820;41;3"
+    "id\tfazenda\tCoordenadas",
+    "1133\tHORTO BONITO\t19°52'39.33\"S 53°01'08.98\"W",
+    "6163\tBETEL - ACL\t20°03'16.20\"S 52°51'56.52\"W",
+    "6220\tSANTA ANITA - RRP\t20°31'40.14\"S 54°10'03.81\"W",
+    "6172\tPARATY - RRP\t20°42'40.70\"S 54°01'10.66\"W",
+    "6213\tIGREJINHA - RRP\t20°42'52.67\"S 53°53'45.39\"W",
+    "6259\tSANTO ANTÔNIO - RRP\t20°42'22.59\"S 53°54'57.04\"W",
+    "6198\tSÃO FRANCISCO II - RRP\t20°38'13.53\"S 53°52'22.76\"W",
+    "6241\tJOANINHA - RRP\t20°43'50.56\"S 53°59'48.89\"W",
+    "6243\tMEDALHA - RRP\t20°41'24.07\"S 53°58'22.22\"W",
+    "6403\tMEDALHA II - RRP\t20°40'37.90\"S 53°57'06.18\"W",
+    "6206\tLAGO AZUL - RRP\t20°45'39.25\"S 54°00'08.29\"W",
+    "6240\tALEGRIA - CPG\t20°43'32.20\"S 54°20'45.28\"W",
+    "6315\tFLORESTA - CPG\t21°21'22.26\"S 53°59'39.30\"W",
+    "6290\tCAMPESTRE - CPG\t21°06'50.80\"S 53°51'28.62\"W",
+    "6279\tPRIMAVERA - CPG\t21°03'57.91\"S 53°56'31.16\"W",
+    "6199\tSANTA MARTA - CPG\t20°53'06.76\"S 54°06'45.45\"W"
   ].join("\n");
-  var DEFAULT_PARAMS = { mm: 2, probHi: 60, probMid: 35, dias: 2, acum: 15, cap: 60, fc: 7, past: 7 };
-  var STORE = "painelColheita.v1";
+  var DEFAULT_PARAMS = { mm: 2, probHi: 60, probMid: 35, dias: 2, acum: 15, cap: 60, frentes: 3, fc: 7, past: 7 };
+  var STORE = "painelColheita.v2";
 
-  var state = { talhoes: [], params: {}, data: null, selected: 0, demo: false };
+  var state = { talhoes: [], params: {}, data: null, selected: 0, demo: false, region: "Todas" };
 
   // ---------- storage (falha silenciosa) ----------
   function load() {
@@ -224,16 +238,48 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
     else s = s.replace(",", ".");
     return parseFloat(s);
   }
+  // aceita: "19°52'39.33"S 53°01'08.98"W" (graus, minutos, segundos) ou decimal (-19,877 / -53,019)
+  var DMS = /(\d{1,3})\s*[°º]\s*(\d{1,2})\s*['’′]\s*([\d.,]+)?\s*(?:"|''|”|″)*\s*([NSEWOL])/gi;
+  function dmsToDec(m) {
+    var v = +m[1] + (+m[2]) / 60 + (m[3] ? num(m[3]) : 0) / 3600, h = m[4].toUpperCase();
+    return (h === "S" || h === "W" || h === "O") ? -v : v;
+  }
+  function isNum(c) { return /^\s*-?\d+([.,]\d+)?\s*$/.test(c) && !isNaN(num(c)); }
   function parseTalhoes(text) {
     var out = [];
     text.split(/\r?\n/).forEach(function (line) {
       if (!line.trim()) return;
-      var cols = line.indexOf("\t") >= 0 ? line.split("\t") : line.split(";");
-      if (cols.length < 3) return;
-      var lat = num(cols[1]), lon = num(cols[2]);
-      if (isNaN(lat) || isNaN(lon)) return; // cabeçalho ou linha inválida
-      var area = num(cols[3]); var pr = num(cols[4]);
-      out.push({ nome: cols[0].trim(), lat: lat, lon: lon, area: isNaN(area) ? 0 : area, prio: isNaN(pr) ? 3 : Math.max(1, Math.min(5, pr)) });
+      var cols = (line.indexOf("\t") >= 0 ? line.split("\t") : line.split(";")).map(function (c) { return c.trim().replace(/^"(.*)"$/, "$1").replace(/""/g, '"'); });
+      var lat = NaN, lon = NaN, ci = -1, cj = -1;
+      // 1) coordenadas em graus/min/seg (numa coluna só ou em duas)
+      for (var i = 0; i < cols.length && isNaN(lon); i++) {
+        var ms = []; DMS.lastIndex = 0; var m;
+        while ((m = DMS.exec(cols[i]))) ms.push(m);
+        ms.forEach(function (mm) {
+          var h = mm[4].toUpperCase(), v = dmsToDec(mm);
+          if (h === "N" || h === "S") { if (isNaN(lat)) { lat = v; ci = i; } }
+          else if (isNaN(lon)) { lon = v; cj = i; }
+        });
+      }
+      // 2) coordenadas decimais em duas colunas seguidas
+      if (isNaN(lat) || isNaN(lon)) {
+        lat = lon = NaN;
+        for (var k = 0; k + 1 < cols.length; k++) {
+          if (isNum(cols[k]) && isNum(cols[k + 1]) && /[.,-]/.test(cols[k]) && /[.,-]/.test(cols[k + 1])) {
+            var a = num(cols[k]), b = num(cols[k + 1]);
+            if (Math.abs(a) <= 90 && Math.abs(b) <= 180) { lat = a; lon = b; ci = k; cj = k + 1; break; }
+          }
+        }
+      }
+      if (isNaN(lat) || isNaN(lon)) return; // cabeçalho ou linha sem coordenada
+      var first = Math.min(ci, cj), last = Math.max(ci, cj);
+      var before = cols.slice(0, first).filter(Boolean), after = cols.slice(last + 1).filter(isNum).map(num);
+      var id = "", nome = "";
+      before.forEach(function (c) { if (isNum(c) && !id) id = c; else if (!nome) nome = c; });
+      nome = nome || id || ("Ponto " + (out.length + 1));
+      var reg = (nome.match(/\s-\s*([^-]+)$/) || [])[1];
+      out.push({ id: id, nome: nome, regiao: reg ? reg.trim() : "Outras", lat: lat, lon: lon,
+        area: after[0] > 0 ? after[0] : 0, prio: after[1] ? Math.max(1, Math.min(5, after[1])) : 3 });
     });
     return out;
   }
@@ -245,7 +291,7 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
       "?latitude=" + t.map(function (x) { return x.lat.toFixed(4); }).join(",") +
       "&longitude=" + t.map(function (x) { return x.lon.toFixed(4); }).join(",") +
       "&daily=precipitation_sum,precipitation_probability_max,temperature_2m_max" +
-      "&past_days=" + p.past + "&forecast_days=" + p.fc + "&timezone=America%2FSao_Paulo";
+      "&past_days=" + p.past + "&forecast_days=" + p.fc + "&timezone=auto";
     return fetch(url).then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.json();
@@ -284,7 +330,7 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
 
   function analyze() {
     var p = state.params, today = todayIso();
-    state.rows = state.talhoes.map(function (t, k) {
+    state.all = state.talhoes.map(function (t, k) {
       var d = state.data[k] || {}, time = d.time || [];
       var days = time.map(function (ds, i) {
         var mm = (d.precipitation_sum || [])[i]; mm = mm == null ? 0 : mm;
@@ -314,14 +360,17 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
       var score = (t0 && t0.st === "good" ? 1000 : t0 && t0.st === "warn" ? 500 : 0) + t.prio * 40 + (rainIn < 99 ? (10 - Math.min(rainIn, 10)) * 15 : 0);
       return { t: t, k: k, days: days, fut: fut, today: t0, win: win, nextRain: nextRain, rainIn: rainIn, hist: hist, fcSum: fcSum, score: score };
     });
+    state.rows = state.all.filter(function (r) { return state.region === "Todas" || r.t.regiao === state.region; });
   }
 
   function buildPlan() {
     var p = state.params, rows = state.rows;
-    var left = rows.map(function (r) { return r.t.area || 0; });
+    var byArea = rows.some(function (r) { return r.t.area > 0; });
+    state.planByArea = byArea;
+    var left = {}; rows.forEach(function (r) { left[r.k] = byArea ? (r.t.area || 0) : 1; });
     var n = rows.length ? rows[0].fut.length : 0, plan = [];
     for (var i = 0; i < n; i++) {
-      var cap = p.cap, list = [];
+      var cap = byArea ? p.cap : p.frentes, list = [];
       var cand = rows.filter(function (r) { return left[r.k] > 0.01 && r.fut[i] && r.fut[i].st === "good"; });
       // urgência: quantos dias bons ainda restam para o talhão a partir de hoje -> menos dias = mais urgente
       cand.sort(function (a, b) {
@@ -333,12 +382,12 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
         if (cap <= 0.01) return;
         var take = Math.min(cap, left[r.k]);
         left[r.k] -= take; cap -= take;
-        list.push({ nome: r.t.nome, ha: take, done: left[r.k] <= 0.01 });
+        list.push({ nome: r.t.nome, ha: byArea ? take : null, done: left[r.k] <= 0.01 });
       });
       plan.push({ date: rows[0].fut[i].date, list: list, blocked: rows.every(function (r) { return !r.fut[i] || r.fut[i].st !== "good"; }) });
     }
     state.plan = plan;
-    state.planLeft = rows.filter(function (r) { return left[r.k] > 0.01; }).map(function (r) { return { nome: r.t.nome, ha: left[r.k] }; });
+    state.planLeft = rows.filter(function (r) { return left[r.k] > 0.01; }).map(function (r) { return { nome: r.t.nome, ha: byArea ? left[r.k] : null }; });
   }
 
   // ---------- render ----------
@@ -376,9 +425,9 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
     var avgFc = rows.reduce(function (s, r) { return s + r.fcSum; }, 0) / Math.max(1, rows.length);
     var avgHist = rows.reduce(function (s, r) { return s + r.hist; }, 0) / Math.max(1, rows.length);
     var nextTxt = minIn == null ? "Sem chuva forte" : minIn === 0 ? "Hoje" : minIn === 1 ? "Amanhã" : "Em " + minIn + " dias";
-    var nextNote = minIn == null ? "nos próximos " + state.params.fc + " dias" : fmtDay(rows[0].fut[minIn].date) + " em " + rows.filter(function (r) { return r.rainIn === minIn; }).length + " talhão(ões)";
+    var nextNote = minIn == null ? "nos próximos " + state.params.fc + " dias" : fmtDay(rows[0].fut[minIn].date) + " em " + rows.filter(function (r) { return r.rainIn === minIn; }).length + " local(is)";
     var html = [
-      ["Talhões aptos hoje", ok.length + " de " + rows.length, Math.round(haOk).toLocaleString("pt-BR") + " ha liberados"],
+      ["Aptos para colher hoje", ok.length + " de " + rows.length, haOk > 0 ? Math.round(haOk).toLocaleString("pt-BR") + " ha liberados" : (state.region === "Todas" ? "todas as regiões" : "região " + state.region)],
       ["Próxima chuva forte", nextTxt, nextNote],
       ["Chuva prevista (média)", fmtMm(avgFc), "próximos " + state.params.fc + " dias"],
       ["Choveu (média)", fmtMm(avgHist), "últimos " + state.params.past + " dias"]
@@ -394,17 +443,18 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
       if (st === "good") {
         why = r.nextRain ? "Janela seca de " + r.win + " dia(s). Chuva prevista " + (r.rainIn === 1 ? "amanhã" : fmtDay(r.nextRain.date)) + " (" + fmtMm(r.nextRain.mm) + ")." : "Sem chuva forte prevista. Janela de " + r.win + " dia(s).";
       } else why = r.today.why.join("; ").replace(/^./, function (c) { return c.toUpperCase(); }) + ".";
-      why += " Prioridade " + r.t.prio + " · " + r.t.area + " ha";
+      why += " Prioridade " + r.t.prio + (r.t.area > 0 ? " · " + r.t.area + " ha" : "") + ".";
       var li = document.createElement("li");
       if (r.k === state.selected) li.className = "sel";
-      li.innerHTML = '<div class="pos">' + (i + 1) + '</div><div><div class="name">' + esc(r.t.nome) + '</div><div class="why">' + esc(why) + "</div></div>" + badge(st);
+      li.innerHTML = '<div class="pos">' + (i + 1) + '</div><div><div class="name">' + esc(r.t.nome) + (r.t.id ? '<span class="id">#' + esc(r.t.id) + "</span>" : "") + '</div><div class="why">' + esc(why) + "</div></div>" + badge(st);
       li.onclick = function () { select(r.k); };
       ul.appendChild(li);
     });
   }
 
+  function shortName(t) { return t.nome.replace(/\s-\s*[^-]+$/, "").split(" ").slice(0, 2).join(" "); }
   function renderMap() {
-    var rows = state.rows, W = 520, H = 320, pad = 40;
+    var rows = state.rows, W = 560, H = 380, pad = 46;
     var lats = rows.map(function (r) { return r.t.lat; }), lons = rows.map(function (r) { return r.t.lon; });
     var la0 = Math.min.apply(null, lats), la1 = Math.max.apply(null, lats), lo0 = Math.min.apply(null, lons), lo1 = Math.max.apply(null, lons);
     var midLat = (la0 + la1) / 2 * Math.PI / 180;
@@ -421,19 +471,27 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
     for (var g = 1; g < 6; g++) { svg += '<line x1="0" x2="' + W + '" y1="' + H * g / 6 + '" y2="' + H * g / 6 + '" stroke="var(--grid)"/><line y1="0" y2="' + H + '" x1="' + W * g / 6 + '" x2="' + W * g / 6 + '" stroke="var(--grid)"/>'; }
     svg += '<text x="' + (W - 16) + '" y="22" text-anchor="middle" style="font-weight:700">N</text><path d="M' + (W - 16) + ' 26 l-5 12 h10z" fill="var(--muted)"/>';
     svg += '<line x1="16" x2="' + (16 + barPx) + '" y1="' + (H - 16) + '" y2="' + (H - 16) + '" stroke="var(--ink-2)" stroke-width="2"/><text x="16" y="' + (H - 22) + '">' + String(stepKm).replace(".", ",") + " km</text>";
+    // rótulos: mostra só os que não se sobrepõem (o selecionado primeiro); o resto aparece no mouse
+    var placed = [], showLabel = {};
+    rows.slice().sort(function (a, b) { return (b.k === state.selected) - (a.k === state.selected); }).forEach(function (r) {
+      var x = X(r.t.lon), y = Y(r.t.lat), w = shortName(r.t).length * 6.6 + 6, box = [x - w / 2, y - 30, x + w / 2, y - 14];
+      var hit = placed.some(function (q) { return box[0] < q[2] && box[2] > q[0] && box[1] < q[3] && box[3] > q[1]; }) ||
+        rows.some(function (o) { var ox2 = X(o.t.lon), oy2 = Y(o.t.lat); return o !== r && ox2 > box[0] - 8 && ox2 < box[2] + 8 && oy2 > box[1] - 8 && oy2 < box[3] + 8; });
+      if (!hit) { placed.push(box); showLabel[r.k] = true; }
+    });
     rows.forEach(function (r) {
       var st = r.today ? r.today.st : "bad", x = X(r.t.lon), y = Y(r.t.lat);
-      var rad = 8 + Math.sqrt(Math.max(r.t.area, 1)) * 1.2;
+      var rad = r.t.area > 0 ? 7 + Math.sqrt(r.t.area) * 0.8 : 10;
       svg += '<g class="pt" data-k="' + r.k + '" style="cursor:pointer">' +
         '<circle cx="' + x + '" cy="' + y + '" r="' + (rad + 8) + '" fill="transparent"/>' +
         '<circle cx="' + x + '" cy="' + y + '" r="' + rad + '" fill="var(--' + st + ')" fill-opacity="0.85" stroke="' + (r.k === state.selected ? "var(--ink)" : "var(--surface)") + '" stroke-width="2"/>' +
         '<text x="' + x + '" y="' + (y + 4) + '" text-anchor="middle" style="fill:' + (st === "warn" ? "#0b0b0b" : "#fff") + ';font-weight:700;font-size:12px">' + ICON[st] + "</text>" +
-        '<text x="' + x + '" y="' + (y - rad - 6) + '" text-anchor="middle" style="fill:var(--ink);font-weight:600">' + esc(r.t.nome) + "</text></g>";
+        (showLabel[r.k] ? '<text x="' + x + '" y="' + (y - rad - 6) + '" text-anchor="middle" style="fill:var(--ink);font-weight:600">' + esc(shortName(r.t)) + "</text>" : "") + "</g>";
     });
     svg += "</svg>";
     var box = document.getElementById("map"); box.innerHTML = svg;
     box.querySelectorAll(".pt").forEach(function (el) {
-      var r = rows[+el.getAttribute("data-k")];
+      var r = state.all[+el.getAttribute("data-k")];
       bindTip(el, r.today ? dayTip(r, r.today) : esc(r.t.nome));
       el.addEventListener("click", function () { select(r.k); });
     });
@@ -443,11 +501,11 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
     var rows = state.rows, tbl = document.getElementById("grid");
     if (!rows.length) { tbl.innerHTML = ""; return; }
     var days = rows[0].days, firstFut = days.findIndex(function (x) { return !x.past; });
-    var h = '<thead><tr><th class="left">Talhão</th><th>Choveu<br>' + state.params.past + 'd</th>';
+    var h = '<thead><tr><th class="left">Fazenda</th><th>Choveu<br>' + state.params.past + 'd</th>';
     days.forEach(function (x, i) { h += '<th class="' + (x.today ? "today " : "") + (i === firstFut ? "sep" : "") + '">' + (x.today ? "HOJE<br>" : "") + fmtDay(x.date) + "</th>"; });
     h += "</tr></thead><tbody>";
     rows.forEach(function (r) {
-      h += '<tr><td class="left"><b>' + esc(r.t.nome) + '</b></td><td>' + fmtMm(r.hist) + "</td>";
+      h += '<tr><td class="left"><b>' + esc(r.t.nome) + "</b>" + (r.t.id ? '<br><span style="color:var(--muted);font-size:11px">#' + esc(r.t.id) + "</span>" : "") + '</td><td>' + fmtMm(r.hist) + "</td>";
       r.days.forEach(function (x, i) {
         var cls = "cell " + (x.past ? "past" : x.st) + (i === firstFut ? " sep" : "");
         h += '<td class="' + cls + '" data-k="' + r.k + '" data-i="' + i + '"><div class="mm">' + (x.past ? "" : ICON[x.st] + " ") + (Math.round(x.mm * 10) / 10).toLocaleString("pt-BR") + '</div><div class="pp">' + (x.past ? "mm" : (x.prob != null ? x.prob + "%" : "")) + "</div></td>";
@@ -456,13 +514,13 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
     });
     tbl.innerHTML = h + "</tbody>";
     tbl.querySelectorAll("td.cell").forEach(function (td) {
-      var r = rows[+td.getAttribute("data-k")], x = r.days[+td.getAttribute("data-i")];
+      var r = state.all[+td.getAttribute("data-k")], x = r.days[+td.getAttribute("data-i")];
       bindTip(td, dayTip(r, x));
     });
   }
 
   function renderChart() {
-    var r = state.rows[state.selected]; if (!r) return;
+    var r = state.all[state.selected]; if (!r) return;
     document.getElementById("chartTitle").textContent = "Chuva diária — " + r.t.nome;
     var days = r.days, W = 640, H = 270, L = 40, R = 10, T = 26, B = 40;
     var max = Math.max(5, Math.max.apply(null, days.map(function (x) { return x.mm; })));
@@ -494,23 +552,35 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
 
   function renderPlan() {
     var p = state.params, box = document.getElementById("plan");
-    document.getElementById("planHint").textContent = "Capacidade de " + p.cap + " ha/dia, só em dias “pode colher” de cada talhão; maior prioridade primeiro e, no empate, quem tem menos dias bons pela frente.";
+    document.getElementById("planHint").textContent = (state.planByArea ? "Capacidade de " + p.cap + " ha/dia" : "Até " + p.frentes + " fazenda(s) por dia (sem área cadastrada)") + ", só em dias “pode colher” de cada local; maior prioridade primeiro e, no empate, quem tem menos dias bons pela frente.";
     var h = "";
     state.plan.forEach(function (d, i) {
       h += '<div class="plan-day"><div class="d">' + (i === 0 ? "Hoje" : i === 1 ? "Amanhã" : fmtDay(d.date)) + (i < 2 ? "<small>" + fmtDay(d.date) + "</small>" : "") + '</div><div class="chips">';
       if (!d.list.length) h += '<span class="chip none">' + (d.blocked ? "✕ Sem condição de colheita" : "Nada pendente apto neste dia") + "</span>";
-      d.list.forEach(function (c) { h += '<span class="chip">' + esc(c.nome) + " · " + Math.round(c.ha) + " ha" + (c.done ? " ✓" : " (parcial)") + "</span>"; });
+      d.list.forEach(function (c) { h += '<span class="chip">' + esc(c.nome) + (c.ha == null ? "" : " · " + Math.round(c.ha) + " ha" + (c.done ? " ✓" : " (parcial)")) + "</span>"; });
       h += "</div></div>";
     });
-    if (state.planLeft.length) h += '<div class="plan-day"><div class="d">Fica para depois</div><div class="chips">' + state.planLeft.map(function (c) { return '<span class="chip none">' + esc(c.nome) + " · " + Math.round(c.ha) + " ha</span>"; }).join("") + "</div></div>";
+    if (state.planLeft.length) h += '<div class="plan-day"><div class="d">Fica para depois</div><div class="chips">' + state.planLeft.map(function (c) { return '<span class="chip none">' + esc(c.nome) + (c.ha == null ? "" : " · " + Math.round(c.ha) + " ha") + "</span>"; }).join("") + "</div></div>";
     box.innerHTML = h;
   }
 
   function select(k) { state.selected = k; renderRank(); renderMap(); renderChart(); }
 
+  function renderFilters() {
+    var regs = ["Todas"];
+    state.talhoes.forEach(function (t) { if (regs.indexOf(t.regiao) < 0) regs.push(t.regiao); });
+    if (regs.indexOf(state.region) < 0) state.region = "Todas";
+    var box = document.getElementById("filters");
+    box.innerHTML = regs.length > 2 ? '<span class="sub" style="color:var(--ink-2)">Região:</span>' + regs.map(function (r) {
+      var n = r === "Todas" ? state.talhoes.length : state.talhoes.filter(function (t) { return t.regiao === r; }).length;
+      return '<button class="fbtn' + (r === state.region ? " on" : "") + '" data-r="' + esc(r) + '">' + esc(r) + " (" + n + ")</button>";
+    }).join("") : "";
+    box.querySelectorAll(".fbtn").forEach(function (b) { b.onclick = function () { state.region = b.getAttribute("data-r"); renderAll(); }; });
+  }
+
   function renderAll() {
-    analyze(); buildPlan();
-    if (state.selected >= state.rows.length) state.selected = 0;
+    analyze(); buildPlan(); renderFilters();
+    if (!state.rows.some(function (r) { return r.k === state.selected; })) state.selected = state.rows.length ? state.rows[0].k : 0;
     renderKpis(); renderRank(); renderMap(); renderGrid(); renderChart(); renderPlan();
   }
 
@@ -537,7 +607,7 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
   }
 
   // ---------- configuração ----------
-  var ids = { pMm: "mm", pProbHi: "probHi", pProbMid: "probMid", pDias: "dias", pAcum: "acum", pCap: "cap", pFc: "fc", pPast: "past" };
+  var ids = { pMm: "mm", pProbHi: "probHi", pProbMid: "probMid", pDias: "dias", pAcum: "acum", pCap: "cap", pFrentes: "frentes", pFc: "fc", pPast: "past" };
   function fillForm() {
     document.getElementById("txtTalhoes").value = state.text;
     Object.keys(ids).forEach(function (id) { document.getElementById(id).value = state.params[ids[id]]; });

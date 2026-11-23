@@ -1,0 +1,891 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chuva nas Fazendas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: barra de controle fixa no topo; mapa + leitura geral lado a lado; quadro de fazendas em linhas, como um boletim de pluviômetros. */
+:root {
+  color-scheme: light;
+  --bg: #e9edf0;          /* fundo: cinza frio, puxado para o azul */
+  --panel: #f8fafb;
+  --ink: #101a21;
+  --ink-2: #4a5964;
+  --muted: #7b8892;
+  --line: #d3dbe0;
+  --line-2: #c0cad1;
+  --dry: #e3e8ec;          /* sem chuva */
+  --rain-1: #a9cdf2;       /* chuva fraca */
+  --rain-2: #1d5fbf;       /* chuva */
+  --on-rain-2: #ffffff;
+  --rain-bar: #1d5fbf;
+  --hl: #101a21;           /* seleção / botões: tinta, para o azul significar só chuva */
+  --on-hl: #ffffff;
+  --manual: #b4560f;
+  --font-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0b1116; --panel: #121a21; --ink: #e5ecf1; --ink-2: #a6b4be; --muted: #74828c;
+    --line: #223039; --line-2: #2d3d48; --dry: #1a252d; --rain-1: #22476f; --rain-2: #4d9cf2;
+    --on-rain-2: #05111d; --rain-bar: #4d9cf2; --hl: #e5ecf1; --on-hl: #0b1116; --manual: #f0a060;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b1116; --panel: #121a21; --ink: #e5ecf1; --ink-2: #a6b4be; --muted: #74828c;
+  --line: #223039; --line-2: #2d3d48; --dry: #1a252d; --rain-1: #22476f; --rain-2: #4d9cf2;
+  --on-rain-2: #05111d; --rain-bar: #4d9cf2; --hl: #e5ecf1; --on-hl: #0b1116; --manual: #f0a060;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 var(--font-body); }
+.num, .mono { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1440px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--rain-2); outline-offset: 2px; }
+
+/* topo */
+.top { padding-block: 18px 14px; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.brand h1 { margin: 0; font-family: var(--font-display); font-stretch: 78%; font-weight: 800; font-size: 30px; letter-spacing: 0.01em; text-transform: uppercase; line-height: 1; }
+.brand p { margin: 6px 0 0; color: var(--ink-2); font-size: 13px; }
+.sync { display: flex; align-items: center; gap: 12px; color: var(--ink-2); font-size: 12.5px; }
+.sync .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; margin-right: 6px; vertical-align: 1px; }
+.sync .dot.live { background: #2f9e5b; box-shadow: 0 0 0 0 rgba(47,158,91,.5); animation: pulse 2.4s infinite; }
+.btn { border: 1px solid var(--line-2); background: var(--panel); padding: 7px 12px; border-radius: 6px; font-weight: 600; font-size: 13px; }
+.btn:hover { border-color: var(--ink-2); }
+.btn.solid { background: var(--hl); color: var(--on-hl); border-color: var(--hl); }
+
+/* barra de controle */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-block: 1px solid var(--line); }
+.bar .wrap { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; padding-block: 10px; }
+.grp { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.grp > .lbl { font-family: var(--font-display); font-stretch: 78%; text-transform: uppercase; letter-spacing: 0.08em; font-size: 11.5px; color: var(--muted); font-weight: 700; }
+.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 7px; overflow: hidden; background: var(--panel); flex-wrap: wrap; }
+.seg button { border: 0; background: transparent; padding: 6px 11px; font-size: 13px; font-weight: 600; color: var(--ink-2); border-right: 1px solid var(--line); transition: background .2s, color .2s; }
+.seg button:last-child { border-right: 0; }
+.seg button.on { background: var(--hl); color: var(--on-hl); }
+.seg button small { font-family: var(--font-data); font-weight: 400; opacity: .75; margin-left: 3px; }
+.play { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line-2); background: var(--panel); display: inline-grid; place-items: center; }
+.play svg { width: 12px; height: 12px; fill: var(--ink); }
+
+/* visão geral */
+.over { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 18px; padding-block: 18px; }
+@media (max-width: 980px) { .over { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+.mapbox { padding: 14px 14px 10px; position: relative; }
+.mapbox h2, .read h2, .board-head h2 { margin: 0; font-family: var(--font-display); font-stretch: 78%; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; font-size: 15px; }
+.maphead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.maphead .when { font-family: var(--font-data); font-size: 12.5px; color: var(--ink-2); }
+#map svg { display: block; width: 100%; height: auto; }
+#map .graticule { stroke: var(--line); stroke-width: 1; }
+#map .glabel { fill: var(--muted); font: 10px var(--font-data); }
+#map .farm { cursor: pointer; }
+#map .farm circle.core { transition: fill .45s ease, stroke .2s; stroke: var(--panel); stroke-width: 2; }
+#map .farm.seco circle.core { fill: var(--dry); stroke: var(--line-2); stroke-width: 1.5; }
+#map .farm.fraca circle.core { fill: var(--rain-1); }
+#map .farm.chuva circle.core { fill: var(--rain-2); }
+#map .farm.sel circle.core { stroke: var(--ink); stroke-width: 2.5; }
+#map .farm .ring { fill: none; stroke: var(--rain-2); stroke-width: 1.5; opacity: 0; transform-box: fill-box; transform-origin: center; }
+#map .farm.chuva .ring { animation: ripple 2.2s ease-out infinite; }
+#map .farm.chuva .ring.r2 { animation-delay: 1.1s; }
+#map .farm.manual circle.core { stroke: var(--manual); stroke-width: 2.5; }
+#map .flabel { fill: var(--ink); font: 600 10.5px var(--font-body); pointer-events: none; paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); margin-top: 6px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; border: 1px solid var(--line-2); }
+
+.read { padding: 16px; display: grid; gap: 16px; align-content: start; }
+.figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+.fig { padding: 12px 0 12px; border-bottom: 1px solid var(--line); min-width: 0; }
+.fig:nth-child(odd) { padding-right: 14px; border-right: 1px solid var(--line); }
+.fig:nth-child(even) { padding-left: 14px; }
+.fig .k { font-size: 12px; color: var(--ink-2); }
+.fig .v { font-family: var(--font-display); font-stretch: 85%; font-weight: 800; font-size: 34px; line-height: 1.05; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.fig .v .of { font-size: 18px; color: var(--muted); font-weight: 600; }
+.fig .s { font-size: 12px; color: var(--muted); margin-top: 2px; min-height: 1.4em; overflow-wrap: anywhere; }
+.rules h3 { margin: 0 0 8px; font-size: 12px; font-family: var(--font-display); font-stretch: 78%; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.rule { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px dashed var(--line); }
+.rule:first-of-type { border-top: 0; }
+.rule .t { font-size: 13px; }
+.rule .t small { display: block; color: var(--muted); font-size: 11.5px; }
+.step { display: inline-flex; align-items: center; border: 1px solid var(--line-2); border-radius: 7px; overflow: hidden; background: var(--bg); }
+.step button { width: 30px; height: 30px; border: 0; background: transparent; font-size: 16px; font-weight: 700; color: var(--ink); }
+.step button:hover { background: var(--line); }
+.step output { min-width: 64px; text-align: center; font-family: var(--font-data); font-weight: 600; font-size: 13px; border-inline: 1px solid var(--line-2); padding: 5px 4px; }
+.step output.bump { animation: bump .35s ease; }
+
+/* quadro */
+.board-head { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px; padding: 6px 0 10px; }
+.board-head p { margin: 3px 0 0; color: var(--ink-2); font-size: 12.5px; }
+.board { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 24px; }
+.rowg { display: grid; grid-template-columns: minmax(170px, 1.25fr) 150px minmax(220px, 1.5fr) minmax(330px, 2.3fr) 118px; gap: 0 16px; align-items: center; padding: 10px 14px; }
+.cols { font-family: var(--font-display); font-stretch: 78%; text-transform: uppercase; letter-spacing: 0.07em; font-size: 11px; font-weight: 700; color: var(--muted); border-bottom: 1px solid var(--line); background: var(--bg); }
+.farmrow { border-bottom: 1px solid var(--line); }
+.farmrow:last-child { border-bottom: 0; }
+.farmrow > .rowg { cursor: pointer; transition: background .15s; }
+.farmrow > .rowg:hover { background: color-mix(in srgb, var(--bg) 55%, transparent); }
+.farmrow.open > .rowg { background: var(--bg); }
+.fname { font-weight: 700; font-size: 13.5px; line-height: 1.25; }
+.fmeta { font-family: var(--font-data); font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
+.tag-man { color: var(--manual); font-weight: 600; }
+.note { font-size: 11.5px; color: var(--manual); margin-top: 3px; overflow-wrap: anywhere; }
+
+.now { position: relative; display: inline-flex; align-items: center; gap: 7px; padding: 5px 10px 5px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; overflow: hidden; white-space: nowrap; }
+.now.off { background: var(--dry); color: var(--ink-2); }
+.now.on { background: var(--rain-2); color: var(--on-rain-2); }
+.now .ico { width: 14px; height: 14px; flex: none; }
+.now .drops { position: absolute; inset: 0; pointer-events: none; }
+.now > span:not(.drops), .now > svg { position: relative; z-index: 1; }
+.now .drops i { position: absolute; top: -8px; width: 1.5px; height: 7px; border-radius: 1px; background: currentColor; opacity: .28; animation: fall .9s linear infinite; }
+.now .mm { font-family: var(--font-data); font-weight: 500; opacity: .85; }
+
+.h24 { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: end; }
+.h24 .tot { font-family: var(--font-data); font-size: 13px; font-weight: 600; min-width: 54px; text-align: right; }
+.h24 .tot small { display: block; font-size: 10.5px; font-weight: 400; color: var(--muted); }
+.hbars { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 1.5px; height: 34px; align-items: end; border-bottom: 1px solid var(--line-2); position: relative; }
+.hb { background: var(--line-2); border-radius: 1.5px 1.5px 0 0; min-height: 2px; transform-origin: bottom; }
+.hb.w { background: var(--rain-1); }
+.hb.r { background: var(--rain-bar); }
+.anim .hb { animation: grow .6s cubic-bezier(.2,.75,.25,1) both; animation-delay: calc(var(--i) * 14ms + var(--row) * 30ms); }
+
+.d7 { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.dc { border-radius: 5px; padding: 4px 2px 3px; text-align: center; line-height: 1.15; position: relative; transition: box-shadow .25s, transform .25s; }
+.dc .d { font-size: 10px; color: inherit; opacity: .75; }
+.dc .m { font-family: var(--font-data); font-size: 12px; font-weight: 600; }
+.dc .p { font-family: var(--font-data); font-size: 9.5px; opacity: .7; }
+.dc.seco { background: var(--dry); color: var(--ink-2); }
+.dc.fraca { background: var(--rain-1); color: var(--ink); }
+.dc.chuva { background: var(--rain-2); color: var(--on-rain-2); }
+.dc.cur { box-shadow: 0 0 0 2px var(--ink); }
+.dc.man::after { content: ""; position: absolute; top: 3px; right: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--manual); }
+.anim .dc { animation: rise .5s ease both; animation-delay: calc(var(--i) * 40ms + var(--row) * 30ms); }
+
+.p7 { display: grid; gap: 4px; }
+.p7 .tot { font-family: var(--font-data); font-size: 13px; font-weight: 600; }
+.p7 .tot small { color: var(--muted); font-weight: 400; font-size: 10.5px; }
+.spark { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; height: 16px; align-items: end; }
+.spark i { background: var(--muted); opacity: .55; border-radius: 1px; min-height: 1px; display: block; }
+.spark i.r { background: var(--rain-bar); opacity: 1; }
+
+/* detalhe */
+.detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s ease; }
+.farmrow.open .detail { grid-template-rows: 1fr; }
+.detail > .in { overflow: hidden; min-height: 0; }
+.dgrid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(260px, .9fr); gap: 18px; padding: 6px 14px 18px; }
+.dgrid h4 { margin: 0 0 6px; font-size: 12px; font-family: var(--font-display); font-stretch: 78%; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.dgrid svg { width: 100%; height: auto; display: block; }
+.dgrid svg text { fill: var(--muted); font: 10px var(--font-data); }
+.manform { display: grid; gap: 10px; background: var(--bg); border: 1px dashed var(--line-2); border-radius: 8px; padding: 12px; align-content: start; }
+.manform label { display: grid; gap: 4px; font-size: 12.5px; color: var(--ink-2); }
+.manform select, .manform input[type=text] { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line-2); background: var(--panel); }
+.manform .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.manform small { color: var(--muted); font-size: 11.5px; }
+
+@media (max-width: 700px) { .bar { position: static; } .brand h1 { font-size: 26px; } }
+@media (max-width: 1100px) {
+  .cols { display: none; }
+  .rowg { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name now" "h24 h24" "d7 d7" "p7 p7"; gap: 10px 12px; }
+  .c-name { grid-area: name; } .c-now { grid-area: now; } .c-h24 { grid-area: h24; } .c-d7 { grid-area: d7; } .c-p7 { grid-area: p7; }
+  .p7 { grid-template-columns: auto 1fr; align-items: center; gap: 10px; }
+  .dgrid { grid-template-columns: 1fr; }
+}
+
+/* configuração */
+details.cfg { margin-bottom: 40px; }
+details.cfg summary { cursor: pointer; font-weight: 700; padding: 12px 0; }
+details.cfg textarea { width: 100%; min-height: 160px; font: 12px/1.45 var(--font-data); padding: 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); }
+details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
+.msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 12px; border: 1px solid var(--line-2); background: var(--panel); }
+.msg.err { border-color: #c9473f; }
+
+#tip { position: fixed; z-index: 20; pointer-events: none; background: var(--ink); color: var(--bg); padding: 7px 10px; border-radius: 6px; font-size: 12px; line-height: 1.4; max-width: 240px; display: none; }
+#tip b { font-weight: 700; }
+
+@keyframes ripple { 0% { opacity: .8; transform: scale(1); } 100% { opacity: 0; transform: scale(3.2); } }
+@keyframes fall { from { transform: translateY(0); } to { transform: translateY(34px); } }
+@keyframes grow { from { transform: scaleY(0); } }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+@keyframes bump { 40% { transform: scale(1.12); } }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(47,158,91,.5); } 70% { box-shadow: 0 0 0 7px rgba(47,158,91,0); } 100% { box-shadow: 0 0 0 0 rgba(47,158,91,0); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .now .drops { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap top">
+  <div class="brand">
+    <h1>Chuva nas Fazendas</h1>
+    <p>Mato Grosso do Sul · modelo Open-Meteo, atualizado a cada 30 min</p>
+  </div>
+  <div class="sync">
+    <span id="syncTxt"><span class="dot"></span>Carregando…</span>
+    <button class="btn solid" id="btnRefresh" type="button">Atualizar</button>
+  </div>
+</div>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="grp"><span class="lbl">Região</span><div class="seg" id="regions"></div></div>
+    <div class="grp"><span class="lbl">Momento</span><div class="seg" id="views"></div>
+      <button class="play" id="btnPlay" type="button" title="Animar a previsão dia a dia" aria-label="Animar a previsão dia a dia"><svg viewBox="0 0 12 12"><path id="playIco" d="M2 1 L11 6 L2 11 Z"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="msg"></div>
+  <section class="over">
+    <div class="panel mapbox">
+      <div class="maphead"><h2>Mapa</h2><span class="when" id="mapWhen"></span></div>
+      <div id="map"></div>
+      <div class="legend">
+        <span><span class="sw" style="background:var(--dry)"></span>Sem chuva (&lt; <span class="lo">4</span> mm)</span>
+        <span><span class="sw" style="background:var(--rain-1)"></span>Chuva fraca (<span class="lo">4</span> a <span class="hi">6</span> mm)</span>
+        <span><span class="sw" style="background:var(--rain-2)"></span>Chuva (&gt; <span class="hi">6</span> mm)</span>
+        <span><span class="sw" style="background:transparent;border:2px solid var(--manual)"></span>Ajuste manual</span>
+      </div>
+    </div>
+    <div class="panel read">
+      <h2>Leitura geral</h2>
+      <div class="figs" id="figs"></div>
+      <div class="rules">
+        <h3>Regras</h3>
+        <div class="rule"><div class="t">Não conta como chuva abaixo de<small>no dia, por fazenda</small></div><div class="step" data-p="lo"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar">+</button></div></div>
+        <div class="rule"><div class="t">Chuva de fato acima de<small>entre os dois valores é chuva fraca</small></div><div class="step" data-p="hi"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar">+</button></div></div>
+        <div class="rule"><div class="t">“Chovendo agora” a partir de<small>intensidade do modelo na hora atual</small></div><div class="step" data-p="now"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar">+</button></div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="board-head">
+    <div><h2>Fazendas</h2><p>Clique numa fazenda para ver as horas, o histórico e fazer um ajuste manual.</p></div>
+    <div class="grp"><span class="lbl">Ordenar</span><div class="seg" id="sorts">
+      <button type="button" data-s="rain">Mais chuva</button><button type="button" data-s="name">Nome</button><button type="button" data-s="region">Região</button>
+    </div></div>
+  </div>
+  <div class="board" id="board"></div>
+
+  <details class="cfg" id="cfg">
+    <summary>Lista de fazendas</summary>
+    <p>Para trocar a lista, selecione no Excel as colunas <b>id, fazenda, Coordenadas</b>, copie (Ctrl+C) e cole aqui (Ctrl+V). As coordenadas podem estar em graus (19°52'39.33"S 53°01'08.98"W) ou em decimal, em duas colunas. A região é o que vem depois do “ - ” no nome.</p>
+    <textarea id="txtFarms" spellcheck="false"></textarea>
+    <div class="grp" style="margin-top:10px">
+      <button class="btn solid" id="btnSave" type="button">Salvar lista</button>
+      <button class="btn" id="btnReset" type="button">Voltar para a lista original</button>
+      <button class="btn" id="btnDemo" type="button">Ver com dados de exemplo</button>
+    </div>
+  </details>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var DEFAULT_TALHOES = [
+    "id\tfazenda\tCoordenadas",
+    "1133\tHORTO BONITO\t19°52'39.33\"S 53°01'08.98\"W",
+    "6163\tBETEL - ACL\t20°03'16.20\"S 52°51'56.52\"W",
+    "6220\tSANTA ANITA - RRP\t20°31'40.14\"S 54°10'03.81\"W",
+    "6172\tPARATY - RRP\t20°42'40.70\"S 54°01'10.66\"W",
+    "6213\tIGREJINHA - RRP\t20°42'52.67\"S 53°53'45.39\"W",
+    "6259\tSANTO ANTÔNIO - RRP\t20°42'22.59\"S 53°54'57.04\"W",
+    "6198\tSÃO FRANCISCO II - RRP\t20°38'13.53\"S 53°52'22.76\"W",
+    "6241\tJOANINHA - RRP\t20°43'50.56\"S 53°59'48.89\"W",
+    "6243\tMEDALHA - RRP\t20°41'24.07\"S 53°58'22.22\"W",
+    "6403\tMEDALHA II - RRP\t20°40'37.90\"S 53°57'06.18\"W",
+    "6206\tLAGO AZUL - RRP\t20°45'39.25\"S 54°00'08.29\"W",
+    "6240\tALEGRIA - CPG\t20°43'32.20\"S 54°20'45.28\"W",
+    "6315\tFLORESTA - CPG\t21°21'22.26\"S 53°59'39.30\"W",
+    "6290\tCAMPESTRE - CPG\t21°06'50.80\"S 53°51'28.62\"W",
+    "6279\tPRIMAVERA - CPG\t21°03'57.91\"S 53°56'31.16\"W",
+    "6199\tSANTA MARTA - CPG\t20°53'06.76\"S 54°06'45.45\"W"
+  ].join("\n");
+
+  var DEFAULT_PARAMS = { lo: 4, hi: 6, now: 0.5 };
+  var STEP = { lo: 0.5, hi: 0.5, now: 0.1 };
+  var STORE = "chuvaFazendas.v1";
+  var REFRESH_MIN = 30;
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var state = { text: "", params: {}, farms: [], data: null, demo: false, region: "Todas", view: "now", sort: "rain", open: null, manual: {}, lastFetch: null, firstPaint: true };
+
+  // ---------- armazenamento local (falha em silêncio) ----------
+  function load() {
+    var s = null;
+    try { s = JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) {}
+    state.text = (s && s.text) || DEFAULT_TALHOES;
+    state.params = Object.assign({}, DEFAULT_PARAMS, (s && s.params) || {});
+    state.manual = (s && s.manual) || {};
+    state.sort = (s && s.sort) || "rain";
+  }
+  function save() {
+    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort })); } catch (e) {}
+  }
+
+  // ---------- números ----------
+  function num(s) {
+    if (s == null) return NaN;
+    s = String(s).trim().replace(/\s/g, "");
+    if (s.indexOf(",") >= 0 && s.indexOf(".") >= 0) s = s.replace(/\./g, "").replace(",", ".");
+    else s = s.replace(",", ".");
+    return parseFloat(s);
+  }
+  function f1(v) { return (Math.round(v * 10) / 10).toLocaleString("pt-BR", { minimumFractionDigits: v > 0 && v < 10 && v % 1 ? 1 : 0, maximumFractionDigits: 1 }); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  // aceita: "19°52'39.33"S 53°01'08.98"W" (graus, minutos, segundos) ou decimal (-19,877 / -53,019)
+  var DMS = /(\d{1,3})\s*[°º]\s*(\d{1,2})\s*['’′]\s*([\d.,]+)?\s*(?:"|''|”|″)*\s*([NSEWOL])/gi;
+  function dmsToDec(m) {
+    var v = +m[1] + (+m[2]) / 60 + (m[3] ? num(m[3]) : 0) / 3600, h = m[4].toUpperCase();
+    return (h === "S" || h === "W" || h === "O") ? -v : v;
+  }
+  function isNum(c) { return /^\s*-?\d+([.,]\d+)?\s*$/.test(c) && !isNaN(num(c)); }
+  function parseTalhoes(text) {
+    var out = [];
+    text.split(/\r?\n/).forEach(function (line) {
+      if (!line.trim()) return;
+      var cols = (line.indexOf("\t") >= 0 ? line.split("\t") : line.split(";")).map(function (c) { return c.trim().replace(/^"(.*)"$/, "$1").replace(/""/g, '"'); });
+      var lat = NaN, lon = NaN, ci = -1, cj = -1;
+      // 1) coordenadas em graus/min/seg (numa coluna só ou em duas)
+      for (var i = 0; i < cols.length && isNaN(lon); i++) {
+        var ms = []; DMS.lastIndex = 0; var m;
+        while ((m = DMS.exec(cols[i]))) ms.push(m);
+        ms.forEach(function (mm) {
+          var h = mm[4].toUpperCase(), v = dmsToDec(mm);
+          if (h === "N" || h === "S") { if (isNaN(lat)) { lat = v; ci = i; } }
+          else if (isNaN(lon)) { lon = v; cj = i; }
+        });
+      }
+      // 2) coordenadas decimais em duas colunas seguidas
+      if (isNaN(lat) || isNaN(lon)) {
+        lat = lon = NaN;
+        for (var k = 0; k + 1 < cols.length; k++) {
+          if (isNum(cols[k]) && isNum(cols[k + 1]) && /[.,-]/.test(cols[k]) && /[.,-]/.test(cols[k + 1])) {
+            var a = num(cols[k]), b = num(cols[k + 1]);
+            if (Math.abs(a) <= 90 && Math.abs(b) <= 180) { lat = a; lon = b; ci = k; cj = k + 1; break; }
+          }
+        }
+      }
+      if (isNaN(lat) || isNaN(lon)) return; // cabeçalho ou linha sem coordenada
+      var first = Math.min(ci, cj), last = Math.max(ci, cj);
+      var before = cols.slice(0, first).filter(Boolean), after = cols.slice(last + 1).filter(isNum).map(num);
+      var id = "", nome = "";
+      before.forEach(function (c) { if (isNum(c) && !id) id = c; else if (!nome) nome = c; });
+      nome = nome || id || ("Ponto " + (out.length + 1));
+      var reg = (nome.match(/\s-\s*([^-]+)$/) || [])[1];
+      out.push({ id: id, nome: nome, regiao: reg ? reg.trim() : "Outras", lat: lat, lon: lon,
+        area: after[0] > 0 ? after[0] : 0, prio: after[1] ? Math.max(1, Math.min(5, after[1])) : 3 });
+    });
+    return out;
+  }
+
+  // ---------- datas ----------
+  var WD = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+  function dObj(s) { return new Date(s.slice(0, 10) + "T12:00:00"); }
+  function dayShort(s) { var d = dObj(s); return WD[d.getDay()] + " " + d.getDate(); }
+  function dayLong(s) { var d = dObj(s); return WD[d.getDay()] + " " + String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0"); }
+  function localIso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") + "T" + String(d.getHours()).padStart(2, "0") + ":00"; }
+
+  // ---------- dados ----------
+  function fetchData() {
+    var f = state.farms;
+    var url = "https://api.open-meteo.com/v1/forecast" +
+      "?latitude=" + f.map(function (x) { return x.lat.toFixed(4); }).join(",") +
+      "&longitude=" + f.map(function (x) { return x.lon.toFixed(4); }).join(",") +
+      "&current=precipitation" +
+      "&hourly=precipitation,precipitation_probability" +
+      "&daily=precipitation_sum,precipitation_probability_max" +
+      "&past_days=7&forecast_days=7&timezone=auto";
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error("a Open-Meteo respondeu com erro " + r.status);
+      return r.json();
+    }).then(function (j) { return Array.isArray(j) ? j : [j]; });
+  }
+
+  // dados inventados, só para mostrar como o painel funciona
+  function demoData() {
+    var now = new Date(); now.setMinutes(0, 0, 0);
+    var start = new Date(now); start.setHours(0); start.setDate(start.getDate() - 7);
+    var seed = 11; function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+    // frentes de chuva: [hora a partir de agora, duração h, intensidade mm/h, região afetada ou "*"]
+    var storms = [[-130, 5, 3.2, "*"], [-60, 3, 1.2, "RRP"], [-1, 4, 2.4, "CPG"], [20, 3, 0.7, "*"], [52, 6, 2.6, "*"], [60, 3, 1.5, "RRP"], [100, 4, 0.9, "ACL"], [125, 5, 1.8, "CPG"]];
+    return state.farms.map(function (t, k) {
+      var hourly = { time: [], precipitation: [], precipitation_probability: [] };
+      for (var h = 0; h < 14 * 24; h++) {
+        var d = new Date(start); d.setHours(d.getHours() + h);
+        var rel = Math.round((d - now) / 3600000), v = 0, pb = Math.round(rnd() * 12);
+        storms.forEach(function (s) {
+          if ((s[3] === "*" || s[3] === t.regiao) && rel >= s[0] && rel < s[0] + s[1]) { v += s[2] * (0.5 + rnd()) * (k % 3 === 0 ? 1.25 : 0.85); pb = Math.max(pb, 55 + Math.round(rnd() * 40)); }
+        });
+        hourly.time.push(localIso(d)); hourly.precipitation.push(Math.round(v * 10) / 10); hourly.precipitation_probability.push(rel < 0 ? null : pb);
+      }
+      var daily = { time: [], precipitation_sum: [], precipitation_probability_max: [] };
+      for (var i = 0; i < 14; i++) {
+        var slice = hourly.precipitation.slice(i * 24, i * 24 + 24), ps = hourly.precipitation_probability.slice(i * 24, i * 24 + 24);
+        daily.time.push(hourly.time[i * 24].slice(0, 10));
+        daily.precipitation_sum.push(Math.round(slice.reduce(function (a, b) { return a + b; }, 0) * 10) / 10);
+        daily.precipitation_probability_max.push(i < 7 ? null : Math.max.apply(null, ps.map(function (x) { return x || 0; })));
+      }
+      var ci = hourly.time.indexOf(localIso(now));
+      return { current: { time: localIso(now), precipitation: hourly.precipitation[ci] || 0 }, hourly: hourly, daily: daily };
+    });
+  }
+
+  // ---------- regras ----------
+  function status(mm) { var p = state.params; return mm > p.hi ? "chuva" : mm >= p.lo ? "fraca" : "seco"; }
+  var LABEL = { seco: "Sem chuva", fraca: "Chuva fraca", chuva: "Chuva" };
+  function key(t) { return t.id || t.nome; }
+
+  function model() {
+    var p = state.params;
+    state.all = state.farms.map(function (t, k) {
+      var o = state.data[k] || {}, H = o.hourly || {}, D = o.daily || {};
+      var curTime = (o.current && o.current.time) || localIso(new Date());
+      var hourKey = curTime.slice(0, 13) + ":00";
+      var nowIdx = (H.time || []).indexOf(hourKey);
+      if (nowIdx < 0) nowIdx = Math.max(0, (H.time || []).filter(function (x) { return x <= hourKey; }).length - 1);
+      var today = curTime.slice(0, 10), todayIdx = Math.max(0, (D.time || []).indexOf(today));
+      var hourly = (H.time || []).map(function (tm, i) { return { time: tm, mm: H.precipitation[i] || 0, prob: (H.precipitation_probability || [])[i] }; });
+      var ov = state.manual[key(t)];
+      if (ov && ov.date !== today) { delete state.manual[key(t)]; ov = null; }
+      var daily = (D.time || []).map(function (ds, i) {
+        var mm = D.precipitation_sum[i] || 0, measured = false;
+        if (i === todayIdx && ov && ov.mm != null && ov.mm !== "") { mm = +ov.mm; measured = true; }
+        return { date: ds, mm: mm, model: D.precipitation_sum[i] || 0, prob: (D.precipitation_probability_max || [])[i], past: i < todayIdx, today: i === todayIdx, offset: i - todayIdx, st: status(mm), measured: measured };
+      });
+      var curMm = (o.current && o.current.precipitation) || 0;
+      var agora = curMm >= p.now, agoraManual = false;
+      if (ov && ov.agora === "sim") { agora = true; agoraManual = true; }
+      if (ov && ov.agora === "nao") { agora = false; agoraManual = true; }
+      var next24 = hourly.slice(nowIdx, nowIdx + 24);
+      var sum24 = next24.reduce(function (s, x) { return s + x.mm; }, 0);
+      var past7 = daily.filter(function (x) { return x.past; }).slice(-7);
+      var sum7 = past7.reduce(function (s, x) { return s + x.mm; }, 0);
+      var peak = next24.reduce(function (b, x) { return x.mm > b.mm ? x : b; }, { mm: 0 });
+      return { k: k, t: t, hourly: hourly, daily: daily, nowIdx: nowIdx, todayIdx: todayIdx, curMm: curMm, agora: agora, agoraManual: agoraManual, ov: ov,
+        next24: next24, sum24: sum24, past7: past7, sum7: sum7, peak: peak, fut: daily.slice(todayIdx, todayIdx + 7) };
+    });
+    state.rows = state.all.filter(function (r) { return state.region === "Todas" || r.t.regiao === state.region; });
+  }
+
+  function viewStatus(r, v) {
+    if (v === "now") return r.agora ? "chuva" : "seco";
+    var d = r.fut[v]; return d ? d.st : "seco";
+  }
+  function viewName(v, long) {
+    if (v === "now") return long ? "Agora" : "Agora";
+    var r0 = state.all[0], d = r0 && r0.fut[v];
+    if (v === 0) return "Hoje"; if (v === 1) return "Amanhã";
+    return d ? (long ? dayLong(d.date) : dayShort(d.date)) : "";
+  }
+
+  // ---------- dica flutuante ----------
+  var tip = document.getElementById("tip");
+  function tipShow(e, html) { tip.innerHTML = html; tip.style.display = "block"; tipMove(e); }
+  function tipMove(e) {
+    var x = e.clientX + 14, y = e.clientY + 14, w = tip.offsetWidth, h = tip.offsetHeight;
+    if (x + w > innerWidth - 8) x = e.clientX - w - 14;
+    if (y + h > innerHeight - 8) y = e.clientY - h - 14;
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+  }
+  function tipHide() { tip.style.display = "none"; }
+  document.addEventListener("mouseover", function (e) {
+    var el = e.target.closest && e.target.closest("[data-tip]");
+    if (el) tipShow(e, el.getAttribute("data-tip"));
+  });
+  document.addEventListener("mousemove", function (e) { if (tip.style.display === "block") tipMove(e); });
+  document.addEventListener("mouseout", function (e) {
+    var el = e.target.closest && e.target.closest("[data-tip]");
+    if (el && !(e.relatedTarget && el.contains(e.relatedTarget))) tipHide();
+  });
+  function attr(s) { return esc(s).replace(/'/g, "&#39;"); }
+
+  // ---------- controles ----------
+  function renderRegions() {
+    var regs = ["Todas"];
+    state.farms.forEach(function (t) { if (regs.indexOf(t.regiao) < 0) regs.push(t.regiao); });
+    if (regs.indexOf(state.region) < 0) state.region = "Todas";
+    var box = document.getElementById("regions");
+    box.innerHTML = regs.map(function (r) {
+      var n = r === "Todas" ? state.farms.length : state.farms.filter(function (t) { return t.regiao === r; }).length;
+      return '<button type="button" class="' + (r === state.region ? "on" : "") + '" data-r="' + attr(r) + '">' + esc(r) + "<small>" + n + "</small></button>";
+    }).join("");
+  }
+  document.getElementById("regions").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    state.region = b.getAttribute("data-r"); render({ animate: true });
+  });
+
+  function viewsList() { var v = ["now"]; var n = state.all && state.all[0] ? state.all[0].fut.length : 7; for (var i = 0; i < n; i++) v.push(i); return v; }
+  function renderViews() {
+    document.getElementById("views").innerHTML = viewsList().map(function (v) {
+      return '<button type="button" class="' + (v === state.view ? "on" : "") + '" data-v="' + v + '">' + viewName(v) + "</button>";
+    }).join("");
+  }
+  document.getElementById("views").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    stopPlay(); setView(b.getAttribute("data-v") === "now" ? "now" : +b.getAttribute("data-v"));
+  });
+  function setView(v) {
+    state.view = v;
+    document.querySelectorAll("#views button").forEach(function (b) { b.classList.toggle("on", String(v) === b.getAttribute("data-v")); });
+    paintMap(); markColumn(); renderFigs(false);
+  }
+
+  var playTimer = null;
+  function stopPlay() { if (playTimer) { clearInterval(playTimer); playTimer = null; document.getElementById("playIco").setAttribute("d", "M2 1 L11 6 L2 11 Z"); } }
+  document.getElementById("btnPlay").addEventListener("click", function () {
+    if (playTimer) { stopPlay(); return; }
+    var list = viewsList(), i = list.indexOf(state.view);
+    document.getElementById("playIco").setAttribute("d", "M2 1 H5 V11 H2 Z M7 1 H10 V11 H7 Z");
+    playTimer = setInterval(function () { i = (i + 1) % list.length; setView(list[i]); }, reduce ? 2200 : 1300);
+  });
+
+  document.getElementById("sorts").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    state.sort = b.getAttribute("data-s"); save(); renderBoard({ flip: true });
+  });
+  function paintSorts() { document.querySelectorAll("#sorts button").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-s") === state.sort); }); }
+
+  // regras com + e −
+  function paintSteps() {
+    document.querySelectorAll(".rules .step").forEach(function (s) {
+      var k = s.getAttribute("data-p"), v = state.params[k];
+      s.querySelector("output").textContent = f1(v) + (k === "now" ? " mm/h" : " mm");
+    });
+    document.querySelectorAll(".lo").forEach(function (e) { e.textContent = f1(state.params.lo); });
+    document.querySelectorAll(".hi").forEach(function (e) { e.textContent = f1(state.params.hi); });
+  }
+  document.querySelector(".rules").addEventListener("click", function (e) {
+    var b = e.target.closest(".step button"); if (!b) return;
+    var s = b.closest(".step"), k = s.getAttribute("data-p"), p = state.params;
+    var v = Math.round((p[k] + (+b.getAttribute("data-d")) * STEP[k]) * 10) / 10;
+    v = Math.max(k === "now" ? 0.1 : 0.5, Math.min(50, v));
+    p[k] = v;
+    if (k === "lo" && p.lo > p.hi) p.hi = p.lo;
+    if (k === "hi" && p.hi < p.lo) p.lo = p.hi;
+    save(); paintSteps();
+    var out = s.querySelector("output"); out.classList.remove("bump"); void out.offsetWidth; out.classList.add("bump");
+    render({ animate: false });
+  });
+
+  // ---------- leitura geral ----------
+  var shown = {};
+  function countTo(el, to, fmt) {
+    var from = shown[el.id] || 0; shown[el.id] = to;
+    if (reduce || from === to) { el.textContent = fmt(to); return; }
+    var t0 = performance.now(), dur = 650;
+    (function tick(t) {
+      var x = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - x, 3);
+      el.textContent = fmt(from + (to - from) * e);
+      if (x < 1) requestAnimationFrame(tick);
+    })(t0);
+  }
+  function names(list) {
+    if (!list.length) return "nenhuma";
+    var n = list.map(function (r) { return r.t.nome.replace(/\s-\s*[^-]+$/, ""); });
+    return n.length <= 3 ? n.join(", ") : n.slice(0, 3).join(", ") + " e mais " + (n.length - 3);
+  }
+  function renderFigs(full) {
+    var rows = state.rows, N = rows.length, v = state.view;
+    var rainNow = rows.filter(function (r) { return r.agora; });
+    var vv = v === "now" ? 0 : v;
+    var dayRows = rows.filter(function (r) { return r.fut[vv] && r.fut[vv].st === "chuva"; });
+    var dayWeak = rows.filter(function (r) { return r.fut[vv] && r.fut[vv].st === "fraca"; });
+    var w24 = rows.filter(function (r) { return r.sum24 > state.params.hi; });
+    var avg7 = rows.reduce(function (s, r) { return s + r.sum7; }, 0) / Math.max(1, N);
+    var max7 = rows.reduce(function (b, r) { return r.sum7 > b.sum7 ? r : b; }, { sum7: -1 });
+    var box = document.getElementById("figs");
+    if (!box.children.length) {
+      box.innerHTML = ['fNow', 'fDay', 'f24', 'f7'].map(function (id) { return '<div class="fig"><div class="k" id="' + id + 'k"></div><div class="v"><span id="' + id + '"></span><span class="of" id="' + id + 'o"></span></div><div class="s" id="' + id + 's"></div></div>'; }).join("");
+    }
+    function set(id, k, val, of, s, fmt) {
+      document.getElementById(id + "k").textContent = k;
+      countTo(document.getElementById(id), val, fmt || function (x) { return Math.round(x); });
+      document.getElementById(id + "o").textContent = of;
+      document.getElementById(id + "s").textContent = s;
+    }
+    set("fNow", "Chovendo agora", rainNow.length, " de " + N, names(rainNow));
+    set("fDay", "Com chuva " + (vv === 0 ? "hoje" : vv === 1 ? "amanhã" : viewName(vv, true)), dayRows.length, " de " + N, dayRows.length || dayWeak.length ? names(dayRows) + (dayWeak.length ? " · fraca em " + dayWeak.length : "") : "nenhuma fazenda");
+    set("f24", "Chuva nas próximas 24 h", w24.length, " de " + N, w24.length ? names(w24) : "acima de " + f1(state.params.hi) + " mm em nenhuma");
+    set("f7", "Choveu nos últimos 7 dias", avg7, " mm", "média · maior: " + (max7.t ? max7.t.nome.replace(/\s-\s*[^-]+$/, "") + " (" + f1(max7.sum7) + " mm)" : "–"), function (x) { return f1(x); });
+  }
+
+  // ---------- mapa ----------
+  function shortName(t) { return t.nome.replace(/\s-\s*[^-]+$/, "").split(" ").slice(0, 2).join(" "); }
+  function dms(v, pos, neg) { var a = Math.abs(v), d = Math.floor(a), m = Math.round((a - d) * 60); if (m === 60) { d++; m = 0; } return d + "°" + (m ? String(m).padStart(2, "0") + "'" : "") + (v < 0 ? neg : pos); }
+  function renderMap() {
+    var rows = state.rows, W = 600, H = 400, pad = 44;
+    if (!rows.length) { document.getElementById("map").innerHTML = ""; return; }
+    var lats = rows.map(function (r) { return r.t.lat; }), lons = rows.map(function (r) { return r.t.lon; });
+    var la0 = Math.min.apply(null, lats), la1 = Math.max.apply(null, lats), lo0 = Math.min.apply(null, lons), lo1 = Math.max.apply(null, lons);
+    var cosL = Math.cos((la0 + la1) / 2 * Math.PI / 180);
+    var spanX = Math.max((lo1 - lo0) * cosL, 0.02), spanY = Math.max(la1 - la0, 0.02);
+    var s = Math.min((W - 2 * pad) / spanX, (H - 2 * pad) / spanY);
+    var ox = (W - spanX * s) / 2, oy = (H - spanY * s) / 2;
+    function X(lon) { return ox + (lon - lo0) * cosL * s; }
+    function Y(lat) { return H - oy - (lat - la0) * s; }
+    function LON(x) { return (x - ox) / (cosL * s) + lo0; }
+    function LAT(y) { return (H - oy - y) / s + la0; }
+    var span = Math.max(LON(W) - LON(0), LAT(0) - LAT(H));
+    var g = [1, 0.5, 0.25, 1 / 6, 1 / 12, 1 / 30].filter(function (x) { return span / x >= 3; })[0] || 1 / 60;
+    var svg = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Mapa das fazendas">';
+    for (var lo = Math.ceil(LON(0) / g) * g; lo < LON(W); lo += g) { var x = X(lo); svg += '<line class="graticule" x1="' + x + '" x2="' + x + '" y1="0" y2="' + H + '"/><text class="glabel" x="' + (x + 3) + '" y="' + (H - 5) + '">' + dms(lo, "L", "O") + "</text>"; }
+    for (var la = Math.ceil(LAT(H) / g) * g; la < LAT(0); la += g) { var y = Y(la); svg += '<line class="graticule" y1="' + y + '" y2="' + y + '" x1="0" x2="' + W + '"/><text class="glabel" x="4" y="' + (y - 3) + '">' + dms(la, "N", "S") + "</text>"; }
+    var km = (LON(W) - LON(0)) * cosL * 111.32;
+    var stepKm = [1, 2, 5, 10, 20, 50, 100].filter(function (v) { return v <= km / 5; }).pop() || 1;
+    var bx = W - 14 - stepKm / 111.32 * s;
+    svg += '<line x1="' + bx + '" x2="' + (W - 14) + '" y1="' + (H - 22) + '" y2="' + (H - 22) + '" stroke="currentColor" stroke-width="2" style="color:var(--ink-2)"/><text class="glabel" text-anchor="end" x="' + (W - 14) + '" y="' + (H - 28) + '">' + stepKm + " km</text>";
+    // rótulos sem sobreposição
+    var placed = [], show = {};
+    rows.slice().sort(function (a, b) { return (b.k === state.open) - (a.k === state.open); }).forEach(function (r) {
+      var x = X(r.t.lon), y = Y(r.t.lat), w = shortName(r.t).length * 6.4 + 6, box = [x - w / 2, y - 28, x + w / 2, y - 13];
+      var hit = box[0] < 2 || box[2] > W - 2 || placed.some(function (q) { return box[0] < q[2] && box[2] > q[0] && box[1] < q[3] && box[3] > q[1]; }) ||
+        rows.some(function (o) { var x2 = X(o.t.lon), y2 = Y(o.t.lat); return o !== r && x2 > box[0] - 7 && x2 < box[2] + 7 && y2 > box[1] - 7 && y2 < box[3] + 7; });
+      if (!hit) { placed.push(box); show[r.k] = true; }
+    });
+    rows.forEach(function (r) {
+      var x = X(r.t.lon), y = Y(r.t.lat);
+      svg += '<g class="farm" data-k="' + r.k + '" tabindex="0" role="button" aria-label="' + attr(r.t.nome) + '">' +
+        '<circle class="ring" cx="' + x + '" cy="' + y + '" r="8"/><circle class="ring r2" cx="' + x + '" cy="' + y + '" r="8"/>' +
+        '<circle cx="' + x + '" cy="' + y + '" r="16" fill="transparent"/>' +
+        '<circle class="core" cx="' + x + '" cy="' + y + '" r="8"/>' +
+        (show[r.k] ? '<text class="flabel" x="' + x + '" y="' + (y - 15) + '" text-anchor="middle">' + esc(shortName(r.t)) + "</text>" : "") + "</g>";
+    });
+    document.getElementById("map").innerHTML = svg + "</svg>";
+    paintMap();
+  }
+  function farmTip(r, v) {
+    var h = "<b>" + esc(r.t.nome) + "</b>" + (r.t.id ? " #" + esc(r.t.id) : "") + "<br>";
+    if (v === "now") h += r.agora ? "Chovendo agora" + (r.agoraManual ? " (informado manualmente)" : " · " + f1(r.curMm) + " mm/h") : "Sem chuva agora" + (r.agoraManual ? " (informado manualmente)" : "");
+    else { var d = r.fut[v]; if (d) h += viewName(v, true) + ": " + f1(d.mm) + " mm" + (d.measured ? " (medido)" : "") + (d.prob != null ? " · " + d.prob + "% de chance" : "") + "<br>" + LABEL[d.st]; }
+    if (r.ov && r.ov.note) h += "<br><i>" + esc(r.ov.note) + "</i>";
+    return h;
+  }
+  function paintMap() {
+    document.querySelectorAll("#map .farm").forEach(function (g) {
+      var r = state.all[+g.getAttribute("data-k")], st = viewStatus(r, state.view);
+      g.setAttribute("class", "farm " + st + (r.k === state.open ? " sel" : "") + (r.ov ? " manual" : ""));
+      g.setAttribute("data-tip", farmTip(r, state.view));
+    });
+    document.getElementById("mapWhen").textContent = state.view === "now" ? "Agora · " + (state.lastFetch ? state.lastFetch.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "") : viewName(state.view, true) + " · chuva do dia";
+  }
+  document.getElementById("map").addEventListener("click", function (e) {
+    var g = e.target.closest(".farm"); if (!g) return;
+    openFarm(+g.getAttribute("data-k"), true);
+  });
+  document.getElementById("map").addEventListener("keydown", function (e) {
+    var g = e.target.closest(".farm"); if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openFarm(+g.getAttribute("data-k"), true); }
+  });
+
+  // ---------- quadro ----------
+  var DROP = '<svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1.5 C7 1.5 2.8 6.4 2.8 9 A4.2 4.2 0 0 0 11.2 9 C11.2 6.4 7 1.5 7 1.5 Z" fill="currentColor"/></svg>';
+  var SUN = '<svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 .8v2M7 11.2v2M.8 7h2M11.2 7h2M2.6 2.6l1.4 1.4M10 10l1.4 1.4M2.6 11.4 4 10M10 4l1.4-1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+  function sorted() {
+    var rows = state.rows.slice();
+    if (state.sort === "name") rows.sort(function (a, b) { return a.t.nome.localeCompare(b.t.nome, "pt-BR"); });
+    else if (state.sort === "region") rows.sort(function (a, b) { return a.t.regiao.localeCompare(b.t.regiao, "pt-BR") || a.t.nome.localeCompare(b.t.nome, "pt-BR"); });
+    else rows.sort(function (a, b) { return (b.agora - a.agora) || (b.sum24 - a.sum24) || (b.fut[0] ? b.fut[0].mm : 0) - (a.fut[0] ? a.fut[0].mm : 0) || a.t.nome.localeCompare(b.t.nome, "pt-BR"); });
+    return rows;
+  }
+  function rowHtml(r, n) {
+    var p = state.params;
+    var drops = "";
+    if (r.agora) for (var i = 0; i < 9; i++) drops += '<i style="left:' + (6 + i * 11) + '%;animation-delay:' + (-(i * 0.37) % 0.9).toFixed(2) + 's"></i>';
+    var now = '<span class="now ' + (r.agora ? "on" : "off") + '">' + (r.agora ? '<span class="drops">' + drops + "</span>" + DROP + "<span>Chovendo</span>" + (r.agoraManual ? "" : ' <span class="mm">' + f1(r.curMm) + " mm/h</span>") : SUN + "<span>Sem chuva</span>") + "</span>";
+    var maxH = Math.max(3, p.hi / 2);
+    var bars = r.next24.map(function (h, i) {
+      var pct = Math.min(100, h.mm / maxH * 100), cls = h.mm >= 1 ? "r" : h.mm >= 0.2 ? "w" : "";
+      return '<i class="hb ' + cls + '" style="--i:' + i + ';height:' + Math.max(pct, 4) + '%" data-tip="' + attr("<b>" + h.time.slice(11, 16) + "</b> " + dayLong(h.time) + "<br>" + f1(h.mm) + " mm" + (h.prob != null ? " · " + h.prob + "%" : "")) + '"></i>';
+    }).join("");
+    var cells = r.fut.map(function (d, i) {
+      var lab = i === 0 ? "hoje" : i === 1 ? "amanhã" : dayShort(d.date);
+      return '<div class="dc ' + d.st + (d.measured ? " man" : "") + '" data-col="' + i + '" style="--i:' + i + '" data-tip="' + attr("<b>" + esc(r.t.nome) + "</b><br>" + dayLong(d.date) + ": " + f1(d.mm) + " mm" + (d.measured ? " medido (modelo: " + f1(d.model) + " mm)" : "") + (d.prob != null ? "<br>" + d.prob + "% de chance de chuva" : "") + "<br>" + LABEL[d.st]) + '"><div class="d">' + lab + '</div><div class="m">' + f1(d.mm) + '</div><div class="p">' + (d.prob != null ? d.prob + "%" : "&nbsp;") + "</div></div>";
+    }).join("");
+    var max7 = Math.max(p.hi * 2, Math.max.apply(null, r.past7.map(function (d) { return d.mm; }).concat([0])));
+    var spark = r.past7.map(function (d) { return '<i class="' + (d.mm >= p.lo ? "r" : "") + '" style="height:' + Math.max(6, d.mm / max7 * 100) + '%" data-tip="' + attr(dayLong(d.date) + ": " + f1(d.mm) + " mm") + '"></i>'; }).join("");
+    var man = r.ov ? '<span class="tag-man">ajuste manual</span>' : "";
+    return '<div class="farmrow' + (state.open === r.k ? " open" : "") + '" data-k="' + r.k + '" style="--row:' + n + '">' +
+      '<div class="rowg" tabindex="0" role="button" aria-expanded="' + (state.open === r.k) + '">' +
+        '<div class="c-name"><div class="fname">' + esc(r.t.nome) + '</div><div class="fmeta">' + (r.t.id ? "<span>#" + esc(r.t.id) + "</span>" : "") + "<span>" + esc(r.t.regiao) + "</span>" + man + "</div>" + (r.ov && r.ov.note ? '<div class="note">' + esc(r.ov.note) + "</div>" : "") + "</div>" +
+        '<div class="c-now">' + now + "</div>" +
+        '<div class="c-h24 h24"><div class="tot">' + f1(r.sum24) + " mm<small>24 h</small></div><div class=\"hbars\">" + bars + "</div></div>" +
+        '<div class="c-d7 d7">' + cells + "</div>" +
+        '<div class="c-p7 p7"><div class="tot">' + f1(r.sum7) + " mm <small>7 dias</small></div><div class=\"spark\">" + spark + "</div></div>" +
+      "</div>" +
+      '<div class="detail"><div class="in">' + (state.open === r.k ? detailHtml(r) : "") + "</div></div></div>";
+  }
+  function renderBoard(o) {
+    o = o || {};
+    var board = document.getElementById("board"), before = {};
+    if (o.flip && !reduce) board.querySelectorAll(".farmrow").forEach(function (el) { before[el.getAttribute("data-k")] = el.getBoundingClientRect().top; });
+    var rows = sorted();
+    board.className = "board" + (o.animate && !reduce ? " anim" : "");
+    board.innerHTML = '<div class="rowg cols"><div>Fazenda</div><div>Agora</div><div>Próximas 24 h (mm por hora)</div><div>Próximos 7 dias (mm no dia · chance)</div><div>Últimos 7 dias</div></div>' +
+      (rows.length ? rows.map(rowHtml).join("") : '<div class="rowg">Nenhuma fazenda nesta região.</div>');
+    markColumn(); paintSorts();
+    if (o.flip && !reduce) board.querySelectorAll(".farmrow").forEach(function (el) {
+      var b = before[el.getAttribute("data-k")]; if (b == null) return;
+      var dy = b - el.getBoundingClientRect().top;
+      if (dy) el.animate([{ transform: "translateY(" + dy + "px)" }, { transform: "none" }], { duration: 420, easing: "cubic-bezier(.2,.7,.2,1)" });
+    });
+  }
+  function markColumn() {
+    document.querySelectorAll("#board .dc").forEach(function (c) { c.classList.toggle("cur", state.view !== "now" && +c.getAttribute("data-col") === state.view); });
+  }
+  document.getElementById("board").addEventListener("click", function (e) {
+    if (e.target.closest(".detail")) return;
+    var row = e.target.closest(".farmrow"); if (!row) return;
+    var k = +row.getAttribute("data-k");
+    openFarm(state.open === k ? null : k, false);
+  });
+  document.getElementById("board").addEventListener("keydown", function (e) {
+    if (!e.target.classList.contains("rowg") || (e.key !== "Enter" && e.key !== " ")) return;
+    e.preventDefault(); var k = +e.target.closest(".farmrow").getAttribute("data-k"); openFarm(state.open === k ? null : k, false);
+  });
+  function openFarm(k, scroll) {
+    var prev = state.open; state.open = k;
+    document.querySelectorAll("#board .farmrow").forEach(function (el) {
+      var kk = +el.getAttribute("data-k"), isOpen = kk === k, r = state.all[kk];
+      if (isOpen && kk !== prev) el.querySelector(".detail .in").innerHTML = detailHtml(r);
+      el.classList.toggle("open", isOpen);
+      el.querySelector(".rowg").setAttribute("aria-expanded", isOpen);
+    });
+    paintMap();
+    if (scroll && k != null) {
+      var el = document.querySelector('#board .farmrow[data-k="' + k + '"]');
+      if (el) el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+    }
+  }
+
+  // ---------- detalhe: gráficos + ajuste manual ----------
+  function barChart(items, opt) {
+    var W = 560, H = 190, L = 30, R = opt.lines ? 70 : 8, T = 14, B = 30;
+    var max = Math.max(opt.min, Math.max.apply(null, items.map(function (x) { return x.v; })));
+    var st = max <= 4 ? 1 : max <= 10 ? 2 : max <= 25 ? 5 : max <= 60 ? 10 : 20; max = Math.ceil(max / st) * st;
+    var cw = (W - L - R) / items.length, bw = Math.max(2, Math.min(22, cw * 0.72));
+    function Y(v) { return T + (H - T - B) * (1 - v / max); }
+    var s = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + attr(opt.label) + '">';
+    for (var v = 0; v <= max; v += st) s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="var(--' + (v ? "line" : "line-2") + ')"/><text x="' + (L - 5) + '" y="' + (Y(v) + 3.5) + '" text-anchor="end">' + v + "</text>";
+    items.forEach(function (x, i) {
+      var cx = L + cw * i + cw / 2, y = Y(x.v), h = Y(0) - y;
+      if (x.mark) s += '<rect x="' + (L + cw * i) + '" y="' + T + '" width="' + cw + '" height="' + (H - T - B) + '" fill="var(--line)" opacity=".7"/>';
+      if (h > 0.4) { var rr = Math.min(2.5, bw / 2, h); s += '<path d="M' + (cx - bw / 2) + " " + Y(0) + " V" + (y + rr) + " q0 -" + rr + " " + rr + " -" + rr + " H" + (cx + bw / 2 - rr) + " q" + rr + " 0 " + rr + " " + rr + " V" + Y(0) + 'Z" fill="var(--' + x.c + ')"/>'; }
+      if (x.lab) s += '<text x="' + cx + '" y="' + (H - B + 13) + '" text-anchor="middle"' + (x.mark ? ' style="fill:var(--ink);font-weight:600"' : "") + ">" + x.lab + "</text>";
+      if (x.top) s += '<text x="' + cx + '" y="' + (y - 4) + '" text-anchor="middle" style="fill:var(--ink)">' + x.top + "</text>";
+      s += '<rect x="' + (L + cw * i) + '" y="' + T + '" width="' + cw + '" height="' + (H - T) + '" fill="transparent" data-tip="' + attr(x.tip) + '"/>';
+    });
+    (opt.lines || []).forEach(function (l) {
+      var ly = Y(l[0]); if (l[0] > max) return;
+      s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + ly + '" y2="' + ly + '" stroke="var(--' + l[1] + ')" stroke-dasharray="4 3"/><text x="' + (W - R + 5) + '" y="' + (ly + 3.5) + '" style="fill:var(--ink-2)">' + l[2] + "</text>";
+    });
+    return s + "</svg>";
+  }
+  function detailHtml(r) {
+    var p = state.params;
+    var h48 = r.hourly.slice(r.nowIdx, r.nowIdx + 48).map(function (h, i) {
+      var hr = +h.time.slice(11, 13);
+      return { v: h.mm, c: h.mm >= 1 ? "rain-bar" : "rain-1", mark: i === 0, lab: hr % 6 === 0 ? (hr === 0 ? dayShort(h.time) : hr + "h") : (i === 0 ? "agora" : ""), tip: "<b>" + h.time.slice(11, 16) + "</b> " + dayLong(h.time) + "<br>" + f1(h.mm) + " mm" + (h.prob != null ? " · " + h.prob + "%" : "") };
+    });
+    var days = r.daily.map(function (d) {
+      return { v: d.mm, c: d.past ? "muted" : d.st === "seco" ? "line-2" : d.st === "fraca" ? "rain-1" : "rain-bar", mark: d.today, lab: d.today ? "hoje" : String(dObj(d.date).getDate()), top: d.mm >= p.lo ? f1(d.mm) : "", tip: "<b>" + dayLong(d.date) + "</b><br>" + (d.past ? "Choveu " : d.today ? "Hoje " : "Previsão ") + f1(d.mm) + " mm" + (d.measured ? " (medido)" : "") + (d.prob != null ? " · " + d.prob + "%" : "") };
+    });
+    var ov = r.ov || {};
+    var k = r.k;
+    return '<div class="dgrid">' +
+      '<div><h4>Próximas 48 horas · mm por hora</h4>' + barChart(h48, { min: 2, label: "Chuva por hora" }) + "</div>" +
+      '<div><h4>7 dias atrás até 7 dias à frente · mm por dia</h4>' + barChart(days, { min: p.hi + 2, label: "Chuva por dia", lines: [[p.hi, "rain-2", "chuva " + f1(p.hi)], [p.lo, "muted", "conta " + f1(p.lo)]] }) + "</div>" +
+      '<form class="manform" data-k="' + k + '"><h4 style="margin:0">Ajuste manual de hoje</h4>' +
+        '<label for="m-mm-' + k + '">Chuva medida no pluviômetro hoje (mm)<span class="row"><span class="step" data-m="mm"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output id="m-mm-' + k + '">' + (ov.mm != null && ov.mm !== "" ? f1(+ov.mm) : "—") + '</output><button type="button" data-d="1" aria-label="Aumentar">+</button></span><button class="btn" type="button" data-clear-mm>usar o modelo</button></span></label>' +
+        '<label for="m-ag-' + k + '">Está chovendo agora?<select id="m-ag-' + k + '"><option value="">Usar o modelo</option><option value="sim"' + (ov.agora === "sim" ? " selected" : "") + '>Sim, confirmado no campo</option><option value="nao"' + (ov.agora === "nao" ? " selected" : "") + ">Não, confirmado no campo</option></select></label>" +
+        '<label for="m-nt-' + k + '">Observação<input type="text" id="m-nt-' + k + '" maxlength="120" placeholder="ex.: estrada molhada no talhão 12" value="' + attr(ov.note || "") + '"></label>' +
+        '<div class="row"><button class="btn solid" type="submit">Salvar ajuste</button><button class="btn" type="button" data-clear>Limpar</button></div>' +
+        "<small>Vale só para hoje e fica salvo neste computador. Amanhã volta para o modelo.</small></form>" +
+      "</div>";
+  }
+  var draftMm = {};
+  document.getElementById("board").addEventListener("click", function (e) {
+    var form = e.target.closest(".manform"); if (!form) return;
+    var k = +form.getAttribute("data-k"), r = state.all[k], out = form.querySelector("output");
+    if (!(k in draftMm)) draftMm[k] = r.ov && r.ov.mm != null && r.ov.mm !== "" ? +r.ov.mm : null;
+    var b = e.target.closest(".step button");
+    if (b) {
+      var cur = draftMm[k] == null ? Math.round(r.fut[0] ? r.fut[0].model : 0) : draftMm[k];
+      draftMm[k] = Math.max(0, Math.round((cur + (+b.getAttribute("data-d")) * 0.5) * 10) / 10);
+      out.textContent = f1(draftMm[k]); out.classList.remove("bump"); void out.offsetWidth; out.classList.add("bump");
+    }
+    if (e.target.closest("[data-clear-mm]")) { draftMm[k] = null; out.textContent = "—"; }
+    if (e.target.closest("[data-clear]")) { delete state.manual[key(r.t)]; delete draftMm[k]; save(); render({ animate: false }); }
+  });
+  document.getElementById("board").addEventListener("submit", function (e) {
+    var form = e.target.closest(".manform"); if (!form) return;
+    e.preventDefault();
+    var k = +form.getAttribute("data-k"), r = state.all[k];
+    var mm = k in draftMm ? draftMm[k] : (r.ov ? r.ov.mm : null);
+    var ag = form.querySelector("select").value, note = form.querySelector("input[type=text]").value.trim();
+    delete draftMm[k];
+    if ((mm == null || mm === "") && !ag && !note) delete state.manual[key(r.t)];
+    else state.manual[key(r.t)] = { date: r.fut[0] ? r.fut[0].date : "", mm: mm, agora: ag, note: note };
+    save(); render({ animate: false });
+    setMsg("Ajuste salvo para " + esc(r.t.nome) + ".", "", 2500);
+  });
+
+  // ---------- montagem ----------
+  var msgTimer = null;
+  function setMsg(html, cls, ms) {
+    clearTimeout(msgTimer);
+    document.getElementById("msg").innerHTML = html ? '<div class="msg ' + (cls || "") + '">' + html + "</div>" : "";
+    if (ms) msgTimer = setTimeout(function () { setMsg(""); }, ms);
+  }
+  function render(o) {
+    model(); renderRegions(); renderViews(); paintSteps();
+    if (state.open != null && !state.rows.some(function (r) { return r.k === state.open; })) state.open = null;
+    renderMap(); renderFigs(true); renderBoard({ animate: o && o.animate });
+  }
+  function syncText() {
+    var el = document.getElementById("syncTxt");
+    if (!state.lastFetch) { el.innerHTML = '<span class="dot"></span>Sem dados'; return; }
+    var mins = Math.round((Date.now() - state.lastFetch) / 60000);
+    el.innerHTML = '<span class="dot ' + (state.demo ? "" : "live") + '"></span>' + (state.demo ? "Dados de exemplo" : "Atualizado " + (mins < 1 ? "agora" : "há " + mins + " min")) + " · " + state.lastFetch.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  }
+  function refresh(useDemo) {
+    state.farms = parseTalhoes(state.text);
+    if (!state.farms.length) { setMsg("Nenhuma fazenda com coordenada válida. Abra “Lista de fazendas” no fim da página e cole as colunas do Excel.", "err"); return; }
+    document.getElementById("syncTxt").innerHTML = '<span class="dot"></span>Buscando previsão…';
+    (useDemo ? Promise.resolve(demoData()) : fetchData()).then(function (data) {
+      state.data = data; state.demo = !!useDemo; state.lastFetch = new Date();
+      setMsg(useDemo ? "Você está vendo <b>dados de exemplo</b>, inventados para mostrar o painel. Clique em <b>Atualizar</b> para buscar a previsão real." : "");
+      render({ animate: true }); syncText();
+    }).catch(function (err) {
+      setMsg("Não foi possível buscar a previsão: " + esc(err.message || "sem conexão") + ". Verifique a internet ou peça à TI para liberar <b>api.open-meteo.com</b> no navegador. Abaixo, dados de exemplo.", "err");
+      state.data = demoData(); state.demo = true; state.lastFetch = new Date();
+      render({ animate: true }); syncText();
+    });
+  }
+
+  document.getElementById("btnRefresh").onclick = function () { refresh(false); };
+  document.getElementById("btnSave").onclick = function () { state.text = document.getElementById("txtFarms").value; save(); refresh(false); };
+  document.getElementById("btnReset").onclick = function () { state.text = DEFAULT_TALHOES; document.getElementById("txtFarms").value = state.text; save(); refresh(false); };
+  document.getElementById("btnDemo").onclick = function () { state.text = document.getElementById("txtFarms").value; refresh(true); };
+
+  load();
+  document.getElementById("txtFarms").value = state.text;
+  refresh(/[?&]demo/.test(location.search));
+  setInterval(function () { if (!state.demo) refresh(false); }, REFRESH_MIN * 60000);
+  setInterval(syncText, 60000);
+})();
+</script>
+</body>
+</html>

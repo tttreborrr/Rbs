@@ -116,6 +116,7 @@ table.t th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-tran
 
 <h2 id="p3"><span class="n">3</span>Consultas do Power Query</h2>
 <p>Para cada consulta abaixo: <span class="menu">Nova Fonte › Consulta Nula</span>, depois <span class="menu">Editor Avançado</span>, apague o que estiver lá, cole o código e clique em <span class="menu">Concluído</span>. Em seguida, renomeie a consulta (painel da esquerda, botão direito › Renomear) com o nome exato do título.</p>
+<div class="note warn"><b>O nome tem que ser exato</b>Renomeie cada consulta só com o nome entre aspas: <code>Fazendas</code>, <code>Modelos</code>, <code>RespostasAPI</code>, <code>ChuvaDiaria</code>, <code>ChuvaHoraria</code>, <code>ChuvaAgora</code>, <code>Atualizacao</code>. Sem “Consulta” na frente e sem “Consulta1”: as consultas usam umas às outras pelo nome.</div>
 <p>Crie <b>nesta ordem</b>:</p>
 {{PQ}}
 <div class="note"><b>Deixe a RespostasAPI só como intermediária</b>Clique com o botão direito em <b>RespostasAPI</b> e desmarque <span class="menu">Habilitar carga</span>. Ela não precisa ir para o relatório.</div>
@@ -230,6 +231,8 @@ table.t th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-tran
 <h2 id="p10"><span class="n">10</span>Se der erro</h2>
 <table class="t">
   <tr><th>Mensagem ou sintoma</th><th>O que fazer</th></tr>
+  <tr><td>“Dados inválidos encontrados durante a decodificação”</td><td>Rode a consulta de diagnóstico abaixo desta tabela e veja qual teste dá erro.</td></tr>
+  <tr><td>“O nome RespostasAPI não foi reconhecido”</td><td>A consulta não está com o nome exato. Renomeie (veja o aviso no passo 3).</td></tr>
   <tr><td>“Formula.Firewall: a consulta faz referência a outras consultas…”</td><td>Níveis de privacidade (fim do passo 3): Organizacional nas duas fontes ou “Ignorar os níveis de privacidade”.</td></tr>
   <tr><td>“A chave não corresponde a nenhuma linha da tabela” na consulta Fazendas</td><td>A planilha não tem uma <b>tabela</b> chamada Fazendas. No Excel, clique na lista › <span class="menu">Página Inicial › Formatar como Tabela</span> e, em <span class="menu">Design da Tabela</span>, dê o nome <b>Fazendas</b>.</td></tr>
   <tr><td>Erro 400 da Open-Meteo</td><td>A Open-Meteo recusou algum nome de modelo. Apague a linha <code>models = …</code> da RespostasAPI para testar sem os modelos separados e me mande a mensagem completa.</td></tr>
@@ -238,6 +241,9 @@ table.t th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-tran
   <tr><td>Cartões mostram números estranhos</td><td>Confira se a segmentação Dia está com <b>um só</b> dia selecionado.</td></tr>
   <tr><td>Atualização agendada falha</td><td>Credenciais do passo 9. Planilha no computador sem gateway não atualiza sozinha.</td></tr>
 </table>
+<h3>Consulta de diagnóstico</h3>
+<p>Crie uma consulta nula com o código abaixo e chame de <code>Diagnostico</code>. Ela testa a planilha e a Open-Meteo de quatro jeitos e mostra “OK” ou a mensagem de erro de cada teste. Tire um print do resultado se precisar de ajuda.</p>
+{{DIAG}}
 </main>
 <script>
 document.querySelectorAll(".code button").forEach(function (b) {

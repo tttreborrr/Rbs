@@ -27,7 +27,7 @@ def consultas():
         fim = next(n for n, l in enumerate(linhas) if l.startswith("// ---"))
         explicacao = " ".join(l[3:].strip() for l in linhas[:fim] if l.startswith("//"))
         codigo = "\n".join(linhas[fim + 1:]).strip()
-        saida.append('<h3>' + html.escape(nome) + '</h3><p>' + html.escape(explicacao) + '</p>' + bloco("Consulta " + nome, codigo))
+        saida.append('<h3>Consulta “' + html.escape(nome) + '”</h3><p>' + html.escape(explicacao) + '</p>' + bloco("Nome da consulta: " + nome, codigo))
     return "\n".join(saida)
 
 
@@ -48,6 +48,8 @@ def dax():
 
 modelo = (AQUI / "_guia-modelo.html").read_text(encoding="utf-8")
 t, m = dax()
-saida = modelo.replace("{{PQ}}", consultas()).replace("{{DAX_TABLES}}", t).replace("{{DAX_MEASURES}}", m)
+diag = (AQUI / "diagnostico.pq").read_text(encoding="utf-8")
+diag_codigo = "\n".join(l for l in diag.split("\n") if not l.startswith("//")).strip()
+saida = modelo.replace("{{DIAG}}", bloco("Nome da consulta: Diagnostico", diag_codigo)).replace("{{PQ}}", consultas()).replace("{{DAX_TABLES}}", t).replace("{{DAX_MEASURES}}", m)
 (AQUI / "guia-powerbi.html").write_text(saida, encoding="utf-8")
 print("guia-powerbi.html gerado")

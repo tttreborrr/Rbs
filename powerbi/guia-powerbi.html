@@ -116,8 +116,9 @@ table.t th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-tran
 
 <h2 id="p3"><span class="n">3</span>Consultas do Power Query</h2>
 <p>Para cada consulta abaixo: <span class="menu">Nova Fonte › Consulta Nula</span>, depois <span class="menu">Editor Avançado</span>, apague o que estiver lá, cole o código e clique em <span class="menu">Concluído</span>. Em seguida, renomeie a consulta (painel da esquerda, botão direito › Renomear) com o nome exato do título.</p>
+<div class="note warn"><b>O nome tem que ser exato</b>Renomeie cada consulta só com o nome entre aspas: <code>Fazendas</code>, <code>Modelos</code>, <code>RespostasAPI</code>, <code>ChuvaDiaria</code>, <code>ChuvaHoraria</code>, <code>ChuvaAgora</code>, <code>Atualizacao</code>. Sem “Consulta” na frente e sem “Consulta1”: as consultas usam umas às outras pelo nome.</div>
 <p>Crie <b>nesta ordem</b>:</p>
-<h3>Fazendas</h3><p>Lê a planilha Fazendas.xlsx (tabela &quot;Fazendas&quot;: id, fazenda, Coordenadas) e converte as coordenadas em graus para latitude e longitude decimais.</p><div class="code"><div class="bar"><span>Consulta Fazendas</span><button type="button">Copiar</button></div><pre>let
+<h3>Consulta “Fazendas”</h3><p>Lê a planilha Fazendas.xlsx (tabela &quot;Fazendas&quot;: id, fazenda, Coordenadas) e converte as coordenadas em graus para latitude e longitude decimais.</p><div class="code"><div class="bar"><span>Nome da consulta: Fazendas</span><button type="button">Copiar</button></div><pre>let
     GrausParaDecimal = (texto as text) as number =&gt;
         let
             t = Text.Trim(texto),
@@ -149,7 +150,7 @@ table.t th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-tran
     Final = Table.RemoveColumns(ComNome, {&quot;Partes&quot;})
 in
     Final</pre></div>
-<h3>Modelos</h3><p>Tabela fixa com os 3 modelos de previsão.</p><div class="code"><div class="bar"><span>Consulta Modelos</span><button type="button">Copiar</button></div><pre>let
+<h3>Consulta “Modelos”</h3><p>Tabela fixa com os 3 modelos de previsão.</p><div class="code"><div class="bar"><span>Nome da consulta: Modelos</span><button type="button">Copiar</button></div><pre>let
     Fonte = #table(
         type table [Modelo = text, Chave = text, Origem = text, Ordem = Int64.Type],
         {
@@ -160,7 +161,7 @@ in
     )
 in
     Fonte</pre></div>
-<h3>RespostasAPI</h3><p>Para cada fazenda, busca na Open-Meteo: chuva de agora, hora a hora e por dia (7 dias para trás e 7 para a frente), nos 3 modelos. Esta consulta lê a planilha e chama a API no mesmo lugar de propósito: assim o Power BI Online consegue atualizar sozinho. Depois de criar, clique com o botão direito nela e DESMARQUE &quot;Habilitar carga&quot; (ela é só intermediária).</p><div class="code"><div class="bar"><span>Consulta RespostasAPI</span><button type="button">Copiar</button></div><pre>let
+<h3>Consulta “RespostasAPI”</h3><p>Para cada fazenda, busca na Open-Meteo: chuva de agora, hora a hora e por dia (7 dias para trás e 7 para a frente), nos 3 modelos. Esta consulta lê a planilha e chama a API no mesmo lugar de propósito: assim o Power BI Online consegue atualizar sozinho. Depois de criar, clique com o botão direito nela e DESMARQUE &quot;Habilitar carga&quot; (ela é só intermediária).</p><div class="code"><div class="bar"><span>Nome da consulta: RespostasAPI</span><button type="button">Copiar</button></div><pre>let
     GrausParaDecimal = (texto as text) as number =&gt;
         let
             t = Text.Trim(texto),
@@ -208,7 +209,7 @@ in
     Final = Table.SelectColumns(ComResposta, {&quot;id&quot;, &quot;Resposta&quot;})
 in
     Final</pre></div>
-<h3>ChuvaDiaria</h3><p>Uma linha por fazenda × dia × modelo. DiaRel: 0 = hoje, 1 = amanhã, -1 = ontem...</p><div class="code"><div class="bar"><span>Consulta ChuvaDiaria</span><button type="button">Copiar</button></div><pre>let
+<h3>Consulta “ChuvaDiaria”</h3><p>Uma linha por fazenda × dia × modelo. DiaRel: 0 = hoje, 1 = amanhã, -1 = ontem...</p><div class="code"><div class="bar"><span>Nome da consulta: ChuvaDiaria</span><button type="button">Copiar</button></div><pre>let
     Fonte = RespostasAPI,
     Modelos = {{&quot;ECMWF&quot;, &quot;ecmwf_ifs025&quot;}, {&quot;GFS&quot;, &quot;gfs_seamless&quot;}, {&quot;ICON&quot;, &quot;icon_seamless&quot;}},
     ParaData = (x as text) as date =&gt; Date.FromText(Text.Start(x, 10), [Format = &quot;yyyy-MM-dd&quot;, Culture = &quot;en-US&quot;]),
@@ -250,7 +251,7 @@ in
     })
 in
     Tipos</pre></div>
-<h3>ChuvaHoraria</h3><p>Uma linha por fazenda × hora × modelo, das últimas 24 h às próximas 48 h. HorasRel: 0 = hora atual, 1 = próxima hora...</p><div class="code"><div class="bar"><span>Consulta ChuvaHoraria</span><button type="button">Copiar</button></div><pre>let
+<h3>Consulta “ChuvaHoraria”</h3><p>Uma linha por fazenda × hora × modelo, das últimas 24 h às próximas 48 h. HorasRel: 0 = hora atual, 1 = próxima hora...</p><div class="code"><div class="bar"><span>Nome da consulta: ChuvaHoraria</span><button type="button">Copiar</button></div><pre>let
     Fonte = RespostasAPI,
     Modelos = {{&quot;ECMWF&quot;, &quot;ecmwf_ifs025&quot;}, {&quot;GFS&quot;, &quot;gfs_seamless&quot;}, {&quot;ICON&quot;, &quot;icon_seamless&quot;}},
     ParaDataHora = (x as text) as datetime =&gt; DateTime.FromText(Text.Replace(x, &quot;T&quot;, &quot; &quot;), [Format = &quot;yyyy-MM-dd HH:mm&quot;, Culture = &quot;en-US&quot;]),
@@ -283,7 +284,7 @@ in
     })
 in
     Tipos</pre></div>
-<h3>ChuvaAgora</h3><p>Uma linha por fazenda × modelo com a chuva da hora atual (mm/h).</p><div class="code"><div class="bar"><span>Consulta ChuvaAgora</span><button type="button">Copiar</button></div><pre>let
+<h3>Consulta “ChuvaAgora”</h3><p>Uma linha por fazenda × modelo com a chuva da hora atual (mm/h).</p><div class="code"><div class="bar"><span>Nome da consulta: ChuvaAgora</span><button type="button">Copiar</button></div><pre>let
     Fonte = RespostasAPI,
     Modelos = {{&quot;ECMWF&quot;, &quot;ecmwf_ifs025&quot;}, {&quot;GFS&quot;, &quot;gfs_seamless&quot;}, {&quot;ICON&quot;, &quot;icon_seamless&quot;}},
     Linhas = Table.AddColumn(Fonte, &quot;Linhas&quot;, (r) =&gt;
@@ -305,7 +306,7 @@ in
     Tipos = Table.TransformColumnTypes(Expandido, {{&quot;id&quot;, type text}, {&quot;Modelo&quot;, type text}, {&quot;mm/h&quot;, type number}})
 in
     Tipos</pre></div>
-<h3>Atualizacao</h3><p>Hora local da previsão (fuso de Campo Grande) e a data de &quot;hoje&quot;.</p><div class="code"><div class="bar"><span>Consulta Atualizacao</span><button type="button">Copiar</button></div><pre>let
+<h3>Consulta “Atualizacao”</h3><p>Hora local da previsão (fuso de Campo Grande) e a data de &quot;hoje&quot;.</p><div class="code"><div class="bar"><span>Nome da consulta: Atualizacao</span><button type="button">Copiar</button></div><pre>let
     Fonte = RespostasAPI,
     Hora = DateTime.FromText(Text.Replace(Fonte{0}[Resposta][current][time], &quot;T&quot;, &quot; &quot;), [Format = &quot;yyyy-MM-dd HH:mm&quot;, Culture = &quot;en-US&quot;]),
     Tabela = #table(type table [#&quot;Hora local&quot; = datetime, Hoje = date], {{Hora, Date.From(Hora)}})
@@ -516,6 +517,8 @@ RETURN
 <h2 id="p10"><span class="n">10</span>Se der erro</h2>
 <table class="t">
   <tr><th>Mensagem ou sintoma</th><th>O que fazer</th></tr>
+  <tr><td>“Dados inválidos encontrados durante a decodificação”</td><td>Rode a consulta de diagnóstico abaixo desta tabela e veja qual teste dá erro.</td></tr>
+  <tr><td>“O nome RespostasAPI não foi reconhecido”</td><td>A consulta não está com o nome exato. Renomeie (veja o aviso no passo 3).</td></tr>
   <tr><td>“Formula.Firewall: a consulta faz referência a outras consultas…”</td><td>Níveis de privacidade (fim do passo 3): Organizacional nas duas fontes ou “Ignorar os níveis de privacidade”.</td></tr>
   <tr><td>“A chave não corresponde a nenhuma linha da tabela” na consulta Fazendas</td><td>A planilha não tem uma <b>tabela</b> chamada Fazendas. No Excel, clique na lista › <span class="menu">Página Inicial › Formatar como Tabela</span> e, em <span class="menu">Design da Tabela</span>, dê o nome <b>Fazendas</b>.</td></tr>
   <tr><td>Erro 400 da Open-Meteo</td><td>A Open-Meteo recusou algum nome de modelo. Apague a linha <code>models = …</code> da RespostasAPI para testar sem os modelos separados e me mande a mensagem completa.</td></tr>
@@ -524,6 +527,39 @@ RETURN
   <tr><td>Cartões mostram números estranhos</td><td>Confira se a segmentação Dia está com <b>um só</b> dia selecionado.</td></tr>
   <tr><td>Atualização agendada falha</td><td>Credenciais do passo 9. Planilha no computador sem gateway não atualiza sozinha.</td></tr>
 </table>
+<h3>Consulta de diagnóstico</h3>
+<p>Crie uma consulta nula com o código abaixo e chame de <code>Diagnostico</code>. Ela testa a planilha e a Open-Meteo de quatro jeitos e mostra “OK” ou a mensagem de erro de cada teste. Tire um print do resultado se precisar de ajuda.</p>
+<div class="code"><div class="bar"><span>Nome da consulta: Diagnostico</span><button type="button">Copiar</button></div><pre>let
+    Base = &quot;https://api.open-meteo.com&quot;,
+    Pequena = [latitude = &quot;-20.5278&quot;, longitude = &quot;-54.1677&quot;, daily = &quot;precipitation_sum&quot;, timezone = &quot;America/Campo_Grande&quot;],
+    Completa = Pequena &amp; [
+        current = &quot;precipitation&quot;,
+        hourly = &quot;precipitation,precipitation_probability&quot;,
+        daily = &quot;precipitation_sum,precipitation_probability_max&quot;,
+        models = &quot;ecmwf_ifs025,gfs_seamless,icon_seamless&quot;,
+        past_days = &quot;7&quot;,
+        forecast_days = &quot;7&quot;
+    ],
+    TestarApi = (q as record, cabecalhos as record) as text =&gt;
+        let
+            r = try Json.Document(Web.Contents(Base, [RelativePath = &quot;v1/forecast&quot;, Query = q, Headers = cabecalhos]))
+        in
+            if r[HasError] then &quot;ERRO: &quot; &amp; r[Error][Message]
+            else &quot;OK: &quot; &amp; Text.Combine(Record.FieldNames(r[Value]), &quot;, &quot;),
+    TestarPlanilha =
+        let
+            r = try Table.RowCount(Excel.Workbook(File.Contents(CaminhoFazendas), null, true){[Item = &quot;Fazendas&quot;, Kind = &quot;Table&quot;]}[Data])
+        in
+            if r[HasError] then &quot;ERRO: &quot; &amp; r[Error][Message] else &quot;OK: &quot; &amp; Text.From(r[Value]) &amp; &quot; fazendas&quot;,
+    Resultado = #table({&quot;Teste&quot;, &quot;Resultado&quot;}, {
+        {&quot;1 Planilha Fazendas.xlsx&quot;, TestarPlanilha},
+        {&quot;2 Open-Meteo, chamada pequena&quot;, TestarApi(Pequena, [])},
+        {&quot;3 Open-Meteo, chamada completa&quot;, TestarApi(Completa, [])},
+        {&quot;4 Completa, sem compressão&quot;, TestarApi(Completa, [#&quot;Accept-Encoding&quot; = &quot;identity&quot;])},
+        {&quot;5 Completa, só gzip&quot;, TestarApi(Completa, [#&quot;Accept-Encoding&quot; = &quot;gzip&quot;])}
+    })
+in
+    Resultado</pre></div>
 </main>
 <script>
 document.querySelectorAll(".code button").forEach(function (b) {

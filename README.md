@@ -19,6 +19,12 @@ Ele já vem com as 16 fazendas e busca a previsão sozinho, de novo a cada 30 mi
 - **Fazendas**: para cada uma, se está chovendo agora, a chuva hora a hora nas próximas 24 h, a previsão dos próximos 7 dias e o total dos últimos 7 dias.
   Clique numa fazenda para abrir as próximas 48 h, o histórico e o ajuste manual.
 
+## Modelos de previsão
+
+No topo dá para escolher o modelo: **ECMWF** (europeu, o mesmo que o Windy mostra por padrão), **GFS** (americano), **ICON** (alemão) ou a **Média** dos três.
+Nas células dos próximos 7 dias, as três bolinhas mostram o que cada modelo prevê (vazia = sem chuva, meio cheia = chuva fraca, cheia = chuva).
+Ao abrir uma fazenda aparece a tabela comparando os três e um link para abrir o mesmo ponto no Windy.
+
 ## Regras (botões − e + na tela)
 
 | Situação no dia | Padrão |

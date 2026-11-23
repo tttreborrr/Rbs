@@ -161,7 +161,21 @@ button { cursor: pointer; }
 .dc { border-radius: 5px; padding: 4px 2px 3px; text-align: center; line-height: 1.15; position: relative; transition: box-shadow .25s, transform .25s; }
 .dc .d { font-size: 10px; color: inherit; opacity: .75; }
 .dc .m { font-family: var(--font-data); font-size: 12px; font-weight: 600; }
-.dc .p { font-family: var(--font-data); font-size: 9.5px; opacity: .7; }
+.dc .p { font-family: var(--font-data); font-size: 9.5px; opacity: .8; display: flex; justify-content: center; align-items: center; gap: 2px; min-height: 11px; }
+.cons { display: inline-flex; gap: 2px; }
+.cons i { width: 6px; height: 6px; border-radius: 50%; border: 1.2px solid currentColor; display: block; }
+.cons i.fraca { background: currentColor; opacity: .55; }
+.cons i.chuva { background: currentColor; }
+.cmp { grid-column: 1 / 3; }
+.cmp table { border-collapse: separate; border-spacing: 3px; width: 100%; font-size: 12px; }
+.cmp th { font-weight: 600; color: var(--muted); font-size: 11px; text-align: center; }
+.cmp th.m { text-align: left; color: var(--ink); white-space: nowrap; }
+.cmp td { text-align: center; border-radius: 4px; padding: 4px 2px; font-family: var(--font-data); }
+.cmp td.seco { background: var(--dry); color: var(--ink-2); } .cmp td.fraca { background: var(--rain-1); } .cmp td.chuva { background: var(--rain-2); color: var(--on-rain-2); }
+.cmp tr.sel th.m::before { content: "▸ "; }
+.cmp .agree { font-family: var(--font-body); font-size: 11.5px; color: var(--ink-2); margin-top: 6px; }
+.windy { font-size: 12px; font-weight: 600; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line-2); }
+.windy:hover { border-color: var(--ink); }
 .dc.seco { background: var(--dry); color: var(--ink-2); }
 .dc.fraca { background: var(--rain-1); color: var(--ink); }
 .dc.chuva { background: var(--rain-2); color: var(--on-rain-2); }
@@ -192,6 +206,7 @@ button { cursor: pointer; }
 
 @media (max-width: 700px) { .bar { position: static; } .brand h1 { font-size: 26px; } }
 @media (max-width: 1100px) {
+  .cmp { grid-column: auto; }
   .cols { display: none; }
   .rowg { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name now" "h24 h24" "d7 d7" "p7 p7"; gap: 10px 12px; }
   .c-name { grid-area: name; } .c-now { grid-area: now; } .c-h24 { grid-area: h24; } .c-d7 { grid-area: d7; } .c-p7 { grid-area: p7; }
@@ -226,7 +241,7 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
 <div class="wrap top">
   <div class="brand">
     <h1>Chuva nas Fazendas</h1>
-    <p>Mato Grosso do Sul · modelo Open-Meteo, atualizado a cada 30 min</p>
+    <p id="subtitle">Mato Grosso do Sul · previsão Open-Meteo, atualizada a cada 30 min</p>
   </div>
   <div class="sync">
     <span id="syncTxt"><span class="dot"></span>Carregando…</span>
@@ -237,6 +252,7 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
 <div class="bar">
   <div class="wrap">
     <div class="grp"><span class="lbl">Região</span><div class="seg" id="regions"></div></div>
+    <div class="grp"><span class="lbl">Modelo</span><div class="seg" id="models"></div></div>
     <div class="grp"><span class="lbl">Momento</span><div class="seg" id="views"></div>
       <button class="play" id="btnPlay" type="button" title="Animar a previsão dia a dia" aria-label="Animar a previsão dia a dia"><svg viewBox="0 0 12 12"><path id="playIco" d="M2 1 L11 6 L2 11 Z"/></svg></button>
     </div>
@@ -319,7 +335,12 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
   var REFRESH_MIN = 30;
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  var state = { text: "", params: {}, farms: [], data: null, demo: false, region: "Todas", view: "now", sort: "rain", open: null, manual: {}, lastFetch: null, firstPaint: true };
+  var MODELS = [
+    { key: "ecmwf", id: "ecmwf_ifs025", name: "ECMWF", desc: "europeu, o padrão do Windy" },
+    { key: "gfs", id: "gfs_seamless", name: "GFS", desc: "americano (NOAA)" },
+    { key: "icon", id: "icon_seamless", name: "ICON", desc: "alemão (DWD)" }
+  ];
+  var state = { text: "", params: {}, farms: [], data: null, raw: null, avail: [], modelSel: "ecmwf", demo: false, region: "Todas", view: "now", sort: "rain", open: null, manual: {}, lastFetch: null, firstPaint: true };
 
   // ---------- armazenamento local (falha em silêncio) ----------
   function load() {
@@ -329,9 +350,10 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     state.params = Object.assign({}, DEFAULT_PARAMS, (s && s.params) || {});
     state.manual = (s && s.manual) || {};
     state.sort = (s && s.sort) || "rain";
+    state.modelSel = (s && s.modelSel) || "ecmwf";
   }
   function save() {
-    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort })); } catch (e) {}
+    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel })); } catch (e) {}
   }
 
   // ---------- números ----------
@@ -399,20 +421,94 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
   function localIso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") + "T" + String(d.getHours()).padStart(2, "0") + ":00"; }
 
   // ---------- dados ----------
-  function fetchData() {
+  function apiUrl(withModels) {
     var f = state.farms;
-    var url = "https://api.open-meteo.com/v1/forecast" +
+    return "https://api.open-meteo.com/v1/forecast" +
       "?latitude=" + f.map(function (x) { return x.lat.toFixed(4); }).join(",") +
       "&longitude=" + f.map(function (x) { return x.lon.toFixed(4); }).join(",") +
       "&current=precipitation" +
       "&hourly=precipitation,precipitation_probability" +
       "&daily=precipitation_sum,precipitation_probability_max" +
+      (withModels ? "&models=" + MODELS.map(function (m) { return m.id; }).join(",") : "") +
       "&past_days=7&forecast_days=7&timezone=auto";
-    return fetch(url).then(function (r) {
-      if (!r.ok) throw new Error("a Open-Meteo respondeu com erro " + r.status);
-      return r.json();
-    }).then(function (j) { return Array.isArray(j) ? j : [j]; });
   }
+  function getJson(url) {
+    return fetch(url).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error("a Open-Meteo respondeu com erro " + r.status + (j && j.reason ? " (" + j.reason + ")" : ""));
+        return Array.isArray(j) ? j : [j];
+      });
+    });
+  }
+  // busca os 3 modelos de uma vez; se a API recusar, cai para a combinação padrão da Open-Meteo
+  function fetchData() {
+    return getJson(apiUrl(true)).then(function (list) {
+      return { list: list, models: MODELS.map(function (m) { return m.key; }), note: "" };
+    }).catch(function (err) {
+      return getJson(apiUrl(false)).then(function (list) {
+        return { list: list, models: ["best"], note: "Não consegui buscar os modelos separados (" + err.message + "). Mostrando a combinação padrão da Open-Meteo." };
+      });
+    });
+  }
+
+  // separa a resposta em uma série por modelo, no formato simples { current, hourly, daily }
+  function pickVar(obj, name, m, single) {
+    if (!obj) return null;
+    if (m.id && obj[name + "_" + m.id] !== undefined) return obj[name + "_" + m.id];
+    var alt = Object.keys(obj).filter(function (k) { return m.id && k.indexOf(name + "_" + m.id.split("_")[0]) === 0; })[0];
+    if (alt) return obj[alt];
+    return single ? obj[name] : null;
+  }
+  function splitModels(o, keys) {
+    var out = {}, single = keys.length === 1;
+    keys.forEach(function (key) {
+      var m = MODELS.filter(function (x) { return x.key === key; })[0] || { key: key };
+      var H = o.hourly || {}, D = o.daily || {}, C = o.current || {};
+      var hp = pickVar(H, "precipitation", m, single), dp = pickVar(D, "precipitation_sum", m, single);
+      if (!hp && !dp) return;
+      out[key] = {
+        current: { time: C.time, precipitation: pickVar(C, "precipitation", m, single) },
+        hourly: { time: H.time || [], precipitation: hp || [], precipitation_probability: pickVar(H, "precipitation_probability", m, single) || [] },
+        daily: { time: D.time || [], precipitation_sum: dp || [], precipitation_probability_max: pickVar(D, "precipitation_probability_max", m, single) || [] }
+      };
+    });
+    return out;
+  }
+  function meanOf(arrs) {
+    var n = Math.max.apply(null, arrs.map(function (a) { return a.length; }).concat([0])), out = [];
+    for (var i = 0; i < n; i++) {
+      var v = arrs.map(function (a) { return a[i]; }).filter(function (x) { return x != null; });
+      out.push(v.length ? Math.round(v.reduce(function (a, b) { return a + b; }, 0) / v.length * 10) / 10 : null);
+    }
+    return out;
+  }
+  function maxOf(arrs) {
+    var n = Math.max.apply(null, arrs.map(function (a) { return a.length; }).concat([0])), out = [];
+    for (var i = 0; i < n; i++) { var v = arrs.map(function (a) { return a[i]; }).filter(function (x) { return x != null; }); out.push(v.length ? Math.max.apply(null, v) : null); }
+    return out;
+  }
+  // monta state.data (o que o painel desenha) a partir do modelo escolhido
+  function applyModel() {
+    if (state.avail.indexOf(state.modelSel) < 0 && state.modelSel !== "media") state.modelSel = state.avail[0];
+    if (state.modelSel === "media" && state.avail.length < 2) state.modelSel = state.avail[0];
+    state.data = state.raw.map(function (byM) {
+      var keys = Object.keys(byM); if (!keys.length) return {};
+      var o;
+      if (state.modelSel === "media") {
+        var ss = keys.map(function (k) { return byM[k]; }), b = ss[0];
+        o = { current: { time: b.current.time, precipitation: meanOf(ss.map(function (x) { return [x.current.precipitation]; }))[0] },
+          hourly: { time: b.hourly.time, precipitation: meanOf(ss.map(function (x) { return x.hourly.precipitation; })), precipitation_probability: maxOf(ss.map(function (x) { return x.hourly.precipitation_probability; })) },
+          daily: { time: b.daily.time, precipitation_sum: meanOf(ss.map(function (x) { return x.daily.precipitation_sum; })), precipitation_probability_max: maxOf(ss.map(function (x) { return x.daily.precipitation_probability_max; })) } };
+      } else o = byM[state.modelSel] || byM[keys[0]];
+      // se o modelo não tiver o valor "agora", usa a chuva da hora atual
+      if (o.current.precipitation == null && o.current.time) {
+        var hi = o.hourly.time.indexOf(o.current.time.slice(0, 13) + ":00");
+        o = Object.assign({}, o, { current: { time: o.current.time, precipitation: hi >= 0 ? o.hourly.precipitation[hi] : 0 } });
+      }
+      return o;
+    });
+  }
+  function modelLabel(key) { if (key === "media") return "Média dos modelos"; if (key === "best") return "Combinação Open-Meteo"; var m = MODELS.filter(function (x) { return x.key === key; })[0]; return m ? m.name : key; }
 
   // dados inventados, só para mostrar como o painel funciona
   function demoData() {
@@ -440,6 +536,22 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
       }
       var ci = hourly.time.indexOf(localIso(now));
       return { current: { time: localIso(now), precipitation: hourly.precipitation[ci] || 0 }, hourly: hourly, daily: daily };
+    });
+  }
+  // a partir do exemplo, inventa 3 "modelos" que discordam um pouco, no mesmo formato da resposta real
+  function demoMulti() {
+    var base = demoData(), fac = { ecmwf: 1, gfs: 0.55, icon: 1.35 }, shift = { ecmwf: 0, gfs: 5, icon: -2 };
+    return base.map(function (b) {
+      var o = { current: { time: b.current.time }, hourly: { time: b.hourly.time }, daily: { time: b.daily.time } };
+      MODELS.forEach(function (m) {
+        var hp = b.hourly.precipitation.map(function (_, i) { var v = b.hourly.precipitation[i - shift[m.key]]; return v == null ? 0 : Math.round(v * fac[m.key] * 10) / 10; });
+        o.hourly["precipitation_" + m.id] = hp;
+        o.hourly["precipitation_probability_" + m.id] = b.hourly.precipitation_probability;
+        o.daily["precipitation_sum_" + m.id] = b.daily.time.map(function (_, d) { return Math.round(hp.slice(d * 24, d * 24 + 24).reduce(function (a, c) { return a + c; }, 0) * 10) / 10; });
+        o.daily["precipitation_probability_max_" + m.id] = b.daily.precipitation_probability_max;
+        o.current["precipitation_" + m.id] = hp[b.hourly.time.indexOf(b.current.time)] || 0;
+      });
+      return o;
     });
   }
 
@@ -474,7 +586,9 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
       var past7 = daily.filter(function (x) { return x.past; }).slice(-7);
       var sum7 = past7.reduce(function (s, x) { return s + x.mm; }, 0);
       var peak = next24.reduce(function (b, x) { return x.mm > b.mm ? x : b; }, { mm: 0 });
-      return { k: k, t: t, hourly: hourly, daily: daily, nowIdx: nowIdx, todayIdx: todayIdx, curMm: curMm, agora: agora, agoraManual: agoraManual, ov: ov,
+      var byM = state.raw[k] || {}, cons = {};
+      Object.keys(byM).forEach(function (mk) { cons[mk] = byM[mk].daily.precipitation_sum || []; });
+      return { cons: cons, k: k, t: t, hourly: hourly, daily: daily, nowIdx: nowIdx, todayIdx: todayIdx, curMm: curMm, agora: agora, agoraManual: agoraManual, ov: ov,
         next24: next24, sum24: sum24, past7: past7, sum7: sum7, peak: peak, fut: daily.slice(todayIdx, todayIdx + 7) };
     });
     state.rows = state.all.filter(function (r) { return state.region === "Todas" || r.t.regiao === state.region; });
@@ -528,6 +642,18 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     state.region = b.getAttribute("data-r"); render({ animate: true });
   });
 
+  function renderModels() {
+    var opts = state.avail.slice(); if (opts.length > 1) opts.push("media");
+    document.getElementById("models").innerHTML = opts.map(function (m) {
+      var mm = MODELS.filter(function (x) { return x.key === m; })[0];
+      return '<button type="button" class="' + (m === state.modelSel ? "on" : "") + '" data-m="' + m + '" title="' + attr(mm ? mm.desc : m === "media" ? "média dos três modelos" : "") + '">' + esc(m === "media" ? "Média" : modelLabel(m)) + "</button>";
+    }).join("");
+    document.getElementById("subtitle").textContent = "Mato Grosso do Sul · " + (state.modelSel === "media" ? "média dos modelos ECMWF, GFS e ICON via Open-Meteo" : state.modelSel === "best" ? "combinação padrão da Open-Meteo" : "modelo " + modelLabel(state.modelSel) + " via Open-Meteo") + " · atualiza a cada 30 min";
+  }
+  document.getElementById("models").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    state.modelSel = b.getAttribute("data-m"); save(); applyModel(); render({ animate: true });
+  });
   function viewsList() { var v = ["now"]; var n = state.all && state.all[0] ? state.all[0].fut.length : 7; for (var i = 0; i < n; i++) v.push(i); return v; }
   function renderViews() {
     document.getElementById("views").innerHTML = viewsList().map(function (v) {
@@ -710,9 +836,13 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
       var pct = Math.min(100, h.mm / maxH * 100), cls = h.mm >= 1 ? "r" : h.mm >= 0.2 ? "w" : "";
       return '<i class="hb ' + cls + '" style="--i:' + i + ';height:' + Math.max(pct, 4) + '%" data-tip="' + attr("<b>" + h.time.slice(11, 16) + "</b> " + dayLong(h.time) + "<br>" + f1(h.mm) + " mm" + (h.prob != null ? " · " + h.prob + "%" : "")) + '"></i>';
     }).join("");
+    var mk = Object.keys(r.cons);
     var cells = r.fut.map(function (d, i) {
       var lab = i === 0 ? "hoje" : i === 1 ? "amanhã" : dayShort(d.date);
-      return '<div class="dc ' + d.st + (d.measured ? " man" : "") + '" data-col="' + i + '" style="--i:' + i + '" data-tip="' + attr("<b>" + esc(r.t.nome) + "</b><br>" + dayLong(d.date) + ": " + f1(d.mm) + " mm" + (d.measured ? " medido (modelo: " + f1(d.model) + " mm)" : "") + (d.prob != null ? "<br>" + d.prob + "% de chance de chuva" : "") + "<br>" + LABEL[d.st]) + '"><div class="d">' + lab + '</div><div class="m">' + f1(d.mm) + '</div><div class="p">' + (d.prob != null ? d.prob + "%" : "&nbsp;") + "</div></div>";
+      var di = r.todayIdx + i;
+      var dots = mk.length > 1 ? '<span class="cons">' + mk.map(function (m) { var v = r.cons[m][di] || 0; return '<i class="' + status(v) + '"></i>'; }).join("") + "</span>" : "";
+      var consTip = mk.length > 1 ? "<br>" + mk.map(function (m) { return modelLabel(m) + " " + f1(r.cons[m][di] || 0); }).join(" · ") + " mm" : "";
+      return '<div class="dc ' + d.st + (d.measured ? " man" : "") + '" data-col="' + i + '" style="--i:' + i + '" data-tip="' + attr("<b>" + esc(r.t.nome) + "</b><br>" + dayLong(d.date) + ": " + f1(d.mm) + " mm" + (d.measured ? " medido (modelo: " + f1(d.model) + " mm)" : "") + (d.prob != null ? "<br>" + d.prob + "% de chance de chuva" : "") + "<br>" + LABEL[d.st] + consTip) + '"><div class="d">' + lab + '</div><div class="m">' + f1(d.mm) + '</div><div class="p">' + (dots || (d.prob != null ? d.prob + "%" : "&nbsp;")) + "</div></div>";
     }).join("");
     var max7 = Math.max(p.hi * 2, Math.max.apply(null, r.past7.map(function (d) { return d.mm; }).concat([0])));
     var spark = r.past7.map(function (d) { return '<i class="' + (d.mm >= p.lo ? "r" : "") + '" style="height:' + Math.max(6, d.mm / max7 * 100) + '%" data-tip="' + attr(dayLong(d.date) + ": " + f1(d.mm) + " mm") + '"></i>'; }).join("");
@@ -733,7 +863,7 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     if (o.flip && !reduce) board.querySelectorAll(".farmrow").forEach(function (el) { before[el.getAttribute("data-k")] = el.getBoundingClientRect().top; });
     var rows = sorted();
     board.className = "board" + (o.animate && !reduce ? " anim" : "");
-    board.innerHTML = '<div class="rowg cols"><div>Fazenda</div><div>Agora</div><div>Próximas 24 h (mm por hora)</div><div>Próximos 7 dias (mm no dia · chance)</div><div>Últimos 7 dias</div></div>' +
+    board.innerHTML = '<div class="rowg cols"><div>Fazenda</div><div>Agora</div><div>Próximas 24 h (mm por hora)</div><div id="colD7">Próximos 7 dias (mm no dia)</div><div>Últimos 7 dias</div></div>' +
       (rows.length ? rows.map(rowHtml).join("") : '<div class="rowg">Nenhuma fazenda nesta região.</div>');
     markColumn(); paintSorts();
     if (o.flip && !reduce) board.querySelectorAll(".farmrow").forEach(function (el) {
@@ -746,7 +876,7 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     document.querySelectorAll("#board .dc").forEach(function (c) { c.classList.toggle("cur", state.view !== "now" && +c.getAttribute("data-col") === state.view); });
   }
   document.getElementById("board").addEventListener("click", function (e) {
-    if (e.target.closest(".detail")) return;
+    if (e.target.closest(".detail") || e.target.closest("a")) return;
     var row = e.target.closest(".farmrow"); if (!row) return;
     var k = +row.getAttribute("data-k");
     openFarm(state.open === k ? null : k, false);
@@ -804,16 +934,34 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     });
     var ov = r.ov || {};
     var k = r.k;
+    var mk = Object.keys(r.cons), cmp = "";
+    if (mk.length > 1) {
+      var rowsC = mk.map(function (m) { return [m, r.cons[m]]; });
+      var agreeTxt = r.fut.map(function (d, i) {
+        var di = r.todayIdx + i, sts = mk.map(function (m) { return status(r.cons[m][di] || 0); });
+        var nR = sts.filter(function (x) { return x === "chuva"; }).length;
+        return nR === mk.length ? "todos" : nR ? nR + " de " + mk.length : "";
+      });
+      var firstAgree = agreeTxt.map(function (a, i) { return a ? (i === 0 ? "hoje" : i === 1 ? "amanhã" : dayShort(r.fut[i].date)) + ": " + a : ""; }).filter(Boolean);
+      cmp = '<div class="cmp"><h4>Comparação dos modelos · mm por dia</h4><div style="overflow-x:auto"><table><tr><th></th>' +
+        r.fut.map(function (d, i) { return "<th>" + (i === 0 ? "hoje" : i === 1 ? "amanhã" : dayShort(d.date)) + "</th>"; }).join("") + "</tr>" +
+        rowsC.map(function (row) {
+          return '<tr class="' + (row[0] === state.modelSel ? "sel" : "") + '"><th class="m">' + modelLabel(row[0]) + "</th>" + r.fut.map(function (d, i) { var v = row[1][r.todayIdx + i] || 0; return '<td class="' + status(v) + '">' + f1(v) + "</td>"; }).join("") + "</tr>";
+        }).join("") + "</table></div>" +
+        '<div class="agree">' + (firstAgree.length ? "Dias com chuva acima de " + f1(p.hi) + " mm em pelo menos um modelo: " + firstAgree.join(" · ") + ". Quanto mais modelos concordam, mais confiável." : "Nenhum modelo prevê chuva acima de " + f1(p.hi) + " mm nos próximos 7 dias.") + "</div></div>";
+    }
+    var windy = "https://www.windy.com/" + r.t.lat.toFixed(3) + "/" + r.t.lon.toFixed(3) + "?rain," + r.t.lat.toFixed(3) + "," + r.t.lon.toFixed(3) + ",10";
     return '<div class="dgrid">' +
-      '<div><h4>Próximas 48 horas · mm por hora</h4>' + barChart(h48, { min: 2, label: "Chuva por hora" }) + "</div>" +
+      '<div><h4>Próximas 48 horas · mm por hora · ' + esc(modelLabel(state.modelSel)) + '</h4>' + barChart(h48, { min: 2, label: "Chuva por hora" }) + "</div>" +
       '<div><h4>7 dias atrás até 7 dias à frente · mm por dia</h4>' + barChart(days, { min: p.hi + 2, label: "Chuva por dia", lines: [[p.hi, "rain-2", "chuva " + f1(p.hi)], [p.lo, "muted", "conta " + f1(p.lo)]] }) + "</div>" +
       '<form class="manform" data-k="' + k + '"><h4 style="margin:0">Ajuste manual de hoje</h4>' +
         '<label for="m-mm-' + k + '">Chuva medida no pluviômetro hoje (mm)<span class="row"><span class="step" data-m="mm"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output id="m-mm-' + k + '">' + (ov.mm != null && ov.mm !== "" ? f1(+ov.mm) : "—") + '</output><button type="button" data-d="1" aria-label="Aumentar">+</button></span><button class="btn" type="button" data-clear-mm>usar o modelo</button></span></label>' +
         '<label for="m-ag-' + k + '">Está chovendo agora?<select id="m-ag-' + k + '"><option value="">Usar o modelo</option><option value="sim"' + (ov.agora === "sim" ? " selected" : "") + '>Sim, confirmado no campo</option><option value="nao"' + (ov.agora === "nao" ? " selected" : "") + ">Não, confirmado no campo</option></select></label>" +
         '<label for="m-nt-' + k + '">Observação<input type="text" id="m-nt-' + k + '" maxlength="120" placeholder="ex.: estrada molhada no talhão 12" value="' + attr(ov.note || "") + '"></label>' +
         '<div class="row"><button class="btn solid" type="submit">Salvar ajuste</button><button class="btn" type="button" data-clear>Limpar</button></div>' +
-        "<small>Vale só para hoje e fica salvo neste computador. Amanhã volta para o modelo.</small></form>" +
-      "</div>";
+        "<small>Vale só para hoje e fica salvo neste computador. Amanhã volta para o modelo.</small>" +
+        '<a class="windy" href="' + windy + '" target="_blank" rel="noopener">Abrir esta fazenda no Windy ↗</a></form>' +
+      cmp + "</div>";
   }
   var draftMm = {};
   document.getElementById("board").addEventListener("click", function (e) {
@@ -850,7 +998,7 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     if (ms) msgTimer = setTimeout(function () { setMsg(""); }, ms);
   }
   function render(o) {
-    model(); renderRegions(); renderViews(); paintSteps();
+    model(); renderRegions(); renderModels(); renderViews(); paintSteps();
     if (state.open != null && !state.rows.some(function (r) { return r.k === state.open; })) state.open = null;
     renderMap(); renderFigs(true); renderBoard({ animate: o && o.animate });
   }
@@ -864,13 +1012,19 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     state.farms = parseTalhoes(state.text);
     if (!state.farms.length) { setMsg("Nenhuma fazenda com coordenada válida. Abra “Lista de fazendas” no fim da página e cole as colunas do Excel.", "err"); return; }
     document.getElementById("syncTxt").innerHTML = '<span class="dot"></span>Buscando previsão…';
-    (useDemo ? Promise.resolve(demoData()) : fetchData()).then(function (data) {
-      state.data = data; state.demo = !!useDemo; state.lastFetch = new Date();
-      setMsg(useDemo ? "Você está vendo <b>dados de exemplo</b>, inventados para mostrar o painel. Clique em <b>Atualizar</b> para buscar a previsão real." : "");
+    (useDemo ? Promise.resolve({ list: demoMulti(), models: MODELS.map(function (m) { return m.key; }), note: "" }) : fetchData()).then(function (res) {
+      state.raw = res.list.map(function (o) { return splitModels(o, res.models); });
+      state.avail = res.models.filter(function (m) { return state.raw.some(function (x) { return x[m]; }); });
+      if (!state.avail.length) throw new Error("a resposta veio sem dados de chuva");
+      applyModel();
+      state.demo = !!useDemo; state.lastFetch = new Date();
+      setMsg(useDemo ? "Você está vendo <b>dados de exemplo</b>, inventados para mostrar o painel. Clique em <b>Atualizar</b> para buscar a previsão real." : esc(res.note));
       render({ animate: true }); syncText();
     }).catch(function (err) {
       setMsg("Não foi possível buscar a previsão: " + esc(err.message || "sem conexão") + ". Verifique a internet ou peça à TI para liberar <b>api.open-meteo.com</b> no navegador. Abaixo, dados de exemplo.", "err");
-      state.data = demoData(); state.demo = true; state.lastFetch = new Date();
+      state.raw = demoMulti().map(function (o) { return splitModels(o, MODELS.map(function (m) { return m.key; })); });
+      state.avail = MODELS.map(function (m) { return m.key; }); applyModel();
+      state.demo = true; state.lastFetch = new Date();
       render({ animate: true }); syncText();
     });
   }

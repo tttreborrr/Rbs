@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel de Colheita</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --hist: #9ec5f4;
+  --fcst: #2a78d6;
+  --good: #0ca30c;
+  --warn: #fab219;
+  --bad: #d03b3b;
+  --good-bg: #e3f4e3;
+  --warn-bg: #fdf1d3;
+  --bad-bg: #f8e0e0;
+  --accent: #2a78d6;
+  --past-bg: #f0efec;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --hist: #256abf; --fcst: #6da7ec; --accent: #6da7ec;
+    --good-bg: #16301a; --warn-bg: #3a2f12; --bad-bg: #3b1a1a; --past-bg: #242422;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+  --hist: #256abf; --fcst: #6da7ec; --accent: #6da7ec;
+  --good-bg: #16301a; --warn-bg: #3a2f12; --bad-bg: #3b1a1a; --past-bg: #242422;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--surface); }
+header h1 { margin: 0; font-size: 20px; }
+header .sub { color: var(--ink-2); font-size: 13px; }
+main { max-width: 1400px; margin: 0 auto; padding: 16px 24px 48px; display: grid; gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; min-width: 0; }
+.card h2 { margin: 0 0 4px; font-size: 16px; }
+.card .hint { margin: 0 0 12px; color: var(--ink-2); font-size: 13px; }
+button { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); cursor: pointer; }
+button.primary { background: var(--accent); border-color: transparent; color: #fff; font-weight: 600; }
+button:hover { filter: brightness(0.96); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; }
+.kpi .label { color: var(--ink-2); font-size: 13px; }
+.kpi .value { font-size: 30px; font-weight: 700; margin-top: 2px; }
+.kpi .note { color: var(--muted); font-size: 12px; }
+.two { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 900px) { .two { grid-template-columns: 1fr; } header, main { padding-left: 16px; padding-right: 16px; } }
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.badge.good { background: var(--good-bg); color: var(--ink); }
+.badge.warn { background: var(--warn-bg); color: var(--ink); }
+.badge.bad { background: var(--bad-bg); color: var(--ink); }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.dot.good { background: var(--good); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); }
+.rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rank li { display: grid; grid-template-columns: 32px 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; }
+.rank li:hover, .rank li.sel { border-color: var(--accent); }
+.rank .pos { font-weight: 700; font-size: 18px; color: var(--ink-2); text-align: center; }
+.rank .name { font-weight: 600; }
+.rank .why { color: var(--ink-2); font-size: 12.5px; }
+.scroll { overflow-x: auto; }
+table { border-collapse: separate; border-spacing: 2px; width: 100%; }
+th, td { padding: 6px 6px; text-align: center; font-size: 12.5px; white-space: nowrap; }
+th { color: var(--ink-2); font-weight: 600; }
+th.left, td.left { text-align: left; position: sticky; left: 0; background: var(--surface); z-index: 1; }
+td.cell { border-radius: 4px; min-width: 52px; cursor: default; }
+td.cell.good { background: var(--good-bg); }
+td.cell.warn { background: var(--warn-bg); }
+td.cell.bad { background: var(--bad-bg); }
+td.cell.past { background: var(--past-bg); color: var(--ink-2); }
+td.cell .mm { font-weight: 600; }
+td.cell .pp { color: var(--ink-2); font-size: 11px; }
+th.today { color: var(--accent); }
+.sep { border-left: 2px solid var(--axis); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; color: var(--ink-2); font-size: 12.5px; margin-top: 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+svg text { fill: var(--ink-2); font-size: 11px; font-family: inherit; }
+#tip { position: fixed; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); display: none; z-index: 10; max-width: 260px; }
+details summary { cursor: pointer; font-weight: 600; }
+textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consolas, monospace; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--page); color: var(--ink); }
+.params { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 16px; margin: 12px 0; }
+.params label { display: grid; gap: 3px; font-size: 12.5px; color: var(--ink-2); }
+.params input, .params select { font: inherit; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--page); color: var(--ink); }
+.banner { padding: 10px 14px; border-radius: 8px; background: var(--warn-bg); font-size: 13px; }
+.banner.err { background: var(--bad-bg); }
+.plan-day { display: grid; grid-template-columns: 110px 1fr; gap: 10px; padding: 8px 0; border-top: 1px solid var(--grid); align-items: start; }
+.plan-day:first-child { border-top: 0; }
+.plan-day .d { font-weight: 600; }
+.plan-day .d small { display: block; color: var(--muted); font-weight: 400; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 3px 10px; border-radius: 6px; background: var(--good-bg); font-size: 12.5px; }
+.chip.none { background: var(--past-bg); color: var(--ink-2); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Painel de Colheita × Chuva</h1>
+    <div class="sub" id="sub">Previsão e histórico Open-Meteo por talhão</div>
+  </div>
+  <div class="row">
+    <span class="sub" id="updated"></span>
+    <button class="primary" id="btnRefresh">Atualizar agora</button>
+  </div>
+</header>
+<main>
+  <div id="msg"></div>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="two">
+    <div class="card">
+      <h2>O que colher hoje</h2>
+      <p class="hint">Ordem sugerida: talhões aptos hoje vêm primeiro, com mais urgência quando a chuva está chegando. Clique para ver o gráfico.</p>
+      <ul class="rank" id="rank"></ul>
+    </div>
+    <div class="card">
+      <h2>Mapa dos talhões (hoje)</h2>
+      <p class="hint">Posição relativa pelas coordenadas. Cor = situação de hoje. Clique em um ponto para ver o gráfico.</p>
+      <div id="map"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Chuva por talhão e por dia</h2>
+    <p class="hint">À esquerda da linha, chuva que já caiu (mm). À direita, previsão: mm e chance de chuva (%). Passe o mouse para detalhes.</p>
+    <div class="scroll"><table id="grid"></table></div>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--good-bg);border:1px solid var(--good)"></span>✓ Pode colher</span>
+      <span><span class="sw" style="background:var(--warn-bg);border:1px solid var(--warn)"></span>! Atenção (solo úmido ou chance média)</span>
+      <span><span class="sw" style="background:var(--bad-bg);border:1px solid var(--bad)"></span>✕ Não colher (chuva prevista)</span>
+      <span><span class="sw" style="background:var(--past-bg)"></span>Histórico</span>
+    </div>
+  </section>
+
+  <section class="two">
+    <div class="card">
+      <h2 id="chartTitle">Chuva diária</h2>
+      <p class="hint">Barras claras = chuva que caiu; barras escuras = previsão (mm/dia).</p>
+      <div id="chart"></div>
+    </div>
+    <div class="card">
+      <h2>Plano de colheita sugerido</h2>
+      <p class="hint" id="planHint"></p>
+      <div id="plan"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <details id="cfg">
+      <summary>Configurar talhões e regras</summary>
+      <p class="hint" style="margin-top:10px">Cole aqui direto do Excel (copiar as colunas e colar). Colunas: <b>Talhão, Latitude, Longitude, Área (ha), Prioridade (1 a 5, 5 = mais urgente/mais maduro)</b>. Separador pode ser tabulação ou ponto e vírgula. Vírgula ou ponto como decimal.</p>
+      <textarea id="txtTalhoes" spellcheck="false"></textarea>
+      <div class="params">
+        <label>Chuva que impede colheita no dia (mm)<input type="number" step="0.5" id="pMm"></label>
+        <label>Chance de chuva que impede colheita (%)<input type="number" step="5" id="pProbHi"></label>
+        <label>Chance de chuva para "atenção" (%)<input type="number" step="5" id="pProbMid"></label>
+        <label>Dias para o solo secar após chuva<input type="number" step="1" min="0" id="pDias"></label>
+        <label>Chuva acumulada nesses dias que deixa o solo úmido (mm)<input type="number" step="1" id="pAcum"></label>
+        <label>Capacidade de colheita (ha/dia)<input type="number" step="1" id="pCap"></label>
+        <label>Dias de previsão<select id="pFc"><option>7</option><option>10</option><option>14</option><option>16</option></select></label>
+        <label>Dias de histórico<select id="pPast"><option>7</option><option>14</option><option>30</option></select></label>
+      </div>
+      <div class="row">
+        <button class="primary" id="btnSave">Salvar e atualizar</button>
+        <button id="btnDemo">Ver com dados de exemplo</button>
+        <button id="btnReset">Restaurar exemplo</button>
+      </div>
+    </details>
+  </section>
+</main>
+<div id="tip"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var DEFAULT_TALHOES = [
+    "Talhão;Latitude;Longitude;Área (ha);Prioridade",
+    "T01;-21,170;-47,810;45;5",
+    "T02;-21,185;-47,840;60;4",
+    "T03;-21,210;-47,790;38;3",
+    "T04;-21,230;-47,860;52;5",
+    "T05;-21,150;-47,880;70;2",
+    "T06;-21,260;-47,820;41;3"
+  ].join("\n");
+  var DEFAULT_PARAMS = { mm: 2, probHi: 60, probMid: 35, dias: 2, acum: 15, cap: 60, fc: 7, past: 7 };
+  var STORE = "painelColheita.v1";
+
+  var state = { talhoes: [], params: {}, data: null, selected: 0, demo: false };
+
+  // ---------- storage (falha silenciosa) ----------
+  function load() {
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) {}
+    state.text = (saved && saved.text) || DEFAULT_TALHOES;
+    state.params = Object.assign({}, DEFAULT_PARAMS, (saved && saved.params) || {});
+  }
+  function save() {
+    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params })); } catch (e) {}
+  }
+
+  // ---------- parse do texto colado do Excel ----------
+  function num(s) {
+    if (s == null) return NaN;
+    s = String(s).trim().replace(/\s/g, "");
+    if (s.indexOf(",") >= 0 && s.indexOf(".") >= 0) s = s.replace(/\./g, "").replace(",", ".");
+    else s = s.replace(",", ".");
+    return parseFloat(s);
+  }
+  function parseTalhoes(text) {
+    var out = [];
+    text.split(/\r?\n/).forEach(function (line) {
+      if (!line.trim()) return;
+      var cols = line.indexOf("\t") >= 0 ? line.split("\t") : line.split(";");
+      if (cols.length < 3) return;
+      var lat = num(cols[1]), lon = num(cols[2]);
+      if (isNaN(lat) || isNaN(lon)) return; // cabeçalho ou linha inválida
+      var area = num(cols[3]); var pr = num(cols[4]);
+      out.push({ nome: cols[0].trim(), lat: lat, lon: lon, area: isNaN(area) ? 0 : area, prio: isNaN(pr) ? 3 : Math.max(1, Math.min(5, pr)) });
+    });
+    return out;
+  }
+
+  // ---------- Open-Meteo ----------
+  function fetchData() {
+    var t = state.talhoes, p = state.params;
+    var url = "https://api.open-meteo.com/v1/forecast" +
+      "?latitude=" + t.map(function (x) { return x.lat.toFixed(4); }).join(",") +
+      "&longitude=" + t.map(function (x) { return x.lon.toFixed(4); }).join(",") +
+      "&daily=precipitation_sum,precipitation_probability_max,temperature_2m_max" +
+      "&past_days=" + p.past + "&forecast_days=" + p.fc + "&timezone=America%2FSao_Paulo";
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (j) {
+      var arr = Array.isArray(j) ? j : [j];
+      return arr.map(function (o) { return o.daily; });
+    });
+  }
+  function demoData() {
+    var p = state.params, n = p.past + p.fc, days = [];
+    var base = new Date(); base.setHours(12, 0, 0, 0);
+    for (var i = 0; i < n; i++) { var d = new Date(base); d.setDate(d.getDate() + i - p.past); days.push(iso(d)); }
+    var seed = 7;
+    function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+    var front = [p.past - 3, p.past + 3, p.past + 4, p.past + 9]; // dias de frente de chuva
+    return state.talhoes.map(function (t, k) {
+      var pr = [], pb = [], tx = [];
+      for (var i = 0; i < n; i++) {
+        var hit = front.indexOf(i) >= 0, near = front.indexOf(i - 1) >= 0;
+        var v = hit ? 6 + rnd() * 22 * (k % 3 === 0 ? 1.4 : 0.8) : (near && rnd() > 0.5 ? rnd() * 4 : (rnd() > 0.88 ? rnd() * 2 : 0));
+        if (i === p.past + 1 && k % 2 === 0) v = 3 + rnd() * 5; // chuva localizada amanhã em alguns talhões
+        pr.push(Math.round(v * 10) / 10);
+        pb.push(i < p.past ? null : Math.min(100, Math.round(v > 2 ? 55 + rnd() * 40 : v > 0 ? 25 + rnd() * 25 : rnd() * 20)));
+        tx.push(Math.round((28 + rnd() * 6) * 10) / 10);
+      }
+      return { time: days, precipitation_sum: pr, precipitation_probability_max: pb, temperature_2m_max: tx };
+    });
+  }
+
+  // ---------- regras ----------
+  function iso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function todayIso() { return iso(new Date()); }
+  var WD = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+  function fmtDay(s) { var d = new Date(s + "T12:00:00"); return WD[d.getDay()] + " " + String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0"); }
+  function fmtMm(v) { return v == null ? "–" : (Math.round(v * 10) / 10).toLocaleString("pt-BR") + " mm"; }
+
+  function analyze() {
+    var p = state.params, today = todayIso();
+    state.rows = state.talhoes.map(function (t, k) {
+      var d = state.data[k] || {}, time = d.time || [];
+      var days = time.map(function (ds, i) {
+        var mm = (d.precipitation_sum || [])[i]; mm = mm == null ? 0 : mm;
+        var prob = (d.precipitation_probability_max || [])[i];
+        var acc = 0;
+        for (var j = Math.max(0, i - p.dias); j < i; j++) acc += (d.precipitation_sum[j] || 0);
+        var past = ds < today;
+        var st = "good", why = [];
+        if (mm >= p.mm) { st = "bad"; why.push("chuva de " + fmtMm(mm)); }
+        if (prob != null && prob >= p.probHi) { st = "bad"; why.push(prob + "% de chance de chuva"); }
+        if (st !== "bad") {
+          if (acc >= p.acum) { st = "warn"; why.push("solo úmido: " + fmtMm(acc) + " nos " + p.dias + " dias anteriores"); }
+          if (prob != null && prob >= p.probMid) { st = "warn"; why.push(prob + "% de chance de chuva"); }
+          if (mm > 0.5 && mm < p.mm) { st = "warn"; why.push("garoa prevista (" + fmtMm(mm) + ")"); }
+        }
+        return { date: ds, mm: mm, prob: prob, acc: acc, past: past, today: ds === today, st: st, why: why, tmax: (d.temperature_2m_max || [])[i] };
+      });
+      var fut = days.filter(function (x) { return !x.past; });
+      var t0 = fut[0];
+      // janela seca a partir de hoje
+      var win = 0; while (win < fut.length && fut[win].st === "good") win++;
+      var nextRain = null; for (var i2 = 0; i2 < fut.length; i2++) if (fut[i2].st === "bad") { nextRain = fut[i2]; break; }
+      var rainIn = nextRain ? fut.indexOf(nextRain) : 99;
+      var hist = days.filter(function (x) { return x.past; }).reduce(function (s, x) { return s + x.mm; }, 0);
+      var fcSum = fut.reduce(function (s, x) { return s + x.mm; }, 0);
+      // pontuação: apto hoje >> urgência (chuva chegando) + prioridade do talhão
+      var score = (t0 && t0.st === "good" ? 1000 : t0 && t0.st === "warn" ? 500 : 0) + t.prio * 40 + (rainIn < 99 ? (10 - Math.min(rainIn, 10)) * 15 : 0);
+      return { t: t, k: k, days: days, fut: fut, today: t0, win: win, nextRain: nextRain, rainIn: rainIn, hist: hist, fcSum: fcSum, score: score };
+    });
+  }
+
+  function buildPlan() {
+    var p = state.params, rows = state.rows;
+    var left = rows.map(function (r) { return r.t.area || 0; });
+    var n = rows.length ? rows[0].fut.length : 0, plan = [];
+    for (var i = 0; i < n; i++) {
+      var cap = p.cap, list = [];
+      var cand = rows.filter(function (r) { return left[r.k] > 0.01 && r.fut[i] && r.fut[i].st === "good"; });
+      // urgência: quantos dias bons ainda restam para o talhão a partir de hoje -> menos dias = mais urgente
+      cand.sort(function (a, b) {
+        var ga = a.fut.slice(i).filter(function (x) { return x.st === "good"; }).length;
+        var gb = b.fut.slice(i).filter(function (x) { return x.st === "good"; }).length;
+        return (b.t.prio - a.t.prio) || (ga - gb) || (a.k - b.k);
+      });
+      cand.forEach(function (r) {
+        if (cap <= 0.01) return;
+        var take = Math.min(cap, left[r.k]);
+        left[r.k] -= take; cap -= take;
+        list.push({ nome: r.t.nome, ha: take, done: left[r.k] <= 0.01 });
+      });
+      plan.push({ date: rows[0].fut[i].date, list: list, blocked: rows.every(function (r) { return !r.fut[i] || r.fut[i].st !== "good"; }) });
+    }
+    state.plan = plan;
+    state.planLeft = rows.filter(function (r) { return left[r.k] > 0.01; }).map(function (r) { return { nome: r.t.nome, ha: left[r.k] }; });
+  }
+
+  // ---------- render ----------
+  var tip = document.getElementById("tip");
+  function showTip(e, html) { tip.innerHTML = html; tip.style.display = "block"; moveTip(e); }
+  function moveTip(e) {
+    var x = e.clientX + 14, y = e.clientY + 14, w = tip.offsetWidth, h = tip.offsetHeight;
+    if (x + w > innerWidth - 8) x = e.clientX - w - 14;
+    if (y + h > innerHeight - 8) y = e.clientY - h - 14;
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+  }
+  function hideTip() { tip.style.display = "none"; }
+  function bindTip(el, html) {
+    el.addEventListener("mouseenter", function (e) { showTip(e, html); });
+    el.addEventListener("mousemove", moveTip);
+    el.addEventListener("mouseleave", hideTip);
+  }
+  var ICON = { good: "✓", warn: "!", bad: "✕" };
+  var LABEL = { good: "Pode colher", warn: "Atenção", bad: "Não colher" };
+  function badge(st) { return '<span class="badge ' + st + '"><span class="dot ' + st + '"></span>' + ICON[st] + " " + LABEL[st] + "</span>"; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function dayTip(r, x) {
+    return "<b>" + esc(r.t.nome) + " — " + fmtDay(x.date) + "</b><br>" +
+      (x.past ? "Choveu: " + fmtMm(x.mm) : "Previsão: " + fmtMm(x.mm) + (x.prob != null ? " · " + x.prob + "% de chance" : "")) +
+      (x.tmax != null ? "<br>Máx: " + String(x.tmax).replace(".", ",") + " °C" : "") +
+      (!x.past ? "<br>" + badge(x.st) + (x.why.length ? "<br><span style='color:var(--ink-2)'>" + esc(x.why.join("; ")) + "</span>" : "") : "");
+  }
+
+  function renderKpis() {
+    var rows = state.rows;
+    var ok = rows.filter(function (r) { return r.today && r.today.st === "good"; });
+    var haOk = ok.reduce(function (s, r) { return s + r.t.area; }, 0);
+    var rainSoon = rows.map(function (r) { return r.rainIn; }).filter(function (x) { return x < 99; });
+    var minIn = rainSoon.length ? Math.min.apply(null, rainSoon) : null;
+    var avgFc = rows.reduce(function (s, r) { return s + r.fcSum; }, 0) / Math.max(1, rows.length);
+    var avgHist = rows.reduce(function (s, r) { return s + r.hist; }, 0) / Math.max(1, rows.length);
+    var nextTxt = minIn == null ? "Sem chuva forte" : minIn === 0 ? "Hoje" : minIn === 1 ? "Amanhã" : "Em " + minIn + " dias";
+    var nextNote = minIn == null ? "nos próximos " + state.params.fc + " dias" : fmtDay(rows[0].fut[minIn].date) + " em " + rows.filter(function (r) { return r.rainIn === minIn; }).length + " talhão(ões)";
+    var html = [
+      ["Talhões aptos hoje", ok.length + " de " + rows.length, Math.round(haOk).toLocaleString("pt-BR") + " ha liberados"],
+      ["Próxima chuva forte", nextTxt, nextNote],
+      ["Chuva prevista (média)", fmtMm(avgFc), "próximos " + state.params.fc + " dias"],
+      ["Choveu (média)", fmtMm(avgHist), "últimos " + state.params.past + " dias"]
+    ].map(function (k) { return '<div class="card kpi"><div class="label">' + k[0] + '</div><div class="value">' + k[1] + '</div><div class="note">' + k[2] + "</div></div>"; }).join("");
+    document.getElementById("kpis").innerHTML = html;
+  }
+
+  function renderRank() {
+    var ul = document.getElementById("rank"); ul.innerHTML = "";
+    var sorted = state.rows.slice().sort(function (a, b) { return b.score - a.score; });
+    sorted.forEach(function (r, i) {
+      var st = r.today ? r.today.st : "bad", why;
+      if (st === "good") {
+        why = r.nextRain ? "Janela seca de " + r.win + " dia(s). Chuva prevista " + (r.rainIn === 1 ? "amanhã" : fmtDay(r.nextRain.date)) + " (" + fmtMm(r.nextRain.mm) + ")." : "Sem chuva forte prevista. Janela de " + r.win + " dia(s).";
+      } else why = r.today.why.join("; ").replace(/^./, function (c) { return c.toUpperCase(); }) + ".";
+      why += " Prioridade " + r.t.prio + " · " + r.t.area + " ha";
+      var li = document.createElement("li");
+      if (r.k === state.selected) li.className = "sel";
+      li.innerHTML = '<div class="pos">' + (i + 1) + '</div><div><div class="name">' + esc(r.t.nome) + '</div><div class="why">' + esc(why) + "</div></div>" + badge(st);
+      li.onclick = function () { select(r.k); };
+      ul.appendChild(li);
+    });
+  }
+
+  function renderMap() {
+    var rows = state.rows, W = 520, H = 320, pad = 40;
+    var lats = rows.map(function (r) { return r.t.lat; }), lons = rows.map(function (r) { return r.t.lon; });
+    var la0 = Math.min.apply(null, lats), la1 = Math.max.apply(null, lats), lo0 = Math.min.apply(null, lons), lo1 = Math.max.apply(null, lons);
+    var midLat = (la0 + la1) / 2 * Math.PI / 180;
+    var spanX = Math.max((lo1 - lo0) * Math.cos(midLat), 1e-3), spanY = Math.max(la1 - la0, 1e-3);
+    var s = Math.min((W - 2 * pad) / spanX, (H - 2 * pad) / spanY);
+    var ox = (W - spanX * s) / 2, oy = (H - spanY * s) / 2;
+    function X(lon) { return ox + (lon - lo0) * Math.cos(midLat) * s; }
+    function Y(lat) { return H - oy - (lat - la0) * s; }
+    var km = spanX * 111.32; // largura em km
+    var stepKm = [0.5, 1, 2, 5, 10, 20, 50, 100].filter(function (v) { return v <= km / 2.5; }).pop() || 0.5;
+    var barPx = stepKm / 111.32 * s;
+    var svg = '<svg viewBox="0 0 ' + W + " " + H + '" width="100%" role="img" aria-label="Mapa dos talhões">';
+    svg += '<rect x="0" y="0" width="' + W + '" height="' + H + '" rx="8" fill="var(--page)"/>';
+    for (var g = 1; g < 6; g++) { svg += '<line x1="0" x2="' + W + '" y1="' + H * g / 6 + '" y2="' + H * g / 6 + '" stroke="var(--grid)"/><line y1="0" y2="' + H + '" x1="' + W * g / 6 + '" x2="' + W * g / 6 + '" stroke="var(--grid)"/>'; }
+    svg += '<text x="' + (W - 16) + '" y="22" text-anchor="middle" style="font-weight:700">N</text><path d="M' + (W - 16) + ' 26 l-5 12 h10z" fill="var(--muted)"/>';
+    svg += '<line x1="16" x2="' + (16 + barPx) + '" y1="' + (H - 16) + '" y2="' + (H - 16) + '" stroke="var(--ink-2)" stroke-width="2"/><text x="16" y="' + (H - 22) + '">' + String(stepKm).replace(".", ",") + " km</text>";
+    rows.forEach(function (r) {
+      var st = r.today ? r.today.st : "bad", x = X(r.t.lon), y = Y(r.t.lat);
+      var rad = 8 + Math.sqrt(Math.max(r.t.area, 1)) * 1.2;
+      svg += '<g class="pt" data-k="' + r.k + '" style="cursor:pointer">' +
+        '<circle cx="' + x + '" cy="' + y + '" r="' + (rad + 8) + '" fill="transparent"/>' +
+        '<circle cx="' + x + '" cy="' + y + '" r="' + rad + '" fill="var(--' + st + ')" fill-opacity="0.85" stroke="' + (r.k === state.selected ? "var(--ink)" : "var(--surface)") + '" stroke-width="2"/>' +
+        '<text x="' + x + '" y="' + (y + 4) + '" text-anchor="middle" style="fill:' + (st === "warn" ? "#0b0b0b" : "#fff") + ';font-weight:700;font-size:12px">' + ICON[st] + "</text>" +
+        '<text x="' + x + '" y="' + (y - rad - 6) + '" text-anchor="middle" style="fill:var(--ink);font-weight:600">' + esc(r.t.nome) + "</text></g>";
+    });
+    svg += "</svg>";
+    var box = document.getElementById("map"); box.innerHTML = svg;
+    box.querySelectorAll(".pt").forEach(function (el) {
+      var r = rows[+el.getAttribute("data-k")];
+      bindTip(el, r.today ? dayTip(r, r.today) : esc(r.t.nome));
+      el.addEventListener("click", function () { select(r.k); });
+    });
+  }
+
+  function renderGrid() {
+    var rows = state.rows, tbl = document.getElementById("grid");
+    if (!rows.length) { tbl.innerHTML = ""; return; }
+    var days = rows[0].days, firstFut = days.findIndex(function (x) { return !x.past; });
+    var h = '<thead><tr><th class="left">Talhão</th><th>Choveu<br>' + state.params.past + 'd</th>';
+    days.forEach(function (x, i) { h += '<th class="' + (x.today ? "today " : "") + (i === firstFut ? "sep" : "") + '">' + (x.today ? "HOJE<br>" : "") + fmtDay(x.date) + "</th>"; });
+    h += "</tr></thead><tbody>";
+    rows.forEach(function (r) {
+      h += '<tr><td class="left"><b>' + esc(r.t.nome) + '</b></td><td>' + fmtMm(r.hist) + "</td>";
+      r.days.forEach(function (x, i) {
+        var cls = "cell " + (x.past ? "past" : x.st) + (i === firstFut ? " sep" : "");
+        h += '<td class="' + cls + '" data-k="' + r.k + '" data-i="' + i + '"><div class="mm">' + (x.past ? "" : ICON[x.st] + " ") + (Math.round(x.mm * 10) / 10).toLocaleString("pt-BR") + '</div><div class="pp">' + (x.past ? "mm" : (x.prob != null ? x.prob + "%" : "")) + "</div></td>";
+      });
+      h += "</tr>";
+    });
+    tbl.innerHTML = h + "</tbody>";
+    tbl.querySelectorAll("td.cell").forEach(function (td) {
+      var r = rows[+td.getAttribute("data-k")], x = r.days[+td.getAttribute("data-i")];
+      bindTip(td, dayTip(r, x));
+    });
+  }
+
+  function renderChart() {
+    var r = state.rows[state.selected]; if (!r) return;
+    document.getElementById("chartTitle").textContent = "Chuva diária — " + r.t.nome;
+    var days = r.days, W = 640, H = 270, L = 40, R = 10, T = 26, B = 40;
+    var max = Math.max(5, Math.max.apply(null, days.map(function (x) { return x.mm; })));
+    var stepY = max <= 10 ? 2 : max <= 25 ? 5 : max <= 60 ? 10 : 20; max = Math.ceil(max / stepY) * stepY;
+    var cw = (W - L - R) / days.length, bw = Math.max(4, Math.min(28, cw - 4));
+    function Y(v) { return T + (H - T - B) * (1 - v / max); }
+    var svg = '<svg viewBox="0 0 ' + W + " " + H + '" width="100%" role="img" aria-label="Chuva diária">';
+    for (var v = 0; v <= max; v += stepY) svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="' + (v === 0 ? "var(--axis)" : "var(--grid)") + '"/><text x="' + (L - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + v + "</text>";
+    svg += '<text x="4" y="12">mm/dia</text>';
+    var lim = Y(state.params.mm);
+    svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + lim + '" y2="' + lim + '" stroke="var(--bad)" stroke-dasharray="4 4"/><text x="' + (W - R) + '" y="' + (lim - 4) + '" text-anchor="end" style="fill:var(--ink-2)">limite ' + String(state.params.mm).replace(".", ",") + " mm</text>";
+    days.forEach(function (x, i) {
+      var cx = L + cw * i + cw / 2, y = Y(x.mm), h = Y(0) - y;
+      if (x.today) svg += '<rect x="' + (L + cw * i) + '" y="' + T + '" width="' + cw + '" height="' + (H - T - B) + '" fill="var(--accent)" fill-opacity="0.08"/>';
+      if (h > 0.5) {
+        var rr = Math.min(4, bw / 2, h);
+        svg += '<path d="M' + (cx - bw / 2) + " " + Y(0) + " V" + (y + rr) + " q0 -" + rr + " " + rr + " -" + rr + " H" + (cx + bw / 2 - rr) + " q" + rr + " 0 " + rr + " " + rr + " V" + Y(0) + 'Z" fill="var(--' + (x.past ? "hist" : "fcst") + ')"/>';
+      }
+      if (x.mm >= state.params.mm) svg += '<text x="' + cx + '" y="' + (y - 4) + '" text-anchor="middle" style="fill:var(--ink)">' + Math.round(x.mm) + "</text>";
+      var every = Math.ceil(days.length / 14);
+      if (i % every === 0 || x.today) svg += '<text x="' + cx + '" y="' + (H - B + 14) + '" text-anchor="middle" ' + (x.today ? 'style="fill:var(--accent);font-weight:700"' : "") + ">" + fmtDay(x.date).slice(4) + "</text>";
+      if (!x.past) svg += '<circle cx="' + cx + '" cy="' + (H - B + 26) + '" r="4" fill="var(--' + x.st + ')"/>';
+      svg += '<rect class="hit" data-i="' + i + '" x="' + (L + cw * i) + '" y="' + T + '" width="' + cw + '" height="' + (H - T) + '" fill="transparent"/>';
+    });
+    svg += "</svg>";
+    var box = document.getElementById("chart"); box.innerHTML = svg;
+    box.querySelectorAll(".hit").forEach(function (el) { bindTip(el, dayTip(r, days[+el.getAttribute("data-i")])); });
+  }
+
+  function renderPlan() {
+    var p = state.params, box = document.getElementById("plan");
+    document.getElementById("planHint").textContent = "Capacidade de " + p.cap + " ha/dia, só em dias “pode colher” de cada talhão; maior prioridade primeiro e, no empate, quem tem menos dias bons pela frente.";
+    var h = "";
+    state.plan.forEach(function (d, i) {
+      h += '<div class="plan-day"><div class="d">' + (i === 0 ? "Hoje" : i === 1 ? "Amanhã" : fmtDay(d.date)) + (i < 2 ? "<small>" + fmtDay(d.date) + "</small>" : "") + '</div><div class="chips">';
+      if (!d.list.length) h += '<span class="chip none">' + (d.blocked ? "✕ Sem condição de colheita" : "Nada pendente apto neste dia") + "</span>";
+      d.list.forEach(function (c) { h += '<span class="chip">' + esc(c.nome) + " · " + Math.round(c.ha) + " ha" + (c.done ? " ✓" : " (parcial)") + "</span>"; });
+      h += "</div></div>";
+    });
+    if (state.planLeft.length) h += '<div class="plan-day"><div class="d">Fica para depois</div><div class="chips">' + state.planLeft.map(function (c) { return '<span class="chip none">' + esc(c.nome) + " · " + Math.round(c.ha) + " ha</span>"; }).join("") + "</div></div>";
+    box.innerHTML = h;
+  }
+
+  function select(k) { state.selected = k; renderRank(); renderMap(); renderChart(); }
+
+  function renderAll() {
+    analyze(); buildPlan();
+    if (state.selected >= state.rows.length) state.selected = 0;
+    renderKpis(); renderRank(); renderMap(); renderGrid(); renderChart(); renderPlan();
+  }
+
+  function setMsg(html, cls) { document.getElementById("msg").innerHTML = html ? '<div class="banner ' + (cls || "") + '">' + html + "</div>" : ""; }
+
+  function refresh(useDemo) {
+    state.talhoes = parseTalhoes(state.text);
+    if (!state.talhoes.length) { setMsg("Nenhum talhão válido. Abra “Configurar talhões” e cole as coordenadas.", "err"); return; }
+    document.getElementById("updated").textContent = "Carregando…";
+    var p = useDemo ? Promise.resolve(demoData()) : fetchData();
+    p.then(function (data) {
+      state.data = data; state.demo = !!useDemo;
+      setMsg(useDemo ? "Mostrando <b>dados de exemplo</b> (inventados). Clique em “Atualizar agora” para buscar a previsão real." : "");
+      document.getElementById("updated").textContent = (useDemo ? "Exemplo · " : "Atualizado às ") + new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      renderAll();
+    }).catch(function (e) {
+      document.getElementById("updated").textContent = "";
+      setMsg("Não consegui acessar a Open-Meteo (" + esc(e.message) + "). Verifique a internet ou se a rede da empresa bloqueia <b>api.open-meteo.com</b>. Mostrando dados de exemplo enquanto isso.", "err");
+      return refreshDemoAfterError();
+    });
+  }
+  function refreshDemoAfterError() {
+    state.data = demoData(); state.demo = true; renderAll();
+  }
+
+  // ---------- configuração ----------
+  var ids = { pMm: "mm", pProbHi: "probHi", pProbMid: "probMid", pDias: "dias", pAcum: "acum", pCap: "cap", pFc: "fc", pPast: "past" };
+  function fillForm() {
+    document.getElementById("txtTalhoes").value = state.text;
+    Object.keys(ids).forEach(function (id) { document.getElementById(id).value = state.params[ids[id]]; });
+  }
+  function readForm() {
+    state.text = document.getElementById("txtTalhoes").value;
+    Object.keys(ids).forEach(function (id) { var v = num(document.getElementById(id).value); if (!isNaN(v)) state.params[ids[id]] = v; });
+  }
+  document.getElementById("btnSave").onclick = function () { readForm(); save(); refresh(false); };
+  document.getElementById("btnDemo").onclick = function () { readForm(); refresh(true); };
+  document.getElementById("btnReset").onclick = function () { state.text = DEFAULT_TALHOES; state.params = Object.assign({}, DEFAULT_PARAMS); fillForm(); save(); refresh(false); };
+  document.getElementById("btnRefresh").onclick = function () { refresh(false); };
+
+  load(); fillForm(); refresh(/[?&]demo/.test(location.search));
+  setInterval(function () { if (!state.demo) refresh(false); }, 60 * 60 * 1000); // atualiza sozinho a cada 1 h
+})();
+</script>
+</body>
+</html>

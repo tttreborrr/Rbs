@@ -33,9 +33,9 @@ A configuração fica salva no navegador. O painel se atualiza sozinho a cada 1 
 
 | Situação | Quando |
 |---|---|
-| ✕ Não colher | chuva prevista ≥ 2 mm **ou** chance de chuva ≥ 60% |
-| ! Atenção | solo úmido (≥ 15 mm nos 2 dias anteriores), chance entre 35% e 60% ou garoa |
-| ✓ Pode colher | nenhum dos casos acima |
+| ✕ Não colher | chuva prevista **acima de 6 mm** (chuva de fato) |
+| ! Atenção | chuva prevista entre 4 e 6 mm, solo úmido (mais de 6 mm nos 2 dias anteriores, somando só dias com 4 mm ou mais) ou chance de chuva ≥ 80% |
+| ✓ Pode colher | nenhum dos casos acima (menos de 4 mm não conta como chuva) |
 
 ## Se não carregar
 

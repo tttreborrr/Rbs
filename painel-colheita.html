@@ -146,8 +146,8 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
     <div class="scroll"><table id="grid"></table></div>
     <div class="legend">
       <span><span class="sw" style="background:var(--good-bg);border:1px solid var(--good)"></span>✓ Pode colher</span>
-      <span><span class="sw" style="background:var(--warn-bg);border:1px solid var(--warn)"></span>! Atenção (solo úmido ou chance média)</span>
-      <span><span class="sw" style="background:var(--bad-bg);border:1px solid var(--bad)"></span>✕ Não colher (chuva prevista)</span>
+      <span><span class="sw" style="background:var(--warn-bg);border:1px solid var(--warn)"></span>! Atenção (chuva fraca, solo úmido ou chance alta)</span>
+      <span><span class="sw" style="background:var(--bad-bg);border:1px solid var(--bad)"></span>✕ Não colher (chuva acima de <span class="lbMm">6</span> mm)</span>
       <span><span class="sw" style="background:var(--past-bg)"></span>Histórico</span>
     </div>
   </section>
@@ -171,11 +171,11 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
       <p class="hint" style="margin-top:10px">Selecione as colunas no Excel, copie (Ctrl+C) e cole aqui (Ctrl+V). Formato: <b>id, fazenda, Coordenadas</b> (como <i>19°52'39.33"S 53°01'08.98"W</i>) ou latitude e longitude decimais em duas colunas. Opcional, depois das coordenadas: <b>Área (ha)</b> e <b>Prioridade (1 a 5, 5 = mais urgente)</b>. A região é o que vem depois do " - " no nome (RRP, CPG...).</p>
       <textarea id="txtTalhoes" spellcheck="false"></textarea>
       <div class="params">
-        <label>Chuva que impede colheita no dia (mm)<input type="number" step="0.5" id="pMm"></label>
-        <label>Chance de chuva que impede colheita (%)<input type="number" step="5" id="pProbHi"></label>
-        <label>Chance de chuva para "atenção" (%)<input type="number" step="5" id="pProbMid"></label>
+        <label>Abaixo disso não conta como chuva (mm)<input type="number" step="0.5" id="pMmLo"></label>
+        <label>Acima disso é chuva de fato: não colher (mm)<input type="number" step="0.5" id="pMm"></label>
+        <label>Chance de chuva que gera “atenção” (%, 100 = desliga)<input type="number" step="5" id="pProbHi"></label>
         <label>Dias para o solo secar após chuva<input type="number" step="1" min="0" id="pDias"></label>
-        <label>Chuva acumulada nesses dias que deixa o solo úmido (mm)<input type="number" step="1" id="pAcum"></label>
+        <label>Chuva nesses dias que deixa o solo úmido (mm, soma só dias que contam como chuva)<input type="number" step="1" id="pAcum"></label>
         <label>Capacidade de colheita (ha/dia, se tiver área)<input type="number" step="1" id="pCap"></label>
         <label>Fazendas por dia (se não tiver área)<input type="number" step="1" min="1" id="pFrentes"></label>
         <label>Dias de previsão<select id="pFc"><option>7</option><option>10</option><option>14</option><option>16</option></select></label>
@@ -214,7 +214,8 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
     "6279\tPRIMAVERA - CPG\t21°03'57.91\"S 53°56'31.16\"W",
     "6199\tSANTA MARTA - CPG\t20°53'06.76\"S 54°06'45.45\"W"
   ].join("\n");
-  var DEFAULT_PARAMS = { mm: 2, probHi: 60, probMid: 35, dias: 2, acum: 15, cap: 60, frentes: 3, fc: 7, past: 7 };
+  var DEFAULT_PARAMS = { mmLo: 4, mm: 6, probHi: 80, dias: 2, acum: 6, cap: 60, frentes: 3, fc: 7, past: 7 };
+  var PARAMS_VERSION = 3; // muda quando as regras padrão mudam
   var STORE = "painelColheita.v2";
 
   var state = { talhoes: [], params: {}, data: null, selected: 0, demo: false, region: "Todas" };
@@ -224,10 +225,10 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
     var saved = null;
     try { saved = JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) {}
     state.text = (saved && saved.text) || DEFAULT_TALHOES;
-    state.params = Object.assign({}, DEFAULT_PARAMS, (saved && saved.params) || {});
+    state.params = Object.assign({}, DEFAULT_PARAMS, (saved && saved.pv === PARAMS_VERSION && saved.params) || {});
   }
   function save() {
-    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params })); } catch (e) {}
+    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, pv: PARAMS_VERSION })); } catch (e) {}
   }
 
   // ---------- parse do texto colado do Excel ----------
@@ -336,15 +337,15 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
         var mm = (d.precipitation_sum || [])[i]; mm = mm == null ? 0 : mm;
         var prob = (d.precipitation_probability_max || [])[i];
         var acc = 0;
-        for (var j = Math.max(0, i - p.dias); j < i; j++) acc += (d.precipitation_sum[j] || 0);
+        for (var j = Math.max(0, i - p.dias); j < i; j++) { var v = d.precipitation_sum[j] || 0; if (v >= p.mmLo) acc += v; }
         var past = ds < today;
         var st = "good", why = [];
-        if (mm >= p.mm) { st = "bad"; why.push("chuva de " + fmtMm(mm)); }
-        if (prob != null && prob >= p.probHi) { st = "bad"; why.push(prob + "% de chance de chuva"); }
-        if (st !== "bad") {
-          if (acc >= p.acum) { st = "warn"; why.push("solo úmido: " + fmtMm(acc) + " nos " + p.dias + " dias anteriores"); }
-          if (prob != null && prob >= p.probMid) { st = "warn"; why.push(prob + "% de chance de chuva"); }
-          if (mm > 0.5 && mm < p.mm) { st = "warn"; why.push("garoa prevista (" + fmtMm(mm) + ")"); }
+        // regra da empresa: < 4 mm não conta como chuva; 4 a 6 mm atenção; acima de 6 mm é chuva de fato
+        if (mm > p.mm) { st = "bad"; why.push("chuva de " + fmtMm(mm)); }
+        else {
+          if (mm >= p.mmLo) { st = "warn"; why.push("chuva fraca prevista (" + fmtMm(mm) + ")"); }
+          if (acc > p.acum) { st = "warn"; why.push("solo úmido: " + fmtMm(acc) + " nos " + p.dias + " dias anteriores"); }
+          if (prob != null && prob >= p.probHi) { st = "warn"; why.push(prob + "% de chance de chuva"); }
         }
         return { date: ds, mm: mm, prob: prob, acc: acc, past: past, today: ds === today, st: st, why: why, tmax: (d.temperature_2m_max || [])[i] };
       });
@@ -522,7 +523,7 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
   function renderChart() {
     var r = state.all[state.selected]; if (!r) return;
     document.getElementById("chartTitle").textContent = "Chuva diária — " + r.t.nome;
-    var days = r.days, W = 640, H = 270, L = 40, R = 10, T = 26, B = 40;
+    var days = r.days, W = 700, H = 270, L = 40, R = 112, T = 26, B = 40;
     var max = Math.max(5, Math.max.apply(null, days.map(function (x) { return x.mm; })));
     var stepY = max <= 10 ? 2 : max <= 25 ? 5 : max <= 60 ? 10 : 20; max = Math.ceil(max / stepY) * stepY;
     var cw = (W - L - R) / days.length, bw = Math.max(4, Math.min(28, cw - 4));
@@ -530,8 +531,10 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
     var svg = '<svg viewBox="0 0 ' + W + " " + H + '" width="100%" role="img" aria-label="Chuva diária">';
     for (var v = 0; v <= max; v += stepY) svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="' + (v === 0 ? "var(--axis)" : "var(--grid)") + '"/><text x="' + (L - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + v + "</text>";
     svg += '<text x="4" y="12">mm/dia</text>';
-    var lim = Y(state.params.mm);
-    svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + lim + '" y2="' + lim + '" stroke="var(--bad)" stroke-dasharray="4 4"/><text x="' + (W - R) + '" y="' + (lim - 4) + '" text-anchor="end" style="fill:var(--ink-2)">limite ' + String(state.params.mm).replace(".", ",") + " mm</text>";
+    [[state.params.mm, "bad", "chuva de fato"], [state.params.mmLo, "warn", "conta como chuva"]].forEach(function (l) {
+      var ly = Y(l[0]);
+      svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + ly + '" y2="' + ly + '" stroke="var(--' + l[1] + ')" stroke-dasharray="4 4"/><text x="' + (W - R + 6) + '" y="' + (l[1] === "bad" ? ly - 1 : ly + 9) + '" style="fill:var(--ink-2)">' + l[2] + '</text><text x="' + (W - R + 6) + '" y="' + (l[1] === "bad" ? ly - 13 : ly + 21) + '" style="fill:var(--ink);font-weight:600">' + String(l[0]).replace(".", ",") + " mm</text>";
+    });
     days.forEach(function (x, i) {
       var cx = L + cw * i + cw / 2, y = Y(x.mm), h = Y(0) - y;
       if (x.today) svg += '<rect x="' + (L + cw * i) + '" y="' + T + '" width="' + cw + '" height="' + (H - T - B) + '" fill="var(--accent)" fill-opacity="0.08"/>';
@@ -539,7 +542,7 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
         var rr = Math.min(4, bw / 2, h);
         svg += '<path d="M' + (cx - bw / 2) + " " + Y(0) + " V" + (y + rr) + " q0 -" + rr + " " + rr + " -" + rr + " H" + (cx + bw / 2 - rr) + " q" + rr + " 0 " + rr + " " + rr + " V" + Y(0) + 'Z" fill="var(--' + (x.past ? "hist" : "fcst") + ')"/>';
       }
-      if (x.mm >= state.params.mm) svg += '<text x="' + cx + '" y="' + (y - 4) + '" text-anchor="middle" style="fill:var(--ink)">' + Math.round(x.mm) + "</text>";
+      if (x.mm >= state.params.mmLo) svg += '<text x="' + cx + '" y="' + (y - 4) + '" text-anchor="middle" style="fill:var(--ink)">' + (Math.round(x.mm * 10) / 10).toLocaleString("pt-BR") + "</text>";
       var every = Math.ceil(days.length / 14);
       if (i % every === 0 || x.today) svg += '<text x="' + cx + '" y="' + (H - B + 14) + '" text-anchor="middle" ' + (x.today ? 'style="fill:var(--accent);font-weight:700"' : "") + ">" + fmtDay(x.date).slice(4) + "</text>";
       if (!x.past) svg += '<circle cx="' + cx + '" cy="' + (H - B + 26) + '" r="4" fill="var(--' + x.st + ')"/>';
@@ -579,6 +582,7 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
   }
 
   function renderAll() {
+    document.querySelectorAll(".lbMm").forEach(function (e) { e.textContent = String(state.params.mm).replace(".", ","); });
     analyze(); buildPlan(); renderFilters();
     if (!state.rows.some(function (r) { return r.k === state.selected; })) state.selected = state.rows.length ? state.rows[0].k : 0;
     renderKpis(); renderRank(); renderMap(); renderGrid(); renderChart(); renderPlan();
@@ -607,7 +611,7 @@ textarea { width: 100%; min-height: 150px; font: 12.5px/1.4 ui-monospace, Consol
   }
 
   // ---------- configuração ----------
-  var ids = { pMm: "mm", pProbHi: "probHi", pProbMid: "probMid", pDias: "dias", pAcum: "acum", pCap: "cap", pFrentes: "frentes", pFc: "fc", pPast: "past" };
+  var ids = { pMmLo: "mmLo", pMm: "mm", pProbHi: "probHi", pDias: "dias", pAcum: "acum", pCap: "cap", pFrentes: "frentes", pFc: "fc", pPast: "past" };
   function fillForm() {
     document.getElementById("txtTalhoes").value = state.text;
     Object.keys(ids).forEach(function (id) { document.getElementById(id).value = state.params[ids[id]]; });

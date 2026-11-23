@@ -12,9 +12,9 @@ Ele já vem com as 16 fazendas e busca a previsão sozinho, de novo a cada 30 mi
 
 ## O que aparece
 
-- **Mapa**: as fazendas pintadas pela chuva do momento escolhido. Fazenda com chuva pulsa.
+- **Mapa**: mapa de verdade, com zoom e opção de satélite (OpenStreetMap e Esri). As fazendas são pintadas pela chuva do momento escolhido; fazenda com chuva pulsa. Se a rede bloquear o mapa, aparece um mapa simples no lugar.
 - **Momento**: Agora, Hoje, Amanhã e os próximos dias. O botão ▶ passa os dias um a um, como um radar.
-- **Região**: filtra RRP, CPG, ACL etc. (o que vem depois do " - " no nome).
+- **Frente**: filtra as frentes de carregamento RRP, CPG, ACL etc. (o que vem depois do " - " no nome).
 - **Leitura geral**: quantas fazendas estão com chuva agora, no dia escolhido, nas próximas 24 h e quanto choveu nos últimos 7 dias.
 - **Fazendas**: para cada uma, se está chovendo agora, a chuva hora a hora nas próximas 24 h, a previsão dos próximos 7 dias e o total dos últimos 7 dias.
   Clique numa fazenda para abrir as próximas 48 h, o histórico e o ajuste manual.
@@ -32,8 +32,8 @@ No fim da página há uma **Legenda** com as cores, siglas, a ficha de cada mode
 | Situação no dia | Padrão |
 |---|---|
 | Sem chuva | menos de 4 mm |
-| Chuva fraca | de 4 a 6 mm |
-| Chuva | acima de 6 mm |
+| Chuva | de 4 a 6 mm |
+| Chuva forte | acima de 6 mm |
 | Chovendo agora | modelo indica 0,5 mm/h ou mais na hora atual |
 
 ## Ajuste manual
@@ -45,6 +45,12 @@ Ao abrir uma fazenda, dá para informar:
 - uma observação.
 
 O ajuste vale só para o dia e fica salvo no navegador daquele computador.
+
+## Lista do mês, logo e arquivo para compartilhar
+
+- A lista colada fica salva no navegador daquele computador.
+- **Baixar painel com esta lista** gera um novo `.html` com a lista, as regras e a logo dentro. Guarde um por mês ou mande pelo Teams.
+- A **logo** é escolhida em "Lista de fazendas, logo e arquivo do mês" (imagem PNG ou JPG do computador).
 
 ## Trocar a lista de fazendas
 

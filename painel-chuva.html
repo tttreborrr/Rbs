@@ -11,19 +11,23 @@
 /* Layout: barra de controle fixa no topo; mapa + leitura geral lado a lado; quadro de fazendas em linhas, como um boletim de pluviômetros. */
 :root {
   color-scheme: light;
-  --bg: #e9edf0;          /* fundo: cinza frio, puxado para o azul */
-  --panel: #f8fafb;
-  --ink: #101a21;
-  --ink-2: #4a5964;
-  --muted: #7b8892;
-  --line: #d3dbe0;
-  --line-2: #c0cad1;
-  --dry: #e3e8ec;          /* sem chuva */
-  --rain-1: #a9cdf2;       /* chuva fraca */
+  --bg: #eceee9;          /* fundo: cinza puxado para o verde da marca */
+  --panel: #fafbf8;
+  --ink: #12201a;
+  --ink-2: #4b5a52;
+  --muted: #7d8a82;
+  --line: #d6dcd3;
+  --line-2: #c2cbc0;
+  --dry: #e4e8e2;          /* sem chuva */
+  --brand: #1d5a3a;        /* verde MS Florestal */
+  --brand-deep: #154630;
+  --lime: #8cc63f;
+  --on-brand: #ffffff;
+  --rain-1: #a9cdf2;       /* chuva (4 a 6 mm) */
   --rain-2: #1d5fbf;       /* chuva */
   --on-rain-2: #ffffff;
   --rain-bar: #1d5fbf;
-  --hl: #101a21;           /* seleção / botões: tinta, para o azul significar só chuva */
+  --hl: #1d5a3a;           /* seleção / botões: verde da marca; o azul fica só para chuva */
   --on-hl: #ffffff;
   --manual: #b4560f;
   --font-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
@@ -33,16 +37,18 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #0b1116; --panel: #121a21; --ink: #e5ecf1; --ink-2: #a6b4be; --muted: #74828c;
-    --line: #223039; --line-2: #2d3d48; --dry: #1a252d; --rain-1: #22476f; --rain-2: #4d9cf2;
-    --on-rain-2: #05111d; --rain-bar: #4d9cf2; --hl: #e5ecf1; --on-hl: #0b1116; --manual: #f0a060;
+    --bg: #0c120e; --panel: #131b16; --ink: #e6ede8; --ink-2: #a8b6ad; --muted: #76857b;
+    --line: #213027; --line-2: #2c3d32; --dry: #1b261f; --rain-1: #22476f; --rain-2: #4d9cf2;
+    --on-rain-2: #05111d; --rain-bar: #4d9cf2; --hl: #8cc63f; --on-hl: #0c1a10; --manual: #f0a060;
+    --brand: #174a30; --brand-deep: #103823; --lime: #8cc63f; --on-brand: #ffffff;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0b1116; --panel: #121a21; --ink: #e5ecf1; --ink-2: #a6b4be; --muted: #74828c;
-  --line: #223039; --line-2: #2d3d48; --dry: #1a252d; --rain-1: #22476f; --rain-2: #4d9cf2;
-  --on-rain-2: #05111d; --rain-bar: #4d9cf2; --hl: #e5ecf1; --on-hl: #0b1116; --manual: #f0a060;
+  --bg: #0c120e; --panel: #131b16; --ink: #e6ede8; --ink-2: #a8b6ad; --muted: #76857b;
+  --line: #213027; --line-2: #2c3d32; --dry: #1b261f; --rain-1: #22476f; --rain-2: #4d9cf2;
+  --on-rain-2: #05111d; --rain-bar: #4d9cf2; --hl: #8cc63f; --on-hl: #0c1a10; --manual: #f0a060;
+  --brand: #174a30; --brand-deep: #103823; --lime: #8cc63f; --on-brand: #ffffff;
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -54,10 +60,18 @@ button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--rain-2); outline-offset: 2px; }
 
 /* topo */
-.top { padding-block: 18px 14px; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.band { background: var(--brand); color: var(--on-brand); }
+.stripe { height: 5px; background: linear-gradient(90deg, var(--brand-deep) 0 72%, var(--lime) 72% 100%); }
+.top { padding-block: 16px 14px; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.brand { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.logo { display: flex; align-items: center; min-height: 44px; padding-right: 16px; border-right: 1px solid rgba(255,255,255,.28); }
+.logo img { display: block; max-height: 46px; max-width: 220px; }
+.logo .wm { font-family: var(--font-display); font-weight: 800; font-style: italic; font-size: 26px; letter-spacing: -0.01em; white-space: nowrap; }
+.logo .wm span { color: var(--lime); }
 .brand h1 { margin: 0; font-family: var(--font-display); font-stretch: 78%; font-weight: 800; font-size: 30px; letter-spacing: 0.01em; text-transform: uppercase; line-height: 1; }
-.brand p { margin: 6px 0 0; color: var(--ink-2); font-size: 13px; }
-.sync { display: flex; align-items: center; gap: 12px; color: var(--ink-2); font-size: 12.5px; }
+.brand p { margin: 6px 0 0; color: rgba(255,255,255,.78); font-size: 13px; }
+.sync { display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,.82); font-size: 12.5px; }
+.band .btn.solid { background: var(--lime); color: #0c1a10; border-color: var(--lime); }
 .sync .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; margin-right: 6px; vertical-align: 1px; }
 .sync .dot.live { background: #2f9e5b; box-shadow: 0 0 0 0 rgba(47,158,91,.5); animation: pulse 2.4s infinite; }
 .btn { border: 1px solid var(--line-2); background: var(--panel); padding: 7px 12px; border-radius: 6px; font-weight: 600; font-size: 13px; }
@@ -65,7 +79,7 @@ button { cursor: pointer; }
 .btn.solid { background: var(--hl); color: var(--on-hl); border-color: var(--hl); }
 
 /* barra de controle */
-.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-block: 1px solid var(--line); }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 1100; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-block: 1px solid var(--line); }
 .bar .wrap { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; padding-block: 10px; }
 .grp { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .grp > .lbl { font-family: var(--font-display); font-stretch: 78%; text-transform: uppercase; letter-spacing: 0.08em; font-size: 11.5px; color: var(--muted); font-weight: 700; }
@@ -85,7 +99,23 @@ button { cursor: pointer; }
 .mapbox h2, .read h2, .board-head h2 { margin: 0; font-family: var(--font-display); font-stretch: 78%; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; font-size: 15px; }
 .maphead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .maphead .when { font-family: var(--font-data); font-size: 12.5px; color: var(--ink-2); }
-#map svg { display: block; width: 100%; height: auto; }
+#map > svg { display: block; width: 100%; height: auto; }
+#map.lf { height: 460px; border-radius: 8px; overflow: hidden; background: var(--dry); }
+@media (max-width: 700px) { #map.lf { height: 360px; } }
+.lpin { background: none; border: 0; }
+.pin { position: relative; display: block; width: 20px; height: 20px; cursor: pointer; }
+.pin b { position: absolute; inset: 2px; border-radius: 50%; background: #eef0ec; border: 2px solid #ffffff; box-shadow: 0 1px 4px rgba(0,0,0,.45); transition: background .45s ease; }
+.pin.fraca b { background: #8fc0f2; }
+.pin.chuva b { background: #1d5fbf; }
+.pin.manual b { border-color: var(--manual); border-width: 3px; }
+.pin.sel b { border-color: #0b0b0b; border-width: 3px; }
+.pin .ring { position: absolute; inset: 2px; border-radius: 50%; border: 2px solid #3a86e0; opacity: 0; }
+.pin.fraca .ring, .pin.chuva .ring { animation: ripple 2.2s ease-out infinite; }
+.pin .ring.r2 { animation-delay: 1.1s; }
+.pin em { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); white-space: nowrap; font: 600 11px var(--font-body); font-style: normal; color: #12201a; background: rgba(255,255,255,.9); padding: 1px 6px; border-radius: 3px; pointer-events: none; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+#map.far .pin em { display: none; }
+#map .leaflet-control-layers, #map .leaflet-bar a { font-family: var(--font-body); }
+.maplinks { display: flex; gap: 14px; flex-wrap: wrap; }
 #map .graticule { stroke: var(--line); stroke-width: 1; }
 #map .glabel { fill: var(--muted); font: 10px var(--font-data); }
 #map .farm { cursor: pointer; }
@@ -95,12 +125,13 @@ button { cursor: pointer; }
 #map .farm.chuva circle.core { fill: var(--rain-2); }
 #map .farm.sel circle.core { stroke: var(--ink); stroke-width: 2.5; }
 #map .farm .ring { fill: none; stroke: var(--rain-2); stroke-width: 1.5; opacity: 0; transform-box: fill-box; transform-origin: center; }
-#map .farm.chuva .ring { animation: ripple 2.2s ease-out infinite; }
-#map .farm.chuva .ring.r2 { animation-delay: 1.1s; }
+#map .farm.chuva .ring, #map .farm.fraca .ring { animation: ripple 2.2s ease-out infinite; }
+#map .farm.chuva .ring.r2, #map .farm.fraca .ring.r2 { animation-delay: 1.1s; }
 #map .farm.manual circle.core { stroke: var(--manual); stroke-width: 2.5; }
 #map .flabel { fill: var(--ink); font: 600 10.5px var(--font-body); pointer-events: none; paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); margin-top: 6px; }
-.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend > span { display: inline-flex; align-items: center; white-space: pre; }
+.legend .sw { margin-right: 6px; }
 .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; border: 1px solid var(--line-2); }
 
 .read { padding: 16px; display: grid; gap: 16px; align-content: start; }
@@ -215,15 +246,19 @@ button { cursor: pointer; }
 }
 
 /* configuração */
-details.cfg { margin-bottom: 40px; }
+details.cfg { margin-bottom: 4px; border-top: 1px solid var(--line-2); }
+details.cfg:last-of-type { margin-bottom: 40px; }
+details.cfg summary { font-family: var(--font-display); font-stretch: 78%; text-transform: uppercase; letter-spacing: .05em; font-size: 15px; }
 details.cfg summary { cursor: pointer; font-weight: 700; padding: 12px 0; }
 details.cfg textarea { width: 100%; min-height: 160px; font: 12px/1.45 var(--font-data); padding: 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); }
 details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
+.cfgh { margin: 22px 0 0; font-family: var(--font-display); font-stretch: 78%; text-transform: uppercase; letter-spacing: .06em; font-size: 13px; }
+.txt { padding: 7px 9px; border-radius: 6px; border: 1px solid var(--line-2); background: var(--panel); min-width: 0; }
 .msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 12px; border: 1px solid var(--line-2); background: var(--panel); }
 .msg.err { border-color: #c9473f; }
 
 /* legenda */
-.guide { border-top: 2px solid var(--ink); padding-top: 18px; margin-top: 8px; margin-bottom: 28px; display: grid; gap: 26px; }
+.guide { padding-top: 6px; margin-bottom: 18px; display: grid; gap: 26px; }
 .guide h2 { margin: 0; font-family: var(--font-display); font-stretch: 78%; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; font-size: 22px; }
 .guide h3 { margin: 0 0 10px; font-family: var(--font-display); font-stretch: 78%; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; font-size: 14px; color: var(--ink-2); }
 .guide p { margin: 0; max-width: 72ch; color: var(--ink-2); }
@@ -259,7 +294,7 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
 .howto b { color: var(--ink); }
 .src { font-size: 12px; color: var(--muted); }
 .src a { color: var(--ink-2); }
-#tip { position: fixed; z-index: 20; pointer-events: none; background: var(--ink); color: var(--bg); padding: 7px 10px; border-radius: 6px; font-size: 12px; line-height: 1.4; max-width: 240px; display: none; }
+#tip { position: fixed; z-index: 3000; pointer-events: none; background: var(--ink); color: var(--bg); padding: 7px 10px; border-radius: 6px; font-size: 12px; line-height: 1.4; max-width: 240px; display: none; }
 #tip b { font-weight: 700; }
 
 @keyframes ripple { 0% { opacity: .8; transform: scale(1); } 100% { opacity: 0; transform: scale(3.2); } }
@@ -275,20 +310,24 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
 </style>
 </head>
 <body>
-<div class="wrap top">
+<header class="band"><div class="wrap top">
   <div class="brand">
-    <h1>Chuva nas Fazendas</h1>
-    <p id="subtitle">Mato Grosso do Sul · previsão Open-Meteo, atualizada a cada 30 min</p>
+    <div class="logo" id="logoBox"><span class="wm">MS <span>Florestal</span></span></div>
+    <div>
+      <h1>Chuva nas Fazendas</h1>
+      <p id="subtitle">Mato Grosso do Sul · previsão Open-Meteo, atualizada a cada 30 min</p>
+    </div>
   </div>
   <div class="sync">
     <span id="syncTxt"><span class="dot"></span>Carregando…</span>
     <button class="btn solid" id="btnRefresh" type="button">Atualizar</button>
   </div>
-</div>
+</div></header>
+<div class="stripe"></div>
 
 <div class="bar">
   <div class="wrap">
-    <div class="grp"><span class="lbl">Região</span><div class="seg" id="regions"></div></div>
+    <div class="grp"><span class="lbl">Frente</span><div class="seg" id="regions"></div></div>
     <div class="grp"><span class="lbl">Modelo</span><div class="seg" id="models"></div></div>
     <div class="grp"><span class="lbl">Momento</span><div class="seg" id="views"></div>
       <button class="play" id="btnPlay" type="button" title="Animar a previsão dia a dia" aria-label="Animar a previsão dia a dia"><svg viewBox="0 0 12 12"><path id="playIco" d="M2 1 L11 6 L2 11 Z"/></svg></button>
@@ -304,8 +343,8 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
       <div id="map"></div>
       <div class="legend">
         <span><span class="sw" style="background:var(--dry)"></span>Sem chuva (&lt; <span class="lo">4</span> mm)</span>
-        <span><span class="sw" style="background:var(--rain-1)"></span>Chuva fraca (<span class="lo">4</span> a <span class="hi">6</span> mm)</span>
-        <span><span class="sw" style="background:var(--rain-2)"></span>Chuva (&gt; <span class="hi">6</span> mm)</span>
+        <span><span class="sw" style="background:var(--rain-1)"></span>Chuva (<span class="lo">4</span> a <span class="hi">6</span> mm)</span>
+        <span><span class="sw" style="background:var(--rain-2)"></span>Chuva forte (&gt; <span class="hi">6</span> mm)</span>
         <span><span class="sw" style="background:transparent;border:2px solid var(--manual)"></span>Ajuste manual</span>
       </div>
     </div>
@@ -314,8 +353,8 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
       <div class="figs" id="figs"></div>
       <div class="rules">
         <h3>Regras</h3>
-        <div class="rule"><div class="t">Não conta como chuva abaixo de<small>no dia, por fazenda</small></div><div class="step" data-p="lo"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar">+</button></div></div>
-        <div class="rule"><div class="t">Chuva de fato acima de<small>entre os dois valores é chuva fraca</small></div><div class="step" data-p="hi"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar">+</button></div></div>
+        <div class="rule"><div class="t">Chuva a partir de<small>abaixo disso, sem chuva</small></div><div class="step" data-p="lo"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar">+</button></div></div>
+        <div class="rule"><div class="t">Chuva forte acima de<small>no dia, por fazenda</small></div><div class="step" data-p="hi"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar">+</button></div></div>
         <div class="rule"><div class="t">“Chovendo agora” a partir de<small>intensidade do modelo na hora atual</small></div><div class="step" data-p="now"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar">+</button></div></div>
       </div>
     </div>
@@ -324,23 +363,24 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
   <div class="board-head">
     <div><h2>Fazendas</h2><p>Clique numa fazenda para ver as horas, o histórico e fazer um ajuste manual.</p></div>
     <div class="grp"><span class="lbl">Ordenar</span><div class="seg" id="sorts">
-      <button type="button" data-s="rain">Mais chuva</button><button type="button" data-s="name">Nome</button><button type="button" data-s="region">Região</button>
+      <button type="button" data-s="rain">Mais chuva</button><button type="button" data-s="name">Nome</button><button type="button" data-s="region">Frente</button>
     </div></div>
   </div>
   <div class="board" id="board"></div>
 
-  <section class="guide" id="legenda" aria-labelledby="gTitle">
-    <h2 id="gTitle">Legenda</h2>
+  <details class="cfg" id="legenda">
+  <summary>Legenda: cores, siglas e modelos</summary>
+  <section class="guide">
 
     <div class="g2">
       <div>
         <h3>Cores e símbolos</h3>
         <dl class="gl">
           <dt><span class="chip" style="background:var(--dry);border:1px solid var(--line-2)"></span></dt><dd><b>Sem chuva.</b> Menos de <span class="lo">4</span> mm no dia. Garoa abaixo disso não conta.</dd>
-          <dt><span class="chip" style="background:var(--rain-1)"></span></dt><dd><b>Chuva fraca.</b> De <span class="lo">4</span> a <span class="hi">6</span> mm no dia.</dd>
-          <dt><span class="chip" style="background:var(--rain-2)"></span></dt><dd><b>Chuva.</b> Acima de <span class="hi">6</span> mm no dia: chuva de fato. No mapa, o ponto pulsa.</dd>
+          <dt><span class="chip" style="background:var(--rain-1)"></span></dt><dd><b>Chuva.</b> De <span class="lo">4</span> a <span class="hi">6</span> mm no dia. No mapa, o ponto pulsa.</dd>
+          <dt><span class="chip" style="background:var(--rain-2)"></span></dt><dd><b>Chuva forte.</b> Acima de <span class="hi">6</span> mm no dia.</dd>
           <dt><span class="now on" style="padding:3px 8px"><span>Chovendo</span></span></dt><dd><b>Chovendo agora.</b> O modelo indica pelo menos <span class="nw">0,5</span> mm/h na hora atual, ou alguém confirmou no ajuste manual.</dd>
-          <dt><span class="cons" style="color:var(--ink)"><i></i><i class="fraca"></i><i class="chuva"></i></span></dt><dd><b>Bolinhas dos modelos.</b> Uma para cada modelo, na ordem ECMWF, GFS e ICON. Vazia = sem chuva, meio cheia = chuva fraca, cheia = chuva. Três cheias: os modelos concordam.</dd>
+          <dt><span class="cons" style="color:var(--ink)"><i></i><i class="fraca"></i><i class="chuva"></i></span></dt><dd><b>Bolinhas dos modelos.</b> Uma para cada modelo, na ordem ECMWF, GFS e ICON. Vazia = sem chuva, meio cheia = chuva, cheia = chuva forte. Todas iguais: os modelos concordam.</dd>
           <dt><span class="ring"></span></dt><dd><b>Ajuste manual.</b> Contorno laranja no mapa e ponto laranja no dia: alguém informou a chuva medida ou se está chovendo. Vale só para o dia.</dd>
           <dt><span class="chip" style="background:var(--dry);box-shadow:0 0 0 2px var(--ink)"></span></dt><dd><b>Dia selecionado</b> no botão Momento, o mesmo que o mapa está mostrando.</dd>
         </dl>
@@ -353,7 +393,7 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
           <dt class="ab">24 h</dt><dd>Soma prevista para as próximas 24 horas, a partir da hora atual. Cada barrinha é uma hora.</dd>
           <dt class="ab">7 dias</dt><dd>Chuva que o modelo calculou para os últimos 7 dias. É estimativa, não medição.</dd>
           <dt class="ab">%</dt><dd>Chance de chover no dia, quando o modelo informa.</dd>
-          <dt class="ab">RRP, CPG, ACL</dt><dd>Região, lida do final do nome da fazenda na planilha (o que vem depois do “ - ”). Fazendas sem sufixo ficam em “Outras”.</dd>
+          <dt class="ab">RRP, CPG, ACL</dt><dd>Frente de carregamento, lida do final do nome da fazenda na planilha (o que vem depois do “ - ”). Fazendas sem sufixo ficam em “Outras”.</dd>
           <dt class="ab">#1133</dt><dd>Código da fazenda (coluna id da planilha).</dd>
           <dt class="ab">Modelo</dt><dd>Programa de computador que simula a atmosfera e calcula a previsão. Cada centro meteorológico tem o seu, e eles discordam.</dd>
           <dt class="ab">Open-Meteo</dt><dd>Serviço gratuito que entrega os dados dos modelos. É de onde o painel puxa tudo.</dd>
@@ -433,23 +473,38 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
 
     <p class="src">Dados: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (modelos ECMWF IFS, NOAA GFS e DWD ICON). Os valores são previsões e estimativas de modelo.</p>
   </section>
+  </details>
 
   <details class="cfg" id="cfg">
-    <summary>Lista de fazendas</summary>
-    <p>Para trocar a lista, selecione no Excel as colunas <b>id, fazenda, Coordenadas</b>, copie (Ctrl+C) e cole aqui (Ctrl+V). As coordenadas podem estar em graus (19°52'39.33"S 53°01'08.98"W) ou em decimal, em duas colunas. A região é o que vem depois do “ - ” no nome.</p>
+    <summary>Lista de fazendas, logo e arquivo do mês</summary>
+    <p>Para trocar a lista, selecione no Excel as colunas <b>id, fazenda, Coordenadas</b>, copie (Ctrl+C) e cole aqui (Ctrl+V). As coordenadas podem estar em graus (19°52'39.33"S 53°01'08.98"W) ou em decimal, em duas colunas. A frente é o que vem depois do “ - ” no nome.</p>
     <textarea id="txtFarms" spellcheck="false"></textarea>
     <div class="grp" style="margin-top:10px">
       <button class="btn solid" id="btnSave" type="button">Salvar lista</button>
       <button class="btn" id="btnReset" type="button">Voltar para a lista original</button>
       <button class="btn" id="btnDemo" type="button">Ver com dados de exemplo</button>
     </div>
+    <p>A lista fica salva neste navegador: ao fechar e abrir de novo, ela continua. Em outro computador, ou se o histórico do navegador for apagado, ela volta para a original.</p>
+
+    <h3 class="cfgh">Arquivo do mês</h3>
+    <p>Gera um novo arquivo .html já com a lista acima, as regras e a logo dentro dele. Guarde um por mês ou mande pelo Teams: quem abrir vê exatamente esta lista, em qualquer computador.</p>
+    <div class="grp"><label for="expName" class="lbl">Nome</label><input type="text" id="expName" class="txt" maxlength="40"><button class="btn solid" id="btnExport" type="button">Baixar painel com esta lista</button></div>
+
+    <h3 class="cfgh">Logo</h3>
+    <p>Escolha a imagem da logo da MS Florestal (PNG ou JPG) salva no computador. Ela fica guardada neste navegador e vai junto no arquivo do mês.</p>
+    <div class="grp"><input type="file" id="logoFile" accept="image/*"><button class="btn" id="btnLogoOff" type="button">Tirar logo</button></div>
   </details>
 </div>
 <div id="tip" role="tooltip"></div>
 
+<script type="application/json" id="painel-config">{"stamp":"","text":null,"params":null,"logo":""}</script>
 <script>
 (function () {
   "use strict";
+  // cópia da página como foi aberta, usada para gerar o arquivo do mês
+  var PRISTINE = "<!doctype html>\n" + document.documentElement.outerHTML;
+  var CFG = {};
+  try { CFG = JSON.parse(document.getElementById("painel-config").textContent) || {}; } catch (e) {}
 
   var DEFAULT_TALHOES = [
     "id\tfazenda\tCoordenadas",
@@ -488,14 +543,18 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
   function load() {
     var s = null;
     try { s = JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) {}
-    state.text = (s && s.text) || DEFAULT_TALHOES;
-    state.params = Object.assign({}, DEFAULT_PARAMS, (s && s.params) || {});
+    // um arquivo do mês (com lista embutida) vale mais que o que estava salvo antes neste navegador
+    var useCfg = !s || (CFG.stamp && s.baseStamp !== CFG.stamp);
+    state.baseStamp = CFG.stamp || "";
+    state.text = (!useCfg && s.text) || CFG.text || DEFAULT_TALHOES;
+    state.params = Object.assign({}, DEFAULT_PARAMS, (useCfg ? CFG.params : s.params) || {});
+    state.logo = (useCfg ? CFG.logo : s.logo) || CFG.logo || (s && s.logo) || "";
     state.manual = (s && s.manual) || {};
     state.sort = (s && s.sort) || "rain";
     state.modelSel = (s && s.modelSel) || "ecmwf";
   }
   function save() {
-    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel })); } catch (e) {}
+    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp })); } catch (e) {}
   }
 
   // ---------- números ----------
@@ -657,7 +716,7 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     var now = new Date(); now.setMinutes(0, 0, 0);
     var start = new Date(now); start.setHours(0); start.setDate(start.getDate() - 7);
     var seed = 11; function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
-    // frentes de chuva: [hora a partir de agora, duração h, intensidade mm/h, região afetada ou "*"]
+    // frentes de chuva: [hora a partir de agora, duração h, intensidade mm/h, frente afetada ou "*"]
     var storms = [[-130, 5, 3.2, "*"], [-60, 3, 1.2, "RRP"], [-1, 4, 2.4, "CPG"], [20, 3, 0.7, "*"], [52, 6, 2.6, "*"], [60, 3, 1.5, "RRP"], [100, 4, 0.9, "ACL"], [125, 5, 1.8, "CPG"]];
     return state.farms.map(function (t, k) {
       var hourly = { time: [], precipitation: [], precipitation_probability: [] };
@@ -699,7 +758,7 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
 
   // ---------- regras ----------
   function status(mm) { var p = state.params; return mm > p.hi ? "chuva" : mm >= p.lo ? "fraca" : "seco"; }
-  var LABEL = { seco: "Sem chuva", fraca: "Chuva fraca", chuva: "Chuva" };
+  var LABEL = { seco: "Sem chuva", fraca: "Chuva", chuva: "Chuva forte" };
   function key(t) { return t.id || t.nome; }
 
   function model() {
@@ -871,9 +930,9 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     var rows = state.rows, N = rows.length, v = state.view;
     var rainNow = rows.filter(function (r) { return r.agora; });
     var vv = v === "now" ? 0 : v;
-    var dayRows = rows.filter(function (r) { return r.fut[vv] && r.fut[vv].st === "chuva"; });
-    var dayWeak = rows.filter(function (r) { return r.fut[vv] && r.fut[vv].st === "fraca"; });
-    var w24 = rows.filter(function (r) { return r.sum24 > state.params.hi; });
+    var dayRows = rows.filter(function (r) { return r.fut[vv] && r.fut[vv].st !== "seco"; });
+    var dayWeak = rows.filter(function (r) { return r.fut[vv] && r.fut[vv].st === "chuva"; });
+    var w24 = rows.filter(function (r) { return r.sum24 >= state.params.lo; });
     var avg7 = rows.reduce(function (s, r) { return s + r.sum7; }, 0) / Math.max(1, N);
     var max7 = rows.reduce(function (b, r) { return r.sum7 > b.sum7 ? r : b; }, { sum7: -1 });
     var box = document.getElementById("figs");
@@ -887,8 +946,8 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
       document.getElementById(id + "s").textContent = s;
     }
     set("fNow", "Chovendo agora", rainNow.length, " de " + N, names(rainNow));
-    set("fDay", "Com chuva " + (vv === 0 ? "hoje" : vv === 1 ? "amanhã" : viewName(vv, true)), dayRows.length, " de " + N, dayRows.length || dayWeak.length ? names(dayRows) + (dayWeak.length ? " · fraca em " + dayWeak.length : "") : "nenhuma fazenda");
-    set("f24", "Chuva nas próximas 24 h", w24.length, " de " + N, w24.length ? names(w24) : "acima de " + f1(state.params.hi) + " mm em nenhuma");
+    set("fDay", "Com chuva " + (vv === 0 ? "hoje" : vv === 1 ? "amanhã" : viewName(vv, true)), dayRows.length, " de " + N, dayRows.length ? names(dayRows) + (dayWeak.length ? " · forte em " + dayWeak.length : "") : "nenhuma fazenda");
+    set("f24", "Chuva nas próximas 24 h", w24.length, " de " + N, w24.length ? names(w24) : f1(state.params.lo) + " mm ou mais em nenhuma");
     set("f7", "Choveu nos últimos 7 dias", avg7, " mm", "média · maior: " + (max7.t ? max7.t.nome.replace(/\s-\s*[^-]+$/, "") + " (" + f1(max7.sum7) + " mm)" : "–"), function (x) { return f1(x); });
   }
 
@@ -896,6 +955,7 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
   function shortName(t) { return t.nome.replace(/\s-\s*[^-]+$/, "").split(" ").slice(0, 2).join(" "); }
   function dms(v, pos, neg) { var a = Math.abs(v), d = Math.floor(a), m = Math.round((a - d) * 60); if (m === 60) { d++; m = 0; } return d + "°" + (m ? String(m).padStart(2, "0") + "'" : "") + (v < 0 ? neg : pos); }
   function renderMap() {
+    if (window.L) { renderLeaflet(); return; }
     var rows = state.rows, W = 600, H = 400, pad = 44;
     if (!rows.length) { document.getElementById("map").innerHTML = ""; return; }
     var lats = rows.map(function (r) { return r.t.lat; }), lons = rows.map(function (r) { return r.t.lon; });
@@ -943,7 +1003,51 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     if (r.ov && r.ov.note) h += "<br><i>" + esc(r.ov.note) + "</i>";
     return h;
   }
+  // mapa de verdade (Leaflet + OpenStreetMap / satélite Esri), carregado depois; se não carregar, fica o mapa simples
+  var LM = null, LMLayer = null, lastFit = "", tileErrs = 0;
+  function loadLeaflet() {
+    var css = document.createElement("link"); css.rel = "stylesheet"; css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"; document.head.appendChild(css);
+    var js = document.createElement("script"); js.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+    js.onload = function () { if (window.L && state.rows) renderMap(); };
+    document.head.appendChild(js);
+  }
+  function renderLeaflet() {
+    var box = document.getElementById("map"), rows = state.rows;
+    if (!LM) {
+      box.innerHTML = ""; box.classList.add("lf");
+      LM = L.map(box, { scrollWheelZoom: true, zoomSnap: 0.5 });
+      var osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" });
+      var sat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Imagens © Esri" });
+      osm.addTo(LM);
+      L.control.layers({ "Mapa": osm, "Satélite": sat }, null, { position: "topright", collapsed: false }).addTo(LM);
+      L.control.scale({ imperial: false }).addTo(LM);
+      [osm, sat].forEach(function (l) { l.on("tileerror", function () { if (++tileErrs === 8) setMsg("O mapa não conseguiu baixar as imagens. A rede pode estar bloqueando <b>tile.openstreetmap.org</b> ou <b>server.arcgisonline.com</b>. Os pontos e as cores continuam certos.", "err"); }); });
+      LM.on("zoomend", function () { box.classList.toggle("far", LM.getZoom() < 10); });
+      setTimeout(function () { LM.invalidateSize(); }, 0);
+    }
+    if (LMLayer) LMLayer.remove();
+    LMLayer = L.layerGroup().addTo(LM);
+    rows.forEach(function (r) {
+      var icon = L.divIcon({ className: "lpin", iconSize: [20, 20], iconAnchor: [10, 10],
+        html: '<span class="pin" data-k="' + r.k + '"><i class="ring"></i><i class="ring r2"></i><b></b><em>' + esc(shortName(r.t)) + "</em></span>" });
+      var m = L.marker([r.t.lat, r.t.lon], { icon: icon, keyboard: true, alt: r.t.nome });
+      m.on("click", function () { openFarm(r.k, true); });
+      LMLayer.addLayer(m);
+    });
+    var fitKey = state.region + "|" + rows.map(function (r) { return r.k; }).join(",");
+    if (fitKey !== lastFit && rows.length) {
+      lastFit = fitKey;
+      LM.fitBounds(L.latLngBounds(rows.map(function (r) { return [r.t.lat, r.t.lon]; })).pad(0.12), { animate: !reduce, maxZoom: 12 });
+    }
+    box.classList.toggle("far", LM.getZoom() < 10);
+    paintMap();
+  }
   function paintMap() {
+    document.querySelectorAll("#map .pin").forEach(function (g) {
+      var r = state.all[+g.getAttribute("data-k")], st = viewStatus(r, state.view);
+      g.className = "pin " + st + (r.k === state.open ? " sel" : "") + (r.ov ? " manual" : "");
+      g.setAttribute("data-tip", farmTip(r, state.view));
+    });
     document.querySelectorAll("#map .farm").forEach(function (g) {
       var r = state.all[+g.getAttribute("data-k")], st = viewStatus(r, state.view);
       g.setAttribute("class", "farm " + st + (r.k === state.open ? " sel" : "") + (r.ov ? " manual" : ""));
@@ -1007,7 +1111,7 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     var rows = sorted();
     board.className = "board" + (o.animate && !reduce ? " anim" : "");
     board.innerHTML = '<div class="rowg cols"><div>Fazenda</div><div>Agora</div><div>Próximas 24 h (mm por hora)</div><div id="colD7">Próximos 7 dias (mm no dia)</div><div>Últimos 7 dias</div></div>' +
-      (rows.length ? rows.map(rowHtml).join("") : '<div class="rowg">Nenhuma fazenda nesta região.</div>');
+      (rows.length ? rows.map(rowHtml).join("") : '<div class="rowg">Nenhuma fazenda nesta frente.</div>');
     markColumn(); paintSorts();
     if (o.flip && !reduce) board.querySelectorAll(".farmrow").forEach(function (el) {
       var b = before[el.getAttribute("data-k")]; if (b == null) return;
@@ -1082,7 +1186,7 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
       var rowsC = mk.map(function (m) { return [m, r.cons[m]]; });
       var agreeTxt = r.fut.map(function (d, i) {
         var di = r.todayIdx + i, sts = mk.map(function (m) { return status(r.cons[m][di] || 0); });
-        var nR = sts.filter(function (x) { return x === "chuva"; }).length;
+        var nR = sts.filter(function (x) { return x !== "seco"; }).length;
         return nR === mk.length ? "todos" : nR ? nR + " de " + mk.length : "";
       });
       var firstAgree = agreeTxt.map(function (a, i) { return a ? (i === 0 ? "hoje" : i === 1 ? "amanhã" : dayShort(r.fut[i].date)) + ": " + a : ""; }).filter(Boolean);
@@ -1091,19 +1195,19 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
         rowsC.map(function (row) {
           return '<tr class="' + (row[0] === state.modelSel ? "sel" : "") + '"><th class="m">' + modelLabel(row[0]) + "</th>" + r.fut.map(function (d, i) { var v = row[1][r.todayIdx + i] || 0; return '<td class="' + status(v) + '">' + f1(v) + "</td>"; }).join("") + "</tr>";
         }).join("") + "</table></div>" +
-        '<div class="agree">' + (firstAgree.length ? "Dias com chuva acima de " + f1(p.hi) + " mm em pelo menos um modelo: " + firstAgree.join(" · ") + ". Quanto mais modelos concordam, mais confiável." : "Nenhum modelo prevê chuva acima de " + f1(p.hi) + " mm nos próximos 7 dias.") + "</div></div>";
+        '<div class="agree">' + (firstAgree.length ? "Dias com chuva (" + f1(p.lo) + " mm ou mais) em pelo menos um modelo: " + firstAgree.join(" · ") + ". Quanto mais modelos concordam, mais confiável." : "Nenhum modelo prevê chuva de " + f1(p.lo) + " mm ou mais nos próximos 7 dias.") + "</div></div>";
     }
     var windy = "https://www.windy.com/" + r.t.lat.toFixed(3) + "/" + r.t.lon.toFixed(3) + "?rain," + r.t.lat.toFixed(3) + "," + r.t.lon.toFixed(3) + ",10";
     return '<div class="dgrid">' +
       '<div><h4>Próximas 48 horas · mm por hora · ' + esc(modelLabel(state.modelSel)) + '</h4>' + barChart(h48, { min: 2, label: "Chuva por hora" }) + "</div>" +
-      '<div><h4>7 dias atrás até 7 dias à frente · mm por dia</h4>' + barChart(days, { min: p.hi + 2, label: "Chuva por dia", lines: [[p.hi, "rain-2", "chuva " + f1(p.hi)], [p.lo, "muted", "conta " + f1(p.lo)]] }) + "</div>" +
+      '<div><h4>7 dias atrás até 7 dias à frente · mm por dia</h4>' + barChart(days, { min: p.hi + 2, label: "Chuva por dia", lines: [[p.hi, "rain-2", "forte " + f1(p.hi)], [p.lo, "muted", "chuva " + f1(p.lo)]] }) + "</div>" +
       '<form class="manform" data-k="' + k + '"><h4 style="margin:0">Ajuste manual de hoje</h4>' +
         '<label for="m-mm-' + k + '">Chuva medida no pluviômetro hoje (mm)<span class="row"><span class="step" data-m="mm"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output id="m-mm-' + k + '">' + (ov.mm != null && ov.mm !== "" ? f1(+ov.mm) : "—") + '</output><button type="button" data-d="1" aria-label="Aumentar">+</button></span><button class="btn" type="button" data-clear-mm>usar o modelo</button></span></label>' +
         '<label for="m-ag-' + k + '">Está chovendo agora?<select id="m-ag-' + k + '"><option value="">Usar o modelo</option><option value="sim"' + (ov.agora === "sim" ? " selected" : "") + '>Sim, confirmado no campo</option><option value="nao"' + (ov.agora === "nao" ? " selected" : "") + ">Não, confirmado no campo</option></select></label>" +
         '<label for="m-nt-' + k + '">Observação<input type="text" id="m-nt-' + k + '" maxlength="120" placeholder="ex.: estrada molhada no talhão 12" value="' + attr(ov.note || "") + '"></label>' +
         '<div class="row"><button class="btn solid" type="submit">Salvar ajuste</button><button class="btn" type="button" data-clear>Limpar</button></div>' +
         "<small>Vale só para hoje e fica salvo neste computador. Amanhã volta para o modelo.</small>" +
-        '<a class="windy" href="' + windy + '" target="_blank" rel="noopener">Abrir esta fazenda no Windy ↗</a></form>' +
+        '<span class="maplinks"><a class="windy" href="' + windy + '" target="_blank" rel="noopener">Abrir no Windy ↗</a><a class="windy" href="https://www.google.com/maps/search/?api=1&amp;query=' + r.t.lat.toFixed(5) + "," + r.t.lon.toFixed(5) + '" target="_blank" rel="noopener">Abrir no Google Maps ↗</a></span></form>' +
       cmp + "</div>";
   }
   var draftMm = {};
@@ -1177,9 +1281,54 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
   document.getElementById("btnReset").onclick = function () { state.text = DEFAULT_TALHOES; document.getElementById("txtFarms").value = state.text; save(); refresh(false); };
   document.getElementById("btnDemo").onclick = function () { state.text = document.getElementById("txtFarms").value; refresh(true); };
 
+  // ---------- logo ----------
+  function paintLogo() {
+    var box = document.getElementById("logoBox");
+    box.innerHTML = state.logo ? '<img src="' + state.logo + '" alt="MS Florestal">' : '<span class="wm">MS <span>Florestal</span></span>';
+  }
+  document.getElementById("logoFile").addEventListener("change", function (e) {
+    var f = e.target.files && e.target.files[0]; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var h = Math.min(120, img.height), w = Math.round(img.width * h / img.height);
+        var c = document.createElement("canvas"); c.width = w; c.height = h;
+        c.getContext("2d").drawImage(img, 0, 0, w, h);
+        state.logo = c.toDataURL("image/png"); save(); paintLogo();
+        setMsg("Logo salva.", "", 2500);
+      };
+      img.onerror = function () { setMsg("Não consegui ler essa imagem. Use um arquivo PNG ou JPG.", "err", 5000); };
+      img.src = rd.result;
+    };
+    rd.readAsDataURL(f);
+  });
+  document.getElementById("btnLogoOff").onclick = function () { state.logo = ""; save(); paintLogo(); };
+
+  // ---------- arquivo do mês ----------
+  var MES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  document.getElementById("btnExport").onclick = function () {
+    state.text = document.getElementById("txtFarms").value;
+    var farms = parseTalhoes(state.text);
+    if (!farms.length) { setMsg("A lista não tem nenhuma fazenda com coordenada válida.", "err", 5000); return; }
+    var now = new Date();
+    var nome = (document.getElementById("expName").value.trim() || MES[now.getMonth()] + "-" + now.getFullYear()).replace(/[^\w\-]+/g, "-");
+    var cfg = { stamp: now.toISOString(), text: state.text, params: state.params, logo: state.logo };
+    var json = JSON.stringify(cfg).replace(/</g, "\\u003c");
+    var html = PRISTINE.replace(/(<script type="application\/json" id="painel-config">)[\s\S]*?(<\/script>)/, function (_, a, b) { return a + json + b; });
+    var url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+    var a = document.createElement("a"); a.href = url; a.download = "painel-chuva-" + nome + ".html";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    setMsg("Arquivo <b>painel-chuva-" + esc(nome) + ".html</b> gerado com " + farms.length + " fazendas. Ele está na pasta Downloads.", "", 7000);
+  };
+
   load();
+  paintLogo();
+  (function () { var n = new Date(); document.getElementById("expName").value = MES[n.getMonth()] + "-" + n.getFullYear(); })();
   document.getElementById("txtFarms").value = state.text;
   refresh(/[?&]demo/.test(location.search));
+  loadLeaflet();
   setInterval(function () { if (!state.demo) refresh(false); }, REFRESH_MIN * 60000);
   setInterval(syncText, 60000);
 })();

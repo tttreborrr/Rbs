@@ -222,6 +222,43 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
 .msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 12px; border: 1px solid var(--line-2); background: var(--panel); }
 .msg.err { border-color: #c9473f; }
 
+/* legenda */
+.guide { border-top: 2px solid var(--ink); padding-top: 18px; margin-top: 8px; margin-bottom: 28px; display: grid; gap: 26px; }
+.guide h2 { margin: 0; font-family: var(--font-display); font-stretch: 78%; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; font-size: 22px; }
+.guide h3 { margin: 0 0 10px; font-family: var(--font-display); font-stretch: 78%; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; font-size: 14px; color: var(--ink-2); }
+.guide p { margin: 0; max-width: 72ch; color: var(--ink-2); }
+.g2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 26px; }
+@media (max-width: 900px) { .g2 { grid-template-columns: 1fr; } }
+.gl { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 0 14px; margin: 0; }
+.gl dt { padding: 8px 0; border-top: 1px solid var(--line); display: flex; align-items: flex-start; font-weight: 700; font-size: 13px; }
+.gl dd { margin: 0; padding: 8px 0; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
+.gl dd b { color: var(--ink); }
+.gl .chip { display: inline-block; width: 40px; height: 20px; border-radius: 5px; }
+.gl .ring { width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid var(--manual); background: var(--rain-1); display: inline-block; }
+.gl .ab { font-family: var(--font-data); font-size: 12.5px; }
+.models { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 1000px) { .models { grid-template-columns: 1fr; } }
+.mcard { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.mcard .mh { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.mcard .mn { font-family: var(--font-display); font-stretch: 78%; font-weight: 800; font-size: 24px; letter-spacing: 0.02em; }
+.mcard .mo { font-size: 12px; color: var(--muted); }
+.mcard .full { font-size: 12.5px; color: var(--ink-2); margin: 2px 0 10px; }
+.mcard dl { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 5px 10px; margin: 0; font-size: 12.5px; }
+.mcard dt { color: var(--muted); }
+.mcard dd { margin: 0; }
+.conf { display: grid; gap: 6px; }
+.conf .cr { display: grid; grid-template-columns: 110px minmax(0, 1fr) 70px; gap: 12px; align-items: center; font-size: 13px; }
+.conf .track { height: 8px; border-radius: 4px; background: var(--dry); overflow: hidden; }
+.conf .track i { display: block; height: 100%; background: var(--ink-2); border-radius: 4px; }
+.conf .cv { color: var(--ink-2); font-size: 12px; }
+.howto { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; counter-reset: st; }
+@media (max-width: 1000px) { .howto { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .howto { grid-template-columns: 1fr; } }
+.howto li { counter-increment: st; border-top: 1px solid var(--line-2); padding-top: 10px; font-size: 13px; color: var(--ink-2); }
+.howto li::before { content: counter(st); display: block; font-family: var(--font-data); font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.howto b { color: var(--ink); }
+.src { font-size: 12px; color: var(--muted); }
+.src a { color: var(--ink-2); }
 #tip { position: fixed; z-index: 20; pointer-events: none; background: var(--ink); color: var(--bg); padding: 7px 10px; border-radius: 6px; font-size: 12px; line-height: 1.4; max-width: 240px; display: none; }
 #tip b { font-weight: 700; }
 
@@ -291,6 +328,111 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     </div></div>
   </div>
   <div class="board" id="board"></div>
+
+  <section class="guide" id="legenda" aria-labelledby="gTitle">
+    <h2 id="gTitle">Legenda</h2>
+
+    <div class="g2">
+      <div>
+        <h3>Cores e símbolos</h3>
+        <dl class="gl">
+          <dt><span class="chip" style="background:var(--dry);border:1px solid var(--line-2)"></span></dt><dd><b>Sem chuva.</b> Menos de <span class="lo">4</span> mm no dia. Garoa abaixo disso não conta.</dd>
+          <dt><span class="chip" style="background:var(--rain-1)"></span></dt><dd><b>Chuva fraca.</b> De <span class="lo">4</span> a <span class="hi">6</span> mm no dia.</dd>
+          <dt><span class="chip" style="background:var(--rain-2)"></span></dt><dd><b>Chuva.</b> Acima de <span class="hi">6</span> mm no dia: chuva de fato. No mapa, o ponto pulsa.</dd>
+          <dt><span class="now on" style="padding:3px 8px"><span>Chovendo</span></span></dt><dd><b>Chovendo agora.</b> O modelo indica pelo menos <span class="nw">0,5</span> mm/h na hora atual, ou alguém confirmou no ajuste manual.</dd>
+          <dt><span class="cons" style="color:var(--ink)"><i></i><i class="fraca"></i><i class="chuva"></i></span></dt><dd><b>Bolinhas dos modelos.</b> Uma para cada modelo, na ordem ECMWF, GFS e ICON. Vazia = sem chuva, meio cheia = chuva fraca, cheia = chuva. Três cheias: os modelos concordam.</dd>
+          <dt><span class="ring"></span></dt><dd><b>Ajuste manual.</b> Contorno laranja no mapa e ponto laranja no dia: alguém informou a chuva medida ou se está chovendo. Vale só para o dia.</dd>
+          <dt><span class="chip" style="background:var(--dry);box-shadow:0 0 0 2px var(--ink)"></span></dt><dd><b>Dia selecionado</b> no botão Momento, o mesmo que o mapa está mostrando.</dd>
+        </dl>
+      </div>
+      <div>
+        <h3>Siglas e termos</h3>
+        <dl class="gl">
+          <dt class="ab">mm</dt><dd>Milímetros de chuva. <b>1 mm = 1 litro de água por metro quadrado.</b></dd>
+          <dt class="ab">mm/h</dt><dd>Intensidade: quantos milímetros caem em uma hora.</dd>
+          <dt class="ab">24 h</dt><dd>Soma prevista para as próximas 24 horas, a partir da hora atual. Cada barrinha é uma hora.</dd>
+          <dt class="ab">7 dias</dt><dd>Chuva que o modelo calculou para os últimos 7 dias. É estimativa, não medição.</dd>
+          <dt class="ab">%</dt><dd>Chance de chover no dia, quando o modelo informa.</dd>
+          <dt class="ab">RRP, CPG, ACL</dt><dd>Região, lida do final do nome da fazenda na planilha (o que vem depois do “ - ”). Fazendas sem sufixo ficam em “Outras”.</dd>
+          <dt class="ab">#1133</dt><dd>Código da fazenda (coluna id da planilha).</dd>
+          <dt class="ab">Modelo</dt><dd>Programa de computador que simula a atmosfera e calcula a previsão. Cada centro meteorológico tem o seu, e eles discordam.</dd>
+          <dt class="ab">Open-Meteo</dt><dd>Serviço gratuito que entrega os dados dos modelos. É de onde o painel puxa tudo.</dd>
+          <dt class="ab">Windy</dt><dd>Site e aplicativo que mostra os mesmos modelos em mapa. Por padrão exibe o ECMWF.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div>
+      <h3>Os modelos</h3>
+      <div class="models">
+        <article class="mcard">
+          <div class="mh"><span class="mn">ECMWF</span><span class="mo">Europa</span></div>
+          <div class="full">IFS, do Centro Europeu de Previsões Meteorológicas de Médio Prazo</div>
+          <dl>
+            <dt>Quem faz</dt><dd>Organização mantida por mais de 30 países europeus</dd>
+            <dt>Detalhe</dt><dd>9 km no modelo original; cerca de 25 km na versão gratuita usada aqui</dd>
+            <dt>Atualiza</dt><dd>4 vezes por dia</dd>
+            <dt>Feito para</dt><dd>Previsão do mundo todo, de 1 a 15 dias</dd>
+            <dt>Quem usa</dt><dd>Serviços meteorológicos, empresas de energia e agro; é o modelo padrão do Windy</dd>
+            <dt>Confiança</dt><dd>Costuma ser o modelo global mais preciso nas comparações internacionais. É a melhor referência única.</dd>
+          </dl>
+        </article>
+        <article class="mcard">
+          <div class="mh"><span class="mn">GFS</span><span class="mo">Estados Unidos</span></div>
+          <div class="full">Global Forecast System, da NOAA (serviço de clima e oceanos dos EUA)</div>
+          <dl>
+            <dt>Quem faz</dt><dd>Governo dos Estados Unidos (NOAA / NCEP)</dd>
+            <dt>Detalhe</dt><dd>Cerca de 13 a 25 km</dd>
+            <dt>Atualiza</dt><dd>4 vezes por dia</dd>
+            <dt>Feito para</dt><dd>Previsão do mundo todo, até 16 dias</dd>
+            <dt>Quem usa</dt><dd>Dados públicos e gratuitos: base da maioria dos aplicativos de clima</dd>
+            <dt>Confiança</dt><dd>Boa, mas em geral um pouco abaixo do ECMWF. Útil como segunda opinião.</dd>
+          </dl>
+        </article>
+        <article class="mcard">
+          <div class="mh"><span class="mn">ICON</span><span class="mo">Alemanha</span></div>
+          <div class="full">ICOsahedral Nonhydrostatic, do DWD (serviço meteorológico alemão)</div>
+          <dl>
+            <dt>Quem faz</dt><dd>DWD, com o Instituto Max Planck de Meteorologia</dd>
+            <dt>Detalhe</dt><dd>Cerca de 13 km (versão global, a que cobre o Brasil)</dd>
+            <dt>Atualiza</dt><dd>4 vezes por dia</dd>
+            <dt>Feito para</dt><dd>Previsão do mundo todo, até 7 dias e meio</dd>
+            <dt>Quem usa</dt><dd>Serviços meteorológicos europeus; aparece no Windy como opção</dd>
+            <dt>Confiança</dt><dd>Boa nos primeiros dias. Terceira opinião para desempatar.</dd>
+          </dl>
+        </article>
+      </div>
+      <p style="margin-top:12px"><b>Média</b> é a média simples dos três, calculada pelo painel. Ela reduz o erro de um modelo que exagera, mas suaviza pancadas fortes. Na prática: <b>quando os três concordam, confie; quando discordam, trate como incerto.</b></p>
+    </div>
+
+    <div class="g2">
+      <div>
+        <h3>Quanto confiar, por prazo</h3>
+        <div class="conf">
+          <div class="cr"><span>Hoje e amanhã</span><span class="track"><i style="width:85%"></i></span><span class="cv">alta</span></div>
+          <div class="cr"><span>3 a 5 dias</span><span class="track"><i style="width:58%"></i></span><span class="cv">média</span></div>
+          <div class="cr"><span>6 e 7 dias</span><span class="track"><i style="width:32%"></i></span><span class="cv">baixa</span></div>
+        </div>
+        <p style="margin-top:10px">Vale para saber <b>se</b> vai chover. Acertar <b>quantos mm</b> é mais difícil, em qualquer prazo.</p>
+      </div>
+      <div>
+        <h3>Limites de qualquer previsão</h3>
+        <p>Pancada de verão é pequena: podem cair 30 mm numa fazenda e nada na vizinha. Os modelos enxergam a região em quadrados de 9 a 25 km, então não acertam o ponto exato de uma tempestade isolada. O “agora” também é cálculo do modelo, não radar nem estação. Por isso existe o ajuste manual: o pluviômetro da fazenda é sempre a medida certa.</p>
+      </div>
+    </div>
+
+    <div>
+      <h3>Como este painel funciona</h3>
+      <ol class="howto">
+        <li><b>Arquivo único.</b> É uma página que roda no navegador (Edge ou Chrome). Não precisa instalar nada nem de servidor.</li>
+        <li><b>Busca os dados.</b> Ao abrir e a cada 30 minutos, pede à Open-Meteo a chuva na coordenada de cada fazenda: 7 dias para trás, 7 para a frente, hora a hora, nos três modelos.</li>
+        <li><b>Aplica as regras.</b> Compara os milímetros com os limites (<span class="lo">4</span> e <span class="hi">6</span> mm, ajustáveis com − e +) e pinta cada fazenda e cada dia.</li>
+        <li><b>Guarda os ajustes.</b> Regras, ajustes manuais e a lista de fazendas ficam salvos só no navegador deste computador. Nenhum dado da empresa é enviado: só as coordenadas vão para a Open-Meteo.</li>
+      </ol>
+    </div>
+
+    <p class="src">Dados: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (modelos ECMWF IFS, NOAA GFS e DWD ICON). Os valores são previsões e estimativas de modelo.</p>
+  </section>
 
   <details class="cfg" id="cfg">
     <summary>Lista de fazendas</summary>
@@ -693,6 +835,7 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     });
     document.querySelectorAll(".lo").forEach(function (e) { e.textContent = f1(state.params.lo); });
     document.querySelectorAll(".hi").forEach(function (e) { e.textContent = f1(state.params.hi); });
+    document.querySelectorAll(".nw").forEach(function (e) { e.textContent = f1(state.params.now); });
   }
   document.querySelector(".rules").addEventListener("click", function (e) {
     var b = e.target.closest(".step button"); if (!b) return;

@@ -25,6 +25,8 @@ No topo dá para escolher o modelo: **ECMWF** (europeu, o mesmo que o Windy most
 Nas células dos próximos 7 dias, as três bolinhas mostram o que cada modelo prevê (vazia = sem chuva, meio cheia = chuva fraca, cheia = chuva).
 Ao abrir uma fazenda aparece a tabela comparando os três e um link para abrir o mesmo ponto no Windy.
 
+No fim da página há uma **Legenda** com as cores, siglas, a ficha de cada modelo (quem faz, detalhe, para que serve, confiança) e como o painel funciona.
+
 ## Regras (botões − e + na tela)
 
 | Situação no dia | Padrão |

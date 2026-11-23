@@ -176,27 +176,36 @@ in
         in
             if List.Contains({&quot;S&quot;, &quot;W&quot;, &quot;O&quot;}, hemisferio) then -valor else valor,
 
-    Chamar = (lat as number, lon as number) as record =&gt;
-        Json.Document(
-            Web.Contents(
-                &quot;https://api.open-meteo.com&quot;,
-                [
-                    RelativePath = &quot;v1/forecast&quot;,
-                    Query = [
-                        latitude = Number.ToText(lat, &quot;0.0000&quot;, &quot;en-US&quot;),
-                        longitude = Number.ToText(lon, &quot;0.0000&quot;, &quot;en-US&quot;),
-                        current = &quot;precipitation&quot;,
-                        hourly = &quot;precipitation,precipitation_probability&quot;,
-                        daily = &quot;precipitation_sum,precipitation_probability_max&quot;,
-                        models = &quot;ecmwf_ifs025,gfs_seamless,icon_seamless&quot;,
-                        past_days = &quot;7&quot;,
-                        forecast_days = &quot;7&quot;,
-                        timezone = &quot;America/Campo_Grande&quot;
-                    ],
-                    Timeout = #duration(0, 0, 2, 0)
-                ]
+    // Pede a resposta compactada em gzip: em alguns computadores o Power BI
+    // não consegue abrir a resposta no formato &quot;deflate&quot; (erro &quot;Dados inválidos
+    // encontrados durante a decodificação&quot;). Se não der, tenta sem compressão.
+    Pedir = (lat as number, lon as number, compressao as text) as record =&gt;
+        let
+            j = Json.Document(
+                Web.Contents(
+                    &quot;https://api.open-meteo.com&quot;,
+                    [
+                        RelativePath = &quot;v1/forecast&quot;,
+                        Query = [
+                            latitude = Number.ToText(lat, &quot;0.0000&quot;, &quot;en-US&quot;),
+                            longitude = Number.ToText(lon, &quot;0.0000&quot;, &quot;en-US&quot;),
+                            current = &quot;precipitation&quot;,
+                            hourly = &quot;precipitation,precipitation_probability&quot;,
+                            daily = &quot;precipitation_sum,precipitation_probability_max&quot;,
+                            models = &quot;ecmwf_ifs025,gfs_seamless,icon_seamless&quot;,
+                            past_days = &quot;7&quot;,
+                            forecast_days = &quot;7&quot;,
+                            timezone = &quot;America/Campo_Grande&quot;
+                        ],
+                        Headers = [#&quot;Accept-Encoding&quot; = compressao],
+                        Timeout = #duration(0, 0, 2, 0)
+                    ]
+                )
             )
-        ),
+        in
+            if Record.HasFields(j, {&quot;daily&quot;, &quot;hourly&quot;, &quot;current&quot;}) then j else error &quot;Resposta da Open-Meteo sem os dados de chuva&quot;,
+    Chamar = (lat as number, lon as number) as record =&gt;
+        try Pedir(lat, lon, &quot;gzip&quot;) otherwise Pedir(lat, lon, &quot;identity&quot;),
 
     Planilha = Excel.Workbook(File.Contents(CaminhoFazendas), null, true),
     Tabela = Planilha{[Item = &quot;Fazendas&quot;, Kind = &quot;Table&quot;]}[Data],

@@ -88,27 +88,36 @@ let
         in
             if List.Contains({"S", "W", "O"}, hemisferio) then -valor else valor,
 
-    Chamar = (lat as number, lon as number) as record =>
-        Json.Document(
-            Web.Contents(
-                "https://api.open-meteo.com",
-                [
-                    RelativePath = "v1/forecast",
-                    Query = [
-                        latitude = Number.ToText(lat, "0.0000", "en-US"),
-                        longitude = Number.ToText(lon, "0.0000", "en-US"),
-                        current = "precipitation",
-                        hourly = "precipitation,precipitation_probability",
-                        daily = "precipitation_sum,precipitation_probability_max",
-                        models = "ecmwf_ifs025,gfs_seamless,icon_seamless",
-                        past_days = "7",
-                        forecast_days = "7",
-                        timezone = "America/Campo_Grande"
-                    ],
-                    Timeout = #duration(0, 0, 2, 0)
-                ]
+    // Pede a resposta compactada em gzip: em alguns computadores o Power BI
+    // não consegue abrir a resposta no formato "deflate" (erro "Dados inválidos
+    // encontrados durante a decodificação"). Se não der, tenta sem compressão.
+    Pedir = (lat as number, lon as number, compressao as text) as record =>
+        let
+            j = Json.Document(
+                Web.Contents(
+                    "https://api.open-meteo.com",
+                    [
+                        RelativePath = "v1/forecast",
+                        Query = [
+                            latitude = Number.ToText(lat, "0.0000", "en-US"),
+                            longitude = Number.ToText(lon, "0.0000", "en-US"),
+                            current = "precipitation",
+                            hourly = "precipitation,precipitation_probability",
+                            daily = "precipitation_sum,precipitation_probability_max",
+                            models = "ecmwf_ifs025,gfs_seamless,icon_seamless",
+                            past_days = "7",
+                            forecast_days = "7",
+                            timezone = "America/Campo_Grande"
+                        ],
+                        Headers = [#"Accept-Encoding" = compressao],
+                        Timeout = #duration(0, 0, 2, 0)
+                    ]
+                )
             )
-        ),
+        in
+            if Record.HasFields(j, {"daily", "hourly", "current"}) then j else error "Resposta da Open-Meteo sem os dados de chuva",
+    Chamar = (lat as number, lon as number) as record =>
+        try Pedir(lat, lon, "gzip") otherwise Pedir(lat, lon, "identity"),
 
     Planilha = Excel.Workbook(File.Contents(CaminhoFazendas), null, true),
     Tabela = Planilha{[Item = "Fazendas", Kind = "Table"]}[Data],

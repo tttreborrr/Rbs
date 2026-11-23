@@ -63,3 +63,15 @@ Se aparecer "Não foi possível buscar a previsão", a rede está bloqueando `ap
 Peça à TI para liberar esse endereço. Enquanto isso, o painel mostra dados de exemplo.
 
 Os valores são do modelo de previsão (não são medição de radar nem de estação).
+
+## Power BI (pasta `powerbi/`)
+
+Kit para montar o mesmo relatório no Power BI, com atualização automática:
+
+- `guia-powerbi.html`: passo a passo com botão de copiar em cada código (abra no navegador)
+- `Fazendas.xlsx`: planilha da lista do mês (tabela "Fazendas")
+- `consultas-power-query.pq`: as consultas do Power Query
+- `medidas-dax.dax`: tabelas de limite e medidas
+- `tema-msflorestal.json`: tema com as cores da MS Florestal
+
+O guia é gerado a partir dos arquivos `.pq` e `.dax` com `python3 powerbi/gerar-guia.py`.

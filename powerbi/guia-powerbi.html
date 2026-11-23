@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guia Power BI · Chuva nas Fazendas</title>
+<style>
+/* Guia de montagem: faixa verde da marca, coluna de leitura com passos numerados e blocos de código copiáveis. */
+:root {
+  --bg: #eceee9; --panel: #fafbf8; --ink: #12201a; --ink-2: #4b5a52; --muted: #7d8a82;
+  --line: #d6dcd3; --line-2: #c2cbc0; --brand: #1d5a3a; --brand-deep: #154630; --lime: #8cc63f;
+  --code-bg: #12201a; --code-ink: #e6ede8; --warn: #b4560f; --rain: #1d5fbf; --rain-1: #a9cdf2; --dry: #e4e8e2;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0c120e; --panel: #131b16; --ink: #e6ede8; --ink-2: #a8b6ad; --muted: #76857b; --line: #213027; --line-2: #2c3d32; --code-bg: #070b08; --dry: #1b261f; --rain-1: #22476f; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 "Segoe UI", system-ui, sans-serif; }
+.band { background: var(--brand); color: #fff; }
+.band .in { max-width: 980px; margin: 0 auto; padding: 26px 20px 22px; }
+.band h1 { margin: 0; font-size: 28px; line-height: 1.15; letter-spacing: -0.01em; }
+.band p { margin: 6px 0 0; color: rgba(255,255,255,.8); max-width: 70ch; }
+.stripe { height: 5px; background: linear-gradient(90deg, var(--brand-deep) 0 72%, var(--lime) 72%); }
+main { max-width: 980px; margin: 0 auto; padding: 8px 20px 60px; }
+nav.toc { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; margin: 22px 0; }
+nav.toc b { display: block; margin-bottom: 6px; color: var(--brand); }
+nav.toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 32px; }
+@media (max-width: 700px) { nav.toc ol { columns: 1; } }
+nav.toc a { color: var(--ink); }
+h2 { margin: 42px 0 8px; font-size: 21px; color: var(--brand); display: flex; gap: 12px; align-items: baseline; }
+h2 .n { font: 600 14px ui-monospace, Consolas, monospace; background: var(--brand); color: #fff; border-radius: 6px; padding: 2px 8px; }
+@media (prefers-color-scheme: dark) { h2 { color: var(--lime); } }
+h3 { margin: 26px 0 6px; font-size: 16px; }
+p, li { max-width: 75ch; }
+.menu { font-weight: 600; background: var(--panel); border: 1px solid var(--line-2); border-radius: 5px; padding: 0 6px; font-size: 14px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+code { overflow-wrap: anywhere; font: 13.5px ui-monospace, Consolas, monospace; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+.code { position: relative; margin: 10px 0 18px; border-radius: 8px; background: var(--code-bg); overflow: hidden; }
+.code .bar { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 6px 14px; background: rgba(255,255,255,.06); color: #c9d4cc; font: 600 12.5px "Segoe UI", sans-serif; }
+.code button { font: 600 12.5px "Segoe UI", sans-serif; background: var(--lime); color: #0c1a10; border: 0; border-radius: 5px; padding: 4px 12px; cursor: pointer; }
+.code button.ok { background: #fff; }
+.code pre { margin: 0; padding: 12px 14px; color: var(--code-ink); font: 12.5px/1.5 ui-monospace, Consolas, monospace; overflow-x: auto; max-height: 340px; }
+.note { border-left: 4px solid var(--lime); background: var(--panel); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.note.warn { border-color: var(--warn); }
+.note b:first-child { display: block; }
+table.t { border-collapse: collapse; width: 100%; margin: 10px 0 16px; font-size: 14px; }
+table.t th, table.t td { border-bottom: 1px solid var(--line); padding: 7px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+table.t th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+.files { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin: 12px 0; }
+.files div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; }
+.files b { display: block; font-family: ui-monospace, Consolas, monospace; font-size: 13px; color: var(--brand); }
+@media (prefers-color-scheme: dark) { .files b { color: var(--lime); } }
+/* rascunho da página */
+.wire { display: grid; gap: 6px; background: #dfe4dc; padding: 8px; border-radius: 8px; font-size: 11.5px; color: #12201a; margin: 12px 0 18px; aspect-ratio: 16 / 9; max-width: 100%; grid-template-rows: 13% 4px 10% 15% 1fr; }
+.wire > div, .wire .row > div { background: #fff; border: 1px dashed #9aa79f; border-radius: 4px; display: grid; place-items: center; text-align: center; padding: 2px; }
+.wire .top { background: #1d5a3a; color: #fff; border: 0; justify-items: start; padding-left: 12px; font-weight: 600; }
+.wire .lime { background: #8cc63f; border: 0; padding: 0; }
+.wire .row { display: grid; gap: 6px; background: transparent; border: 0; padding: 0; place-items: stretch; }
+.wire .r1 { grid-template-columns: 1fr 1fr 1.6fr 1fr; }
+.wire .r2 { grid-template-columns: repeat(4, 1fr); }
+.wire .r3 { grid-template-columns: 1fr 1.4fr; }
+.wire .r2 > div { font-weight: 600; }
+.sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; border: 1px solid var(--line-2); }
+</style>
+</head>
+<body>
+<header class="band"><div class="in">
+  <h1>Chuva nas Fazendas no Power BI</h1>
+  <p>Guia para montar o relatório com atualização automática: a chuva de cada fazenda vem da Open-Meteo nos modelos ECMWF, GFS e ICON, com as mesmas regras do painel em HTML.</p>
+</div></header>
+<div class="stripe"></div>
+<main>
+
+<nav class="toc"><b>Passos</b><ol>
+  <li><a href="#p1">O que tem no kit</a></li>
+  <li><a href="#p2">Planilha e parâmetro</a></li>
+  <li><a href="#p3">Consultas do Power Query</a></li>
+  <li><a href="#p4">Relacionamentos</a></li>
+  <li><a href="#p5">Limites e medidas</a></li>
+  <li><a href="#p6">Tema MS Florestal</a></li>
+  <li><a href="#p7">Página Panorama</a></li>
+  <li><a href="#p8">Página Fazenda</a></li>
+  <li><a href="#p9">Publicar e atualizar sozinho</a></li>
+  <li><a href="#p10">Se der erro</a></li>
+</ol></nav>
+
+<div class="note warn"><b>Antes de começar</b>Este kit foi escrito sem acesso a um Power BI, então nenhum passo foi testado de verdade. Os nomes de menu são os do Power BI Desktop em português e podem variar um pouco conforme a versão. Se algum passo der erro, tire um print da mensagem: na maioria dos casos é um ajuste pequeno.</div>
+
+<h2 id="p1"><span class="n">1</span>O que tem no kit</h2>
+<div class="files">
+  <div><b>Fazendas.xlsx</b>Lista das fazendas do mês, numa tabela do Excel chamada Fazendas.</div>
+  <div><b>consultas-power-query.pq</b>As 7 consultas do Power Query (as mesmas deste guia).</div>
+  <div><b>medidas-dax.dax</b>As tabelas de limite e as medidas (as mesmas deste guia).</div>
+  <div><b>tema-msflorestal.json</b>Cores verdes da MS Florestal para o relatório.</div>
+</div>
+<p>Você vai precisar do <b>Power BI Desktop</b> (gratuito, da Microsoft Store) e, para publicar e atualizar sozinho, de uma licença <b>Power BI Pro</b> e de um workspace da empresa.</p>
+<p>Como fica o modelo:</p>
+<table class="t">
+  <tr><th>Tabela</th><th>O que tem</th><th>Linhas, para 16 fazendas</th></tr>
+  <tr><td>Fazendas</td><td>id, fazenda, Coordenadas, Latitude, Longitude, Frente, Nome curto</td><td>16</td></tr>
+  <tr><td>Modelos</td><td>ECMWF, GFS e ICON</td><td>3</td></tr>
+  <tr><td>ChuvaDiaria</td><td>mm por fazenda, dia e modelo; 7 dias para trás e 7 para a frente</td><td>cerca de 670</td></tr>
+  <tr><td>ChuvaHoraria</td><td>mm por hora, das últimas 24 h às próximas 48 h</td><td>cerca de 3.500</td></tr>
+  <tr><td>ChuvaAgora</td><td>mm/h na hora atual</td><td>48</td></tr>
+  <tr><td>Atualizacao</td><td>hora local da previsão e a data de hoje</td><td>1</td></tr>
+</table>
+
+<h2 id="p2"><span class="n">2</span>Planilha e parâmetro</h2>
+<ol>
+  <li>Salve <code>Fazendas.xlsx</code> numa pasta fixa. Todo mês, troque as linhas da tabela pelas fazendas do mês, sem mudar os nomes das colunas (<code>id</code>, <code>fazenda</code>, <code>Coordenadas</code>).</li>
+  <li>Abra o Power BI Desktop e clique em <span class="menu">Página Inicial › Transformar dados</span>. Abre o Editor do Power Query.</li>
+  <li>Clique em <span class="menu">Gerenciar Parâmetros › Novo Parâmetro</span> e preencha:
+    <ul><li>Nome: <code>CaminhoFazendas</code></li><li>Tipo: <b>Texto</b></li><li>Valor atual: o caminho completo do arquivo, por exemplo <code>C:\Chuva\Fazendas.xlsx</code></li></ul>
+  </li>
+</ol>
+<div class="note"><b>Melhor ainda: planilha no SharePoint ou OneDrive</b>Com a planilha no computador, o Power BI Online precisa de um <i>gateway</i> instalado para atualizar sozinho. Com a planilha no SharePoint, não precisa. Nesse caso, coloque no parâmetro o endereço do arquivo (no Excel Online: <span class="menu">Arquivo › Informações › Copiar caminho</span>, apagando o <code>?web=1</code> do final) e, nas consultas <b>Fazendas</b> e <b>RespostasAPI</b>, troque <code>File.Contents(CaminhoFazendas)</code> por <code>Web.Contents(CaminhoFazendas)</code>.</div>
+
+<h2 id="p3"><span class="n">3</span>Consultas do Power Query</h2>
+<p>Para cada consulta abaixo: <span class="menu">Nova Fonte › Consulta Nula</span>, depois <span class="menu">Editor Avançado</span>, apague o que estiver lá, cole o código e clique em <span class="menu">Concluído</span>. Em seguida, renomeie a consulta (painel da esquerda, botão direito › Renomear) com o nome exato do título.</p>
+<p>Crie <b>nesta ordem</b>:</p>
+<h3>Fazendas</h3><p>Lê a planilha Fazendas.xlsx (tabela &quot;Fazendas&quot;: id, fazenda, Coordenadas) e converte as coordenadas em graus para latitude e longitude decimais.</p><div class="code"><div class="bar"><span>Consulta Fazendas</span><button type="button">Copiar</button></div><pre>let
+    GrausParaDecimal = (texto as text) as number =&gt;
+        let
+            t = Text.Trim(texto),
+            hemisferio = Text.Upper(Text.End(t, 1)),
+            corpo = Text.Start(t, Text.Length(t) - 1),
+            partes = List.Select(List.Transform(Text.SplitAny(corpo, &quot;°º&#x27;’&quot;&quot;″”&quot;), Text.Trim), each _ &lt;&gt; &quot;&quot;),
+            numero = (x as text) as number =&gt; Number.FromText(Text.Replace(x, &quot;,&quot;, &quot;.&quot;), &quot;en-US&quot;),
+            graus = numero(partes{0}),
+            minutos = if List.Count(partes) &gt; 1 then numero(partes{1}) else 0,
+            segundos = if List.Count(partes) &gt; 2 then numero(partes{2}) else 0,
+            valor = graus + minutos / 60 + segundos / 3600
+        in
+            if List.Contains({&quot;S&quot;, &quot;W&quot;, &quot;O&quot;}, hemisferio) then -valor else valor,
+
+    Planilha = Excel.Workbook(File.Contents(CaminhoFazendas), null, true),
+    Tabela = Planilha{[Item = &quot;Fazendas&quot;, Kind = &quot;Table&quot;]}[Data],
+    Validas = Table.SelectRows(Tabela, each [id] &lt;&gt; null and [Coordenadas] &lt;&gt; null and Text.Trim(Text.From([Coordenadas])) &lt;&gt; &quot;&quot;),
+    Texto = Table.TransformColumns(Validas, {
+        {&quot;id&quot;, each Text.Trim(Text.From(_)), type text},
+        {&quot;fazenda&quot;, each Text.Trim(Text.From(_)), type text},
+        {&quot;Coordenadas&quot;, each Text.Trim(Text.From(_)), type text}
+    }),
+    ComPartes = Table.AddColumn(Texto, &quot;Partes&quot;, each List.Select(Text.Split([Coordenadas], &quot; &quot;), each _ &lt;&gt; &quot;&quot;)),
+    ComLatitude = Table.AddColumn(ComPartes, &quot;Latitude&quot;, each GrausParaDecimal([Partes]{0}), type number),
+    ComLongitude = Table.AddColumn(ComLatitude, &quot;Longitude&quot;, each GrausParaDecimal([Partes]{1}), type number),
+    ComFrente = Table.AddColumn(ComLongitude, &quot;Frente&quot;, each
+        let p = Text.Split([fazenda], &quot; - &quot;) in if List.Count(p) &gt; 1 then Text.Trim(List.Last(p)) else &quot;Outras&quot;, type text),
+    ComNome = Table.AddColumn(ComFrente, &quot;Nome curto&quot;, each Text.Trim(Text.Split([fazenda], &quot; - &quot;){0}), type text),
+    Final = Table.RemoveColumns(ComNome, {&quot;Partes&quot;})
+in
+    Final</pre></div>
+<h3>Modelos</h3><p>Tabela fixa com os 3 modelos de previsão.</p><div class="code"><div class="bar"><span>Consulta Modelos</span><button type="button">Copiar</button></div><pre>let
+    Fonte = #table(
+        type table [Modelo = text, Chave = text, Origem = text, Ordem = Int64.Type],
+        {
+            {&quot;ECMWF&quot;, &quot;ecmwf_ifs025&quot;, &quot;Europa (Centro Europeu)&quot;, 1},
+            {&quot;GFS&quot;, &quot;gfs_seamless&quot;, &quot;Estados Unidos (NOAA)&quot;, 2},
+            {&quot;ICON&quot;, &quot;icon_seamless&quot;, &quot;Alemanha (DWD)&quot;, 3}
+        }
+    )
+in
+    Fonte</pre></div>
+<h3>RespostasAPI</h3><p>Para cada fazenda, busca na Open-Meteo: chuva de agora, hora a hora e por dia (7 dias para trás e 7 para a frente), nos 3 modelos. Esta consulta lê a planilha e chama a API no mesmo lugar de propósito: assim o Power BI Online consegue atualizar sozinho. Depois de criar, clique com o botão direito nela e DESMARQUE &quot;Habilitar carga&quot; (ela é só intermediária).</p><div class="code"><div class="bar"><span>Consulta RespostasAPI</span><button type="button">Copiar</button></div><pre>let
+    GrausParaDecimal = (texto as text) as number =&gt;
+        let
+            t = Text.Trim(texto),
+            hemisferio = Text.Upper(Text.End(t, 1)),
+            corpo = Text.Start(t, Text.Length(t) - 1),
+            partes = List.Select(List.Transform(Text.SplitAny(corpo, &quot;°º&#x27;’&quot;&quot;″”&quot;), Text.Trim), each _ &lt;&gt; &quot;&quot;),
+            numero = (x as text) as number =&gt; Number.FromText(Text.Replace(x, &quot;,&quot;, &quot;.&quot;), &quot;en-US&quot;),
+            graus = numero(partes{0}),
+            minutos = if List.Count(partes) &gt; 1 then numero(partes{1}) else 0,
+            segundos = if List.Count(partes) &gt; 2 then numero(partes{2}) else 0,
+            valor = graus + minutos / 60 + segundos / 3600
+        in
+            if List.Contains({&quot;S&quot;, &quot;W&quot;, &quot;O&quot;}, hemisferio) then -valor else valor,
+
+    Chamar = (lat as number, lon as number) as record =&gt;
+        Json.Document(
+            Web.Contents(
+                &quot;https://api.open-meteo.com&quot;,
+                [
+                    RelativePath = &quot;v1/forecast&quot;,
+                    Query = [
+                        latitude = Number.ToText(lat, &quot;0.0000&quot;, &quot;en-US&quot;),
+                        longitude = Number.ToText(lon, &quot;0.0000&quot;, &quot;en-US&quot;),
+                        current = &quot;precipitation&quot;,
+                        hourly = &quot;precipitation,precipitation_probability&quot;,
+                        daily = &quot;precipitation_sum,precipitation_probability_max&quot;,
+                        models = &quot;ecmwf_ifs025,gfs_seamless,icon_seamless&quot;,
+                        past_days = &quot;7&quot;,
+                        forecast_days = &quot;7&quot;,
+                        timezone = &quot;America/Campo_Grande&quot;
+                    ],
+                    Timeout = #duration(0, 0, 2, 0)
+                ]
+            )
+        ),
+
+    Planilha = Excel.Workbook(File.Contents(CaminhoFazendas), null, true),
+    Tabela = Planilha{[Item = &quot;Fazendas&quot;, Kind = &quot;Table&quot;]}[Data],
+    Validas = Table.SelectRows(Tabela, each [id] &lt;&gt; null and [Coordenadas] &lt;&gt; null and Text.Trim(Text.From([Coordenadas])) &lt;&gt; &quot;&quot;),
+    Pontos = Table.AddColumn(Validas, &quot;Ponto&quot;, each
+        let p = List.Select(Text.Split(Text.Trim(Text.From([Coordenadas])), &quot; &quot;), each _ &lt;&gt; &quot;&quot;)
+        in [Lat = GrausParaDecimal(p{0}), Lon = GrausParaDecimal(p{1})]),
+    ComId = Table.TransformColumns(Table.SelectColumns(Pontos, {&quot;id&quot;, &quot;Ponto&quot;}), {{&quot;id&quot;, each Text.Trim(Text.From(_)), type text}}),
+    ComResposta = Table.AddColumn(ComId, &quot;Resposta&quot;, each Chamar([Ponto][Lat], [Ponto][Lon])),
+    Final = Table.SelectColumns(ComResposta, {&quot;id&quot;, &quot;Resposta&quot;})
+in
+    Final</pre></div>
+<h3>ChuvaDiaria</h3><p>Uma linha por fazenda × dia × modelo. DiaRel: 0 = hoje, 1 = amanhã, -1 = ontem...</p><div class="code"><div class="bar"><span>Consulta ChuvaDiaria</span><button type="button">Copiar</button></div><pre>let
+    Fonte = RespostasAPI,
+    Modelos = {{&quot;ECMWF&quot;, &quot;ecmwf_ifs025&quot;}, {&quot;GFS&quot;, &quot;gfs_seamless&quot;}, {&quot;ICON&quot;, &quot;icon_seamless&quot;}},
+    ParaData = (x as text) as date =&gt; Date.FromText(Text.Start(x, 10), [Format = &quot;yyyy-MM-dd&quot;, Culture = &quot;en-US&quot;]),
+    Linhas = Table.AddColumn(Fonte, &quot;Linhas&quot;, (r) =&gt;
+        let
+            d = r[Resposta][daily],
+            hoje = ParaData(r[Resposta][current][time]),
+            datas = List.Transform(d[time], ParaData),
+            n = List.Count(datas),
+            porModelo = List.Transform(Modelos, (m) =&gt;
+                let
+                    mm = Record.FieldOrDefault(d, &quot;precipitation_sum_&quot; &amp; m{1}, null),
+                    chance = Record.FieldOrDefault(d, &quot;precipitation_probability_max_&quot; &amp; m{1}, null)
+                in
+                    if mm = null then null
+                    else Table.FromColumns(
+                        {
+                            datas,
+                            List.Repeat({m{0}}, n),
+                            mm,
+                            if chance = null then List.Repeat({null}, n) else chance,
+                            List.Transform(datas, each Duration.Days(_ - hoje))
+                        },
+                        {&quot;Data&quot;, &quot;Modelo&quot;, &quot;mm&quot;, &quot;Chance&quot;, &quot;DiaRel&quot;}
+                    )
+            )
+        in
+            Table.Combine(List.RemoveNulls(porModelo))
+    ),
+    Expandido = Table.ExpandTableColumn(Table.SelectColumns(Linhas, {&quot;id&quot;, &quot;Linhas&quot;}), &quot;Linhas&quot;, {&quot;Data&quot;, &quot;Modelo&quot;, &quot;mm&quot;, &quot;Chance&quot;, &quot;DiaRel&quot;}),
+    ComTipo = Table.AddColumn(Expandido, &quot;Tipo&quot;, each if [DiaRel] &lt; 0 then &quot;Histórico&quot; else if [DiaRel] = 0 then &quot;Hoje&quot; else &quot;Previsão&quot;, type text),
+    ComDia = Table.AddColumn(ComTipo, &quot;Dia&quot;, each
+        if [DiaRel] = 0 then &quot;Hoje&quot;
+        else if [DiaRel] = 1 then &quot;Amanhã&quot;
+        else Date.ToText([Data], [Format = &quot;ddd dd/MM&quot;, Culture = &quot;pt-BR&quot;]), type text),
+    Tipos = Table.TransformColumnTypes(ComDia, {
+        {&quot;id&quot;, type text}, {&quot;Data&quot;, type date}, {&quot;Modelo&quot;, type text},
+        {&quot;mm&quot;, type number}, {&quot;Chance&quot;, Int64.Type}, {&quot;DiaRel&quot;, Int64.Type}
+    })
+in
+    Tipos</pre></div>
+<h3>ChuvaHoraria</h3><p>Uma linha por fazenda × hora × modelo, das últimas 24 h às próximas 48 h. HorasRel: 0 = hora atual, 1 = próxima hora...</p><div class="code"><div class="bar"><span>Consulta ChuvaHoraria</span><button type="button">Copiar</button></div><pre>let
+    Fonte = RespostasAPI,
+    Modelos = {{&quot;ECMWF&quot;, &quot;ecmwf_ifs025&quot;}, {&quot;GFS&quot;, &quot;gfs_seamless&quot;}, {&quot;ICON&quot;, &quot;icon_seamless&quot;}},
+    ParaDataHora = (x as text) as datetime =&gt; DateTime.FromText(Text.Replace(x, &quot;T&quot;, &quot; &quot;), [Format = &quot;yyyy-MM-dd HH:mm&quot;, Culture = &quot;en-US&quot;]),
+    Linhas = Table.AddColumn(Fonte, &quot;Linhas&quot;, (r) =&gt;
+        let
+            h = r[Resposta][hourly],
+            agora = ParaDataHora(r[Resposta][current][time]),
+            horaAtual = #datetime(Date.Year(agora), Date.Month(agora), Date.Day(agora), Time.Hour(agora), 0, 0),
+            horas = List.Transform(h[time], ParaDataHora),
+            n = List.Count(horas),
+            rel = List.Transform(horas, each Duration.TotalHours(_ - horaAtual)),
+            porModelo = List.Transform(Modelos, (m) =&gt;
+                let
+                    mm = Record.FieldOrDefault(h, &quot;precipitation_&quot; &amp; m{1}, null),
+                    chance = Record.FieldOrDefault(h, &quot;precipitation_probability_&quot; &amp; m{1}, null)
+                in
+                    if mm = null then null
+                    else Table.FromColumns(
+                        {horas, List.Repeat({m{0}}, n), mm, if chance = null then List.Repeat({null}, n) else chance, rel},
+                        {&quot;Data e hora&quot;, &quot;Modelo&quot;, &quot;mm&quot;, &quot;Chance&quot;, &quot;HorasRel&quot;}
+                    )
+            )
+        in
+            Table.SelectRows(Table.Combine(List.RemoveNulls(porModelo)), each [HorasRel] &gt;= -24 and [HorasRel] &lt; 48)
+    ),
+    Expandido = Table.ExpandTableColumn(Table.SelectColumns(Linhas, {&quot;id&quot;, &quot;Linhas&quot;}), &quot;Linhas&quot;, {&quot;Data e hora&quot;, &quot;Modelo&quot;, &quot;mm&quot;, &quot;Chance&quot;, &quot;HorasRel&quot;}),
+    Tipos = Table.TransformColumnTypes(Expandido, {
+        {&quot;id&quot;, type text}, {&quot;Data e hora&quot;, type datetime}, {&quot;Modelo&quot;, type text},
+        {&quot;mm&quot;, type number}, {&quot;Chance&quot;, Int64.Type}, {&quot;HorasRel&quot;, Int64.Type}
+    })
+in
+    Tipos</pre></div>
+<h3>ChuvaAgora</h3><p>Uma linha por fazenda × modelo com a chuva da hora atual (mm/h).</p><div class="code"><div class="bar"><span>Consulta ChuvaAgora</span><button type="button">Copiar</button></div><pre>let
+    Fonte = RespostasAPI,
+    Modelos = {{&quot;ECMWF&quot;, &quot;ecmwf_ifs025&quot;}, {&quot;GFS&quot;, &quot;gfs_seamless&quot;}, {&quot;ICON&quot;, &quot;icon_seamless&quot;}},
+    Linhas = Table.AddColumn(Fonte, &quot;Linhas&quot;, (r) =&gt;
+        let
+            c = r[Resposta][current],
+            h = r[Resposta][hourly],
+            posicao = List.PositionOf(h[time], Text.Start(c[time], 13) &amp; &quot;:00&quot;),
+            linhas = List.Transform(Modelos, (m) =&gt;
+                let
+                    atual = Record.FieldOrDefault(c, &quot;precipitation_&quot; &amp; m{1}, null),
+                    lista = Record.FieldOrDefault(h, &quot;precipitation_&quot; &amp; m{1}, null),
+                    valor = if atual &lt;&gt; null then atual else if lista &lt;&gt; null and posicao &gt;= 0 then lista{posicao} else null
+                in
+                    {m{0}, valor})
+        in
+            #table({&quot;Modelo&quot;, &quot;mm/h&quot;}, linhas)
+    ),
+    Expandido = Table.ExpandTableColumn(Table.SelectColumns(Linhas, {&quot;id&quot;, &quot;Linhas&quot;}), &quot;Linhas&quot;, {&quot;Modelo&quot;, &quot;mm/h&quot;}),
+    Tipos = Table.TransformColumnTypes(Expandido, {{&quot;id&quot;, type text}, {&quot;Modelo&quot;, type text}, {&quot;mm/h&quot;, type number}})
+in
+    Tipos</pre></div>
+<h3>Atualizacao</h3><p>Hora local da previsão (fuso de Campo Grande) e a data de &quot;hoje&quot;.</p><div class="code"><div class="bar"><span>Consulta Atualizacao</span><button type="button">Copiar</button></div><pre>let
+    Fonte = RespostasAPI,
+    Hora = DateTime.FromText(Text.Replace(Fonte{0}[Resposta][current][time], &quot;T&quot;, &quot; &quot;), [Format = &quot;yyyy-MM-dd HH:mm&quot;, Culture = &quot;en-US&quot;]),
+    Tabela = #table(type table [#&quot;Hora local&quot; = datetime, Hoje = date], {{Hora, Date.From(Hora)}})
+in
+    Tabela</pre></div>
+<div class="note"><b>Deixe a RespostasAPI só como intermediária</b>Clique com o botão direito em <b>RespostasAPI</b> e desmarque <span class="menu">Habilitar carga</span>. Ela não precisa ir para o relatório.</div>
+<div class="note warn"><b>Se aparecer aviso de privacidade ou “Formula.Firewall”</b>Na primeira vez, o Power BI pergunta o nível de privacidade de cada fonte. Escolha <b>Organizacional</b> para as duas (a planilha e api.open-meteo.com). Se mesmo assim aparecer “Formula.Firewall”, vá em <span class="menu">Arquivo › Opções e configurações › Opções › Arquivo Atual › Privacidade</span> e marque <b>Ignorar os níveis de privacidade</b>.</div>
+<p>Quando todas estiverem prontas, clique em <span class="menu">Fechar e Aplicar</span>. A primeira carga demora alguns segundos, porque são 16 consultas à Open-Meteo.</p>
+
+<h2 id="p4"><span class="n">4</span>Relacionamentos</h2>
+<p>Abra a <span class="menu">Exibição de modelo</span> (terceiro ícone da barra da esquerda). O Power BI pode ter criado alguns sozinho; confira se ficaram exatamente assim e crie os que faltarem arrastando uma coluna até a outra:</p>
+<table class="t">
+  <tr><th>De (lado “1”)</th><th>Para (lado “vários”)</th></tr>
+  <tr><td>Fazendas[id]</td><td>ChuvaDiaria[id], ChuvaHoraria[id], ChuvaAgora[id]</td></tr>
+  <tr><td>Modelos[Modelo]</td><td>ChuvaDiaria[Modelo], ChuvaHoraria[Modelo], ChuvaAgora[Modelo]</td></tr>
+</table>
+<p>Todos com cardinalidade <b>Um para muitos</b> e direção de filtro <b>Única</b>. As tabelas Atualizacao, Limite Chuva e Limite Forte ficam soltas, sem relacionamento.</p>
+<h3>Ordem dos dias</h3>
+<p>Na <span class="menu">Exibição de tabela</span>, abra ChuvaDiaria, clique na coluna <b>Dia</b> e use <span class="menu">Ferramentas de coluna › Classificar por coluna › DiaRel</span>. Assim os dias aparecem em ordem (… ontem, Hoje, Amanhã, qua 25/11 …) e não em ordem alfabética.</p>
+
+<h2 id="p5"><span class="n">5</span>Limites e medidas</h2>
+<h3>Tabelas de limite</h3>
+<p>Em <span class="menu">Modelagem › Nova tabela</span>, cole uma de cada vez:</p>
+<div class="code"><div class="bar"><span>Tabela Limite Chuva</span><button type="button">Copiar</button></div><pre>Limite Chuva = GENERATESERIES(0, 20, 0.5)</pre></div>
+<div class="code"><div class="bar"><span>Tabela Limite Forte</span><button type="button">Copiar</button></div><pre>Limite Forte = GENERATESERIES(0, 40, 0.5)</pre></div>
+<h3>Medidas</h3>
+<p>Crie uma tabela vazia para guardar as medidas: <span class="menu">Página Inicial › Inserir dados</span>, nome <code>Medidas</code>, <span class="menu">Carregar</span>. Com a tabela Medidas selecionada, use <span class="menu">Modelagem › Nova medida</span> para cada bloco abaixo (pode criar na ordem em que aparecem):</p>
+<div class="code"><div class="bar"><span>Medida Limite Chuva mm</span><button type="button">Copiar</button></div><pre>Limite Chuva mm = SELECTEDVALUE(&#x27;Limite Chuva&#x27;[Value], 4)</pre></div>
+<div class="code"><div class="bar"><span>Medida Limite Forte mm</span><button type="button">Copiar</button></div><pre>Limite Forte mm = SELECTEDVALUE(&#x27;Limite Forte&#x27;[Value], 6)</pre></div>
+<div class="code"><div class="bar"><span>Medida Limite Agora mm/h</span><button type="button">Copiar</button></div><pre>Limite Agora mm/h = 0.5</pre></div>
+<div class="code"><div class="bar"><span>Medida Hoje</span><button type="button">Copiar</button></div><pre>Hoje = MAX(Atualizacao[Hoje])</pre></div>
+<div class="code"><div class="bar"><span>Medida Atualizado às</span><button type="button">Copiar</button></div><pre>Atualizado às = &quot;Previsão das &quot; &amp; FORMAT(MAX(Atualizacao[Hora local]), &quot;hh:nn&quot;) &amp; &quot; de &quot; &amp; FORMAT(MAX(Atualizacao[Hora local]), &quot;dd/mm/yyyy&quot;)</pre></div>
+<div class="code"><div class="bar"><span>Medida Chuva mm</span><button type="button">Copiar</button></div><pre>Chuva mm =
+AVERAGEX(
+    VALUES(Modelos[Modelo]),
+    CALCULATE(SUM(ChuvaDiaria[mm]))
+)</pre></div>
+<div class="code"><div class="bar"><span>Medida Situação</span><button type="button">Copiar</button></div><pre>Situação =
+VAR v = [Chuva mm]
+RETURN
+    SWITCH(
+        TRUE(),
+        ISBLANK(v), BLANK(),
+        v &gt; [Limite Forte mm], &quot;Chuva forte&quot;,
+        v &gt;= [Limite Chuva mm], &quot;Chuva&quot;,
+        &quot;Sem chuva&quot;
+    )</pre></div>
+<div class="code"><div class="bar"><span>Medida Cor Situação</span><button type="button">Copiar</button></div><pre>Cor Situação =
+SWITCH(
+    [Situação],
+    &quot;Chuva forte&quot;, &quot;#1D5FBF&quot;,
+    &quot;Chuva&quot;, &quot;#A9CDF2&quot;,
+    &quot;Sem chuva&quot;, &quot;#E4E8E2&quot;
+)</pre></div>
+<div class="code"><div class="bar"><span>Medida Cor Texto</span><button type="button">Copiar</button></div><pre>Cor Texto =
+IF([Situação] = &quot;Chuva forte&quot;, &quot;#FFFFFF&quot;, &quot;#12201A&quot;)</pre></div>
+<div class="code"><div class="bar"><span>Medida Chance %</span><button type="button">Copiar</button></div><pre>Chance % =
+MAX(ChuvaDiaria[Chance]) / 100</pre></div>
+<div class="code"><div class="bar"><span>Medida Total de fazendas</span><button type="button">Copiar</button></div><pre>Total de fazendas =
+COUNTROWS(VALUES(Fazendas[id]))</pre></div>
+<div class="code"><div class="bar"><span>Medida Fazendas com chuva</span><button type="button">Copiar</button></div><pre>Fazendas com chuva =
+VAR lim = [Limite Chuva mm]
+RETURN
+    COUNTROWS(FILTER(VALUES(Fazendas[id]), [Chuva mm] &gt;= lim)) + 0</pre></div>
+<div class="code"><div class="bar"><span>Medida Fazendas com chuva forte</span><button type="button">Copiar</button></div><pre>Fazendas com chuva forte =
+VAR lim = [Limite Forte mm]
+RETURN
+    COUNTROWS(FILTER(VALUES(Fazendas[id]), [Chuva mm] &gt; lim)) + 0</pre></div>
+<div class="code"><div class="bar"><span>Medida Título chuva no dia</span><button type="button">Copiar</button></div><pre>Título chuva no dia =
+&quot;Com chuva &quot; &amp; IF(SELECTEDVALUE(ChuvaDiaria[Dia]) = &quot;Hoje&quot;, &quot;hoje&quot;, IF(SELECTEDVALUE(ChuvaDiaria[Dia]) = &quot;Amanhã&quot;, &quot;amanhã&quot;, &quot;em &quot; &amp; SELECTEDVALUE(ChuvaDiaria[Dia], &quot;todos os dias&quot;)))</pre></div>
+<div class="code"><div class="bar"><span>Medida Chuva agora mm/h</span><button type="button">Copiar</button></div><pre>Chuva agora mm/h =
+AVERAGEX(
+    VALUES(Modelos[Modelo]),
+    CALCULATE(SUM(ChuvaAgora[mm/h]))
+)</pre></div>
+<div class="code"><div class="bar"><span>Medida Chovendo agora</span><button type="button">Copiar</button></div><pre>Chovendo agora =
+IF([Chuva agora mm/h] &gt;= [Limite Agora mm/h], &quot;Chovendo&quot;, &quot;Sem chuva&quot;)</pre></div>
+<div class="code"><div class="bar"><span>Medida Fazendas chovendo agora</span><button type="button">Copiar</button></div><pre>Fazendas chovendo agora =
+VAR lim = [Limite Agora mm/h]
+RETURN
+    COUNTROWS(FILTER(VALUES(Fazendas[id]), [Chuva agora mm/h] &gt;= lim)) + 0</pre></div>
+<div class="code"><div class="bar"><span>Medida Chuva próximas 24 h</span><button type="button">Copiar</button></div><pre>Chuva próximas 24 h =
+CALCULATE(
+    AVERAGEX(VALUES(Modelos[Modelo]), CALCULATE(SUM(ChuvaHoraria[mm]))),
+    ChuvaHoraria[HorasRel] &gt;= 0,
+    ChuvaHoraria[HorasRel] &lt; 24
+)</pre></div>
+<div class="code"><div class="bar"><span>Medida Chuva por hora</span><button type="button">Copiar</button></div><pre>Chuva por hora =
+AVERAGEX(
+    VALUES(Modelos[Modelo]),
+    CALCULATE(SUM(ChuvaHoraria[mm]))
+)</pre></div>
+<div class="code"><div class="bar"><span>Medida Chuva últimos 7 dias</span><button type="button">Copiar</button></div><pre>Chuva últimos 7 dias =
+CALCULATE(
+    [Chuva mm],
+    REMOVEFILTERS(ChuvaDiaria),
+    ChuvaDiaria[DiaRel] &gt;= -7,
+    ChuvaDiaria[DiaRel] &lt;= -1
+)</pre></div>
+<div class="code"><div class="bar"><span>Medida Média últimos 7 dias</span><button type="button">Copiar</button></div><pre>Média últimos 7 dias =
+AVERAGEX(VALUES(Fazendas[id]), [Chuva últimos 7 dias])</pre></div>
+<div class="code"><div class="bar"><span>Medida Dias com chuva (próx. 7)</span><button type="button">Copiar</button></div><pre>Dias com chuva (próx. 7) =
+VAR lim = [Limite Chuva mm]
+RETURN
+    CALCULATE(
+        COUNTROWS(FILTER(VALUES(ChuvaDiaria[Data]), [Chuva mm] &gt;= lim)),
+        REMOVEFILTERS(ChuvaDiaria),
+        ChuvaDiaria[DiaRel] &gt;= 0,
+        ChuvaDiaria[DiaRel] &lt;= 6
+    ) + 0</pre></div>
+<div class="code"><div class="bar"><span>Medida % Chuva (próx. 7 dias)</span><button type="button">Copiar</button></div><pre>% Chuva (próx. 7 dias) =
+DIVIDE([Dias com chuva (próx. 7)], 7)</pre></div>
+<div class="code"><div class="bar"><span>Medida Modelos com chuva</span><button type="button">Copiar</button></div><pre>Modelos com chuva =
+VAR lim = [Limite Chuva mm]
+RETURN
+    COUNTROWS(
+        FILTER(ALL(Modelos[Modelo]), CALCULATE(SUM(ChuvaDiaria[mm])) &gt;= lim)
+    ) + 0</pre></div>
+<div class="code"><div class="bar"><span>Medida Concordância</span><button type="button">Copiar</button></div><pre>Concordância =
+[Modelos com chuva] &amp; &quot; de &quot; &amp; COUNTROWS(ALL(Modelos[Modelo]))</pre></div>
+<p>Depois de criar as medidas, apague a coluna “Coluna1” da tabela Medidas. Ajuste os formatos: <b>Chuva mm</b>, <b>Chuva últimos 7 dias</b>, <b>Chuva próximas 24 h</b> e <b>Média últimos 7 dias</b> com 1 casa decimal; <b>% Chuva (próx. 7 dias)</b> e <b>Chance %</b> como porcentagem.</p>
+
+<h2 id="p6"><span class="n">6</span>Tema MS Florestal</h2>
+<p><span class="menu">Exibição › Temas › Procurar temas</span> e escolha <code>tema-msflorestal.json</code>. O fundo fica cinza-esverdeado, os títulos e cabeçalhos verdes, e a chuva em azul.</p>
+
+<h2 id="p7"><span class="n">7</span>Página Panorama</h2>
+<p>Renomeie a primeira página para <b>Panorama</b>. A ideia de layout (tela 16:9):</p>
+<div class="wire" aria-label="Rascunho do layout da página Panorama">
+  <div class="top">Logo · Chuva nas Fazendas · [Atualizado às]</div>
+  <div class="lime"></div>
+  <div class="row r1"><div>Frente</div><div>Modelo</div><div>Dia</div><div>Limites</div></div>
+  <div class="row r2"><div>Chovendo agora</div><div>Com chuva no dia</div><div>Chuva forte no dia</div><div>Média 7 dias</div></div>
+  <div class="row r3"><div>Mapa das fazendas</div><div>Matriz fazenda × dia (mm, com cores)</div></div>
+</div>
+
+<h3>Faixa do topo</h3>
+<ol>
+  <li><span class="menu">Inserir › Formas › Retângulo</span> no alto, largura toda, cor <code>#1D5A3A</code>, sem borda. Logo abaixo, outro retângulo fino (5 px) verde-claro <code>#8CC63F</code>.</li>
+  <li><span class="menu">Inserir › Imagem</span> com a logo da MS Florestal, à esquerda.</li>
+  <li><span class="menu">Inserir › Caixa de texto</span>: “Chuva nas Fazendas”, branco, 20 pt, negrito.</li>
+  <li>Um visual <b>Cartão</b> com a medida <b>Atualizado às</b>, à direita, texto branco e fundo transparente.</li>
+</ol>
+
+<h3>Segmentações (filtros)</h3>
+<table class="t">
+  <tr><th>Segmentação</th><th>Campo</th><th>Como configurar</th></tr>
+  <tr><td>Frente</td><td>Fazendas[Frente]</td><td>Estilo <b>Blocos</b>; seleção múltipla.</td></tr>
+  <tr><td>Modelo</td><td>Modelos[Modelo]</td><td>Estilo <b>Blocos</b>. Deixe <b>ECMWF</b> selecionado (o mesmo do Windy). Com os três selecionados, o relatório mostra a <b>média</b>.</td></tr>
+  <tr><td>Dia</td><td>ChuvaDiaria[Dia]</td><td>Estilo <b>Blocos</b>, <b>Seleção única</b> ligada. No painel de filtros deste visual, filtre <b>DiaRel</b> “é maior ou igual a 0”. Deixe <b>Hoje</b> selecionado.</td></tr>
+  <tr><td>Chuva a partir de</td><td>'Limite Chuva'[Value]</td><td>Estilo <b>Lista suspensa</b>, seleção única, com <b>4</b> selecionado.</td></tr>
+  <tr><td>Chuva forte acima de</td><td>'Limite Forte'[Value]</td><td>Estilo <b>Lista suspensa</b>, seleção única, com <b>6</b> selecionado.</td></tr>
+</table>
+
+<h3>Cartões</h3>
+<table class="t">
+  <tr><th>Cartão</th><th>Medida</th><th>Título</th></tr>
+  <tr><td>1</td><td>Fazendas chovendo agora</td><td>Chovendo agora</td></tr>
+  <tr><td>2</td><td>Fazendas com chuva</td><td>Use a medida <b>Título chuva no dia</b> como título: no formato do visual, <span class="menu">Título › Texto › fx</span> › Valor do campo.</td></tr>
+  <tr><td>3</td><td>Fazendas com chuva forte</td><td>Chuva forte no dia</td></tr>
+  <tr><td>4</td><td>Média últimos 7 dias</td><td>Choveu nos últimos 7 dias (mm, média)</td></tr>
+</table>
+
+<h3>Mapa</h3>
+<ol>
+  <li>Use o visual <b>Mapa do Azure</b> (Azure Maps). Em <b>Latitude</b> coloque Fazendas[Latitude]; em <b>Longitude</b>, Fazendas[Longitude]; em <b>Dicas de ferramentas</b>, Fazendas[fazenda], <b>Chuva mm</b> e <b>Situação</b>.</li>
+  <li>Em <span class="menu">Formatar › Camada de bolhas › Cor de preenchimento</span>, clique em <b>fx</b>, escolha <b>Valor do campo</b> e a medida <b>Cor Situação</b>. As fazendas ficam cinza, azul-claro ou azul-escuro conforme a chuva do dia escolhido.</li>
+  <li>Em <span class="menu">Formatar › Estilo do mapa</span> dá para escolher <b>Satélite</b>.</li>
+</ol>
+<div class="note"><b>Se o Mapa do Azure não aparecer ou estiver bloqueado</b>Alguns administradores desligam os mapas. Use um <b>Gráfico de dispersão</b>: Eixo X = Fazendas[Longitude], Eixo Y = Fazendas[Latitude], Valores = Fazendas[fazenda]; em <span class="menu">Marcadores › Cor › fx</span>, Valor do campo = <b>Cor Situação</b>. Não terá fundo de mapa, mas as posições e as cores ficam certas.</div>
+
+<h3>Matriz fazenda × dia</h3>
+<ol>
+  <li>Visual <b>Matriz</b>: <b>Linhas</b> = Fazendas[fazenda]; <b>Colunas</b> = ChuvaDiaria[Dia]; <b>Valores</b> = <b>Chuva mm</b>.</li>
+  <li>No painel de filtros <b>deste visual</b>, filtre ChuvaDiaria[DiaRel] entre <b>0 e 6</b>. Para a matriz não seguir a segmentação Dia, selecione a segmentação Dia, vá em <span class="menu">Formatar › Editar interações</span> e clique no ícone <b>Nenhum</b> em cima da matriz.</li>
+  <li>Cores: em <span class="menu">Formatar › Elementos de célula</span>, ligue <b>Cor da tela de fundo</b> › <b>fx</b> › Valor do campo › <b>Cor Situação</b>. Ligue <b>Cor da fonte</b> › <b>fx</b> › Valor do campo › <b>Cor Texto</b>.</li>
+  <li>Desligue os <b>Totais</b> de linha e de coluna.</li>
+</ol>
+<p>Legenda das cores, para pôr numa caixa de texto ao lado: <span class="sw" style="background:#e4e8e2"></span>Sem chuva (menos de 4 mm) · <span class="sw" style="background:#a9cdf2"></span>Chuva (4 a 6 mm) · <span class="sw" style="background:#1d5fbf"></span>Chuva forte (acima de 6 mm).</p>
+
+<h3>Tabela de resumo (opcional, abaixo da matriz)</h3>
+<p>Visual <b>Tabela</b> com Fazendas[fazenda], Fazendas[Frente], <b>Chovendo agora</b>, <b>Chuva agora mm/h</b>, <b>Chuva próximas 24 h</b>, <b>Chuva últimos 7 dias</b>, <b>% Chuva (próx. 7 dias)</b> e <b>Concordância</b> (quantos dos 3 modelos preveem chuva no dia escolhido).</p>
+
+<h2 id="p8"><span class="n">8</span>Página Fazenda (detalhe)</h2>
+<ol>
+  <li>Crie uma página <b>Fazenda</b>. No painel de visualizações, arraste Fazendas[fazenda] para <b>Detalhamento</b> e desligue <b>Manter todos os filtros</b>.</li>
+  <li><b>Gráfico de colunas</b> “Próximas 48 horas”: Eixo X = ChuvaHoraria[Data e hora], Eixo Y = <b>Chuva por hora</b>. Filtro do visual: HorasRel entre 0 e 47.</li>
+  <li><b>Gráfico de colunas</b> “7 dias atrás até 7 dias à frente”: Eixo X = ChuvaDiaria[Dia], Eixo Y = <b>Chuva mm</b>. Em <span class="menu">Colunas › Cor › fx</span>, Valor do campo = <b>Cor Situação</b>.</li>
+  <li><b>Matriz</b> “Comparação dos modelos”: Linhas = Modelos[Modelo], Colunas = ChuvaDiaria[Dia] (filtro DiaRel de 0 a 6), Valores = <b>Chuva mm</b>, com as mesmas cores de fundo e fonte da matriz da página Panorama.</li>
+  <li>Cartões com <b>Chovendo agora</b>, <b>Chuva próximas 24 h</b> e <b>Chuva últimos 7 dias</b>.</li>
+</ol>
+<p>Na página Panorama, clique com o botão direito numa fazenda (na matriz ou no mapa) › <span class="menu">Detalhamento › Fazenda</span>.</p>
+
+<h2 id="p9"><span class="n">9</span>Publicar e atualizar sozinho</h2>
+<ol>
+  <li>Salve o arquivo (por exemplo <code>Chuva nas Fazendas.pbix</code>) e clique em <span class="menu">Página Inicial › Publicar</span>, escolhendo o workspace da equipe.</li>
+  <li>No Power BI Online, abra o workspace, passe o mouse sobre o <b>modelo semântico</b> “Chuva nas Fazendas”, clique nos três pontos › <span class="menu">Configurações</span>.</li>
+  <li>Em <b>Credenciais da fonte de dados</b>:
+    <ul>
+      <li><b>api.open-meteo.com</b>: Método de autenticação <b>Anônimo</b>, nível de privacidade <b>Organizacional</b>. Se aparecer, marque <b>Ignorar conexão de teste</b>.</li>
+      <li><b>Planilha</b>: se estiver no SharePoint, <b>OAuth2</b> com a conta da empresa, nível <b>Organizacional</b>. Se estiver no computador, é preciso um <b>gateway</b> (fale com a TI).</li>
+    </ul>
+  </li>
+  <li>Em <b>Atualizar</b>, ligue <b>Atualização agendada</b>, fuso <b>Cuiabá / Campo Grande (UTC−4)</b>, e adicione horários. Com a licença Pro dá para até 8 por dia, por exemplo 5h, 7h, 9h, 11h, 13h, 15h, 17h e 19h.</li>
+</ol>
+<div class="note"><b>Troca das fazendas todo mês</b>Basta atualizar a tabela da planilha Fazendas.xlsx. Na próxima atualização agendada, o relatório já mostra as fazendas novas.</div>
+<div class="note warn"><b>Uso comercial da Open-Meteo</b>A API gratuita da Open-Meteo é para uso não comercial. Para uso dentro da empresa, o certo é contratar o plano comercial deles (assinatura mensal com chave de acesso). Com o plano, só muda o endereço na consulta RespostasAPI: <code>https://customer-api.open-meteo.com</code> e o parâmetro <code>apikey</code> com a chave. Confirme preço e condições no site da Open-Meteo.</div>
+
+<h2 id="p10"><span class="n">10</span>Se der erro</h2>
+<table class="t">
+  <tr><th>Mensagem ou sintoma</th><th>O que fazer</th></tr>
+  <tr><td>“Formula.Firewall: a consulta faz referência a outras consultas…”</td><td>Níveis de privacidade (fim do passo 3): Organizacional nas duas fontes ou “Ignorar os níveis de privacidade”.</td></tr>
+  <tr><td>“A chave não corresponde a nenhuma linha da tabela” na consulta Fazendas</td><td>A planilha não tem uma <b>tabela</b> chamada Fazendas. No Excel, clique na lista › <span class="menu">Página Inicial › Formatar como Tabela</span> e, em <span class="menu">Design da Tabela</span>, dê o nome <b>Fazendas</b>.</td></tr>
+  <tr><td>Erro 400 da Open-Meteo</td><td>A Open-Meteo recusou algum nome de modelo. Apague a linha <code>models = …</code> da RespostasAPI para testar sem os modelos separados e me mande a mensagem completa.</td></tr>
+  <tr><td>ChuvaDiaria fica vazia</td><td>Os nomes das colunas que a Open-Meteo devolve mudaram. No Power Query, abra a RespostasAPI, clique num “Record” da coluna Resposta › daily, tire um print dos nomes e me mande.</td></tr>
+  <tr><td>Erro ao converter coordenada</td><td>Alguma linha da planilha está num formato diferente de <code>19°52'39.33"S 53°01'08.98"W</code> (graus, minutos, segundos, letra do hemisfério, um espaço entre latitude e longitude).</td></tr>
+  <tr><td>Cartões mostram números estranhos</td><td>Confira se a segmentação Dia está com <b>um só</b> dia selecionado.</td></tr>
+  <tr><td>Atualização agendada falha</td><td>Credenciais do passo 9. Planilha no computador sem gateway não atualiza sozinha.</td></tr>
+</table>
+</main>
+<script>
+document.querySelectorAll(".code button").forEach(function (b) {
+  b.addEventListener("click", function () {
+    var pre = b.closest(".code").querySelector("pre"), text = pre.textContent;
+    function done() { b.textContent = "Copiado"; b.classList.add("ok"); setTimeout(function () { b.textContent = "Copiar"; b.classList.remove("ok"); }, 1800); }
+    function fallback() { var r = document.createRange(); r.selectNodeContents(pre); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); done(); } catch (e) {} }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+  });
+});
+</script>
+</body>
+</html>

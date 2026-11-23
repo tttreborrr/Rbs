@@ -1,0 +1,158 @@
+// =====================================================================
+// DAX · Chuva nas Fazendas · MS Florestal
+// =====================================================================
+
+// ---------------------------------------------------------------------
+// TABELAS CALCULADAS  (Modelagem > Nova tabela, uma de cada vez)
+// Servem para escolher os limites de chuva numa segmentação, como os
+// botões − e + do painel HTML.
+// ---------------------------------------------------------------------
+
+Limite Chuva = GENERATESERIES(0, 20, 0.5)
+
+Limite Forte = GENERATESERIES(0, 40, 0.5)
+
+
+// ---------------------------------------------------------------------
+// MEDIDAS  (crie uma tabela vazia chamada "Medidas" e, com ela
+// selecionada, use Modelagem > Nova medida para cada uma abaixo)
+// ---------------------------------------------------------------------
+
+// Limites ----------------------------------------------------------------
+
+Limite Chuva mm = SELECTEDVALUE('Limite Chuva'[Value], 4)
+
+Limite Forte mm = SELECTEDVALUE('Limite Forte'[Value], 6)
+
+Limite Agora mm/h = 0.5
+
+Hoje = MAX(Atualizacao[Hoje])
+
+Atualizado às = "Previsão das " & FORMAT(MAX(Atualizacao[Hora local]), "hh:nn") & " de " & FORMAT(MAX(Atualizacao[Hora local]), "dd/mm/yyyy")
+
+
+// Chuva do dia -----------------------------------------------------------
+// Média entre os modelos escolhidos na segmentação Modelo.
+// Um modelo escolhido = valor dele. Os três = média dos três.
+
+Chuva mm =
+AVERAGEX(
+    VALUES(Modelos[Modelo]),
+    CALCULATE(SUM(ChuvaDiaria[mm]))
+)
+
+Situação =
+VAR v = [Chuva mm]
+RETURN
+    SWITCH(
+        TRUE(),
+        ISBLANK(v), BLANK(),
+        v > [Limite Forte mm], "Chuva forte",
+        v >= [Limite Chuva mm], "Chuva",
+        "Sem chuva"
+    )
+
+Cor Situação =
+SWITCH(
+    [Situação],
+    "Chuva forte", "#1D5FBF",
+    "Chuva", "#A9CDF2",
+    "Sem chuva", "#E4E8E2"
+)
+
+Cor Texto =
+IF([Situação] = "Chuva forte", "#FFFFFF", "#12201A")
+
+Chance % =
+MAX(ChuvaDiaria[Chance]) / 100
+
+
+// Contagens para os cartões ----------------------------------------------
+// Usam o dia escolhido na segmentação Dia (escolha um dia só).
+
+Total de fazendas =
+COUNTROWS(VALUES(Fazendas[id]))
+
+Fazendas com chuva =
+VAR lim = [Limite Chuva mm]
+RETURN
+    COUNTROWS(FILTER(VALUES(Fazendas[id]), [Chuva mm] >= lim)) + 0
+
+Fazendas com chuva forte =
+VAR lim = [Limite Forte mm]
+RETURN
+    COUNTROWS(FILTER(VALUES(Fazendas[id]), [Chuva mm] > lim)) + 0
+
+Título chuva no dia =
+"Com chuva " & IF(SELECTEDVALUE(ChuvaDiaria[Dia]) = "Hoje", "hoje", IF(SELECTEDVALUE(ChuvaDiaria[Dia]) = "Amanhã", "amanhã", "em " & SELECTEDVALUE(ChuvaDiaria[Dia], "todos os dias")))
+
+
+// Agora ------------------------------------------------------------------
+
+Chuva agora mm/h =
+AVERAGEX(
+    VALUES(Modelos[Modelo]),
+    CALCULATE(SUM(ChuvaAgora[mm/h]))
+)
+
+Chovendo agora =
+IF([Chuva agora mm/h] >= [Limite Agora mm/h], "Chovendo", "Sem chuva")
+
+Fazendas chovendo agora =
+VAR lim = [Limite Agora mm/h]
+RETURN
+    COUNTROWS(FILTER(VALUES(Fazendas[id]), [Chuva agora mm/h] >= lim)) + 0
+
+
+// Janelas de tempo -------------------------------------------------------
+
+Chuva próximas 24 h =
+CALCULATE(
+    AVERAGEX(VALUES(Modelos[Modelo]), CALCULATE(SUM(ChuvaHoraria[mm]))),
+    ChuvaHoraria[HorasRel] >= 0,
+    ChuvaHoraria[HorasRel] < 24
+)
+
+Chuva por hora =
+AVERAGEX(
+    VALUES(Modelos[Modelo]),
+    CALCULATE(SUM(ChuvaHoraria[mm]))
+)
+
+Chuva últimos 7 dias =
+CALCULATE(
+    [Chuva mm],
+    REMOVEFILTERS(ChuvaDiaria),
+    ChuvaDiaria[DiaRel] >= -7,
+    ChuvaDiaria[DiaRel] <= -1
+)
+
+Média últimos 7 dias =
+AVERAGEX(VALUES(Fazendas[id]), [Chuva últimos 7 dias])
+
+Dias com chuva (próx. 7) =
+VAR lim = [Limite Chuva mm]
+RETURN
+    CALCULATE(
+        COUNTROWS(FILTER(VALUES(ChuvaDiaria[Data]), [Chuva mm] >= lim)),
+        REMOVEFILTERS(ChuvaDiaria),
+        ChuvaDiaria[DiaRel] >= 0,
+        ChuvaDiaria[DiaRel] <= 6
+    ) + 0
+
+% Chuva (próx. 7 dias) =
+DIVIDE([Dias com chuva (próx. 7)], 7)
+
+
+// Concordância entre modelos ---------------------------------------------
+// Quantos dos 3 modelos preveem chuva (ignora a segmentação Modelo).
+
+Modelos com chuva =
+VAR lim = [Limite Chuva mm]
+RETURN
+    COUNTROWS(
+        FILTER(ALL(Modelos[Modelo]), CALCULATE(SUM(ChuvaDiaria[mm])) >= lim)
+    ) + 0
+
+Concordância =
+[Modelos com chuva] & " de " & COUNTROWS(ALL(Modelos[Modelo]))

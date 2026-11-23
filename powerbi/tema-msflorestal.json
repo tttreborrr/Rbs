@@ -1,0 +1,51 @@
+{
+  "name": "MS Florestal - Chuva",
+  "dataColors": ["#1D5FBF", "#8CC63F", "#1D5A3A", "#A9CDF2", "#B4560F", "#7D8A82", "#154630", "#4D9CF2"],
+  "background": "#FFFFFF",
+  "foreground": "#12201A",
+  "tableAccent": "#1D5A3A",
+  "good": "#8CC63F",
+  "neutral": "#A9CDF2",
+  "bad": "#1D5FBF",
+  "maximum": "#1D5FBF",
+  "center": "#A9CDF2",
+  "minimum": "#E4E8E2",
+  "textClasses": {
+    "title": { "fontFace": "Segoe UI Semibold", "fontSize": 12, "color": "#1D5A3A" },
+    "header": { "fontFace": "Segoe UI Semibold", "fontSize": 11, "color": "#12201A" },
+    "label": { "fontFace": "Segoe UI", "fontSize": 10, "color": "#4B5A52" },
+    "callout": { "fontFace": "Segoe UI Bold", "fontSize": 28, "color": "#12201A" }
+  },
+  "visualStyles": {
+    "page": {
+      "*": {
+        "background": [{ "color": { "solid": { "color": "#ECEEE9" } }, "transparency": 0 }],
+        "outspace": [{ "color": { "solid": { "color": "#ECEEE9" } }, "transparency": 0 }]
+      }
+    },
+    "*": {
+      "*": {
+        "background": [{ "show": true, "color": { "solid": { "color": "#FAFBF8" } }, "transparency": 0 }],
+        "border": [{ "show": true, "color": { "solid": { "color": "#D6DCD3" } }, "radius": 8 }],
+        "title": [{ "show": true, "fontColor": { "solid": { "color": "#1D5A3A" } }, "fontSize": 11, "fontFamily": "Segoe UI Semibold" }]
+      }
+    },
+    "slicer": {
+      "*": {
+        "items": [{ "fontColor": { "solid": { "color": "#12201A" } }, "background": { "solid": { "color": "#FFFFFF" } } }],
+        "header": [{ "fontColor": { "solid": { "color": "#1D5A3A" } }, "fontFamily": "Segoe UI Semibold" }]
+      }
+    },
+    "pivotTable": {
+      "*": {
+        "columnHeaders": [{ "fontColor": { "solid": { "color": "#FFFFFF" } }, "backColor": { "solid": { "color": "#1D5A3A" } } }],
+        "rowHeaders": [{ "fontColor": { "solid": { "color": "#12201A" } } }]
+      }
+    },
+    "tableEx": {
+      "*": {
+        "columnHeaders": [{ "fontColor": { "solid": { "color": "#FFFFFF" } }, "backColor": { "solid": { "color": "#1D5A3A" } } }]
+      }
+    }
+  }
+}

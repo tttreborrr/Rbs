@@ -119,6 +119,7 @@ button { cursor: pointer; }
 .areas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 0 4px; border-bottom: 1px dashed var(--line); margin-bottom: 6px; font-size: 12.5px; }
 .areas .btn { font-size: 12.5px; padding: 5px 10px; cursor: pointer; }
 .ar-info { color: var(--ink-2); flex: 1 1 200px; min-width: 0; }
+.pasta-row { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding-top: 6px; border-top: 1px dotted var(--line); }
 .ar-ctl { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); }
 .ar-ctl input[type=range] { width: 130px; accent-color: var(--brand); }
 .ar-ctl output { min-width: 36px; font-size: 12px; }
@@ -411,7 +412,9 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       <button type="button" class="st-btn" id="stAll">Marcar todas</button>
       <button type="button" class="st-btn" id="stNone">Limpar</button>
       <label class="st-btn xls" for="xlsFile">Carregar planilha do Excel</label>
+      <button type="button" class="st-btn" id="stPasta">Conectar pasta</button>
     </div>
+    <div class="st-msg" id="stPastaInfo" hidden></div>
     <div class="st-msg" id="stMsg" role="status"></div>
     <div class="st-grid" id="stGrid"></div>
   </div>
@@ -461,6 +464,12 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
         <label class="ar-ctl" id="arCampoBox" for="arCampo" hidden>Ligar pela coluna <select id="arCampo"></select></label>
         <button class="btn" id="arZoom" type="button" hidden>Ver áreas</button>
         <button class="btn" id="arOff" type="button" hidden>Tirar áreas</button>
+        <span class="pasta-row">
+          <button class="btn" id="btnPasta" type="button">Conectar pasta</button>
+          <button class="btn" id="btnPastaLer" type="button" hidden>Ler pasta</button>
+          <button class="btn" id="btnPastaOff" type="button" hidden>Desconectar</button>
+          <span class="ar-info" id="pastaInfo" hidden></span>
+        </span>
       </div>
       <div class="legend">
         <span><span class="sw" style="background:var(--dry)"></span>Sem chuva (&lt; <span class="lo">4</span> mm)</span>
@@ -1509,6 +1518,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   document.getElementById("stNone").onclick = function () { state.sel = []; save(); renderStart(false); };
   document.getElementById("stGo").onclick = function () {
     if (!state.sel.length) return;
+    if (PASTA.handle && !PASTA.ok) atualizarDaPasta(false, true); // o clique em Iniciar libera a leitura da pasta
     closeStart(function () { started = true; refresh(state.wantDemo); });
   };
 
@@ -1953,6 +1963,136 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     LM.fitBounds((lig.length ? L.featureGroup(lig) : areasLayer).getBounds(), { maxZoom: 15, animate: !reduce });
   };
 
+  // =================== pasta conectada: lista de fazendas + áreas lidas sozinhas ===================
+  // O navegador só deixa ler uma pasta que a pessoa escolheu. A escolha fica guardada; em cada
+  // visita o navegador pede uma confirmação (um clique) e o painel relê a pasta inteira.
+  var PASTA = { handle: null, assinatura: "", ok: false, quando: null, lendo: false, resumo: "" };
+  var temPasta = typeof window.showDirectoryPicker === "function";
+  function idbKv(chave, modo, valor) {
+    return new Promise(function (ok) {
+      try {
+        var r = indexedDB.open("chuvaFazendas", 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore("kv"); };
+        r.onerror = function () { ok(null); };
+        r.onsuccess = function () {
+          try {
+            var tx = r.result.transaction("kv", modo === "get" ? "readonly" : "readwrite"), st = tx.objectStore("kv");
+            var q = modo === "get" ? st.get(chave) : modo === "del" ? st.delete(chave) : st.put(valor, chave);
+            q.onsuccess = function () { ok(q.result || null); };
+            q.onerror = function () { ok(null); };
+          } catch (e) { ok(null); }
+        };
+      } catch (e) { ok(null); }
+    });
+  }
+  async function listarPasta(dir, prof, base) {
+    var out = [];
+    for await (var par of dir.entries()) {
+      var nome = par[0], h = par[1];
+      if (h.kind === "file") {
+        if (/\.(zip|kmz|kml|geojson|json|shp|dbf|prj|cpg|xlsx|csv)$/i.test(nome) && !/^~\$/.test(nome)) out.push({ caminho: base + nome, h: h });
+      } else if (prof < 3) out = out.concat(await listarPasta(h, prof + 1, base + nome + "/"));
+    }
+    return out;
+  }
+  async function lerPasta(forcar) {
+    var itens = await listarPasta(PASTA.handle, 0, "");
+    var arqs = await Promise.all(itens.map(function (i) { return i.h.getFile().then(function (f) { return { caminho: i.caminho, f: f }; }); }));
+    var assinatura = arqs.map(function (x) { return x.caminho + ":" + x.f.size + ":" + x.f.lastModified; }).sort().join("|");
+    if (!forcar && assinatura === PASTA.assinatura) return { mudou: false };
+    PASTA.assinatura = assinatura;
+    // planilha de fazendas: a primeira que tiver colunas de fazenda e coordenadas (as com "fazenda" no nome primeiro)
+    var lista = null, planilhas = arqs.filter(function (x) { return /\.(xlsx|csv)$/i.test(x.f.name); })
+      .sort(function (a, b) { return /fazend/i.test(b.f.name) - /fazend/i.test(a.f.name); });
+    for (var i = 0; i < planilhas.length && !lista; i++) {
+      try {
+        var x = planilhas[i], abas = /\.csv$/i.test(x.f.name) ? lerCsv(await x.f.text()) : await lerXlsx(await x.f.arrayBuffer());
+        var r = abasParaTexto(abas);
+        if (parseTalhoes(r.texto).length) lista = { texto: r.texto, nome: x.caminho };
+      } catch (e) { /* planilha que não é de fazendas: ignora */ }
+    }
+    // áreas: shapefiles agrupados pelo nome; .zip, .kml, .kmz e .geojson um por um
+    var feats = [], erros = [], grupos = {};
+    arqs.forEach(function (x) { var m = /^(.*)\.(shp|dbf|prj|cpg)$/i.exec(x.caminho); if (m) (grupos[m[1].toLowerCase()] = grupos[m[1].toLowerCase()] || []).push(x.f); });
+    for (var g in grupos) {
+      if (!grupos[g].some(function (f) { return /\.shp$/i.test(f.name); })) continue;
+      try { feats = feats.concat(await lerArquivosDeArea(grupos[g])); } catch (e) { erros.push(g + ".shp: " + e.message); }
+    }
+    var outros = arqs.filter(function (x) { return /\.(zip|kmz|kml|geojson|json)$/i.test(x.f.name); });
+    for (var j = 0; j < outros.length; j++) {
+      try { feats = feats.concat(await lerArquivosDeArea([outros[j].f])); } catch (e) { erros.push(outros[j].caminho + ": " + e.message); }
+    }
+    return { mudou: true, lista: lista, feats: feats, erros: erros, nArq: arqs.length };
+  }
+  function aplicarPasta(r) {
+    var partes = [];
+    if (r.lista) {
+      var farms = parseTalhoes(r.lista.texto), mudouLista = r.lista.texto !== state.text;
+      state.text = r.lista.texto; document.getElementById("txtFarms").value = r.lista.texto;
+      var existe = {}; farms.forEach(function (t) { existe[key(t)] = true; });
+      state.sel = state.sel.filter(function (k) { return existe[k]; });
+      save();
+      partes.push(farms.length + " fazendas de " + esc(r.lista.nome));
+      if (mudouLista && startOpen) renderStart(false);
+      if (mudouLista && started && !startOpen) refresh(state.demo);
+    }
+    if (r.feats.length) {
+      usarAreas({ geo: { type: "FeatureCollection", features: r.feats }, nome: "pasta " + PASTA.handle.name, campo: AREAS.campo }, true);
+      partes.push(r.feats.length + " áreas");
+    }
+    PASTA.resumo = partes.length ? partes.join(" e ") : "nenhuma planilha de fazendas nem área encontrada";
+    if (r.erros.length) PASTA.resumo += " · " + r.erros.length + " arquivo" + (r.erros.length > 1 ? "s" : "") + " não lido" + (r.erros.length > 1 ? "s" : "");
+    PASTA.errosTxt = r.erros.join("\n");
+  }
+  async function permissaoPasta(pedir) {
+    var h = PASTA.handle; if (!h) return false;
+    try {
+      if ((await h.queryPermission({ mode: "read" })) === "granted") return true;
+      return pedir ? (await h.requestPermission({ mode: "read" })) === "granted" : false;
+    } catch (e) { return false; }
+  }
+  async function atualizarDaPasta(forcar, pedir) {
+    if (!PASTA.handle || PASTA.lendo) return;
+    if (!(await permissaoPasta(pedir))) { PASTA.ok = false; painelPasta(); return; }
+    PASTA.ok = true; PASTA.lendo = true; painelPasta();
+    try {
+      var r = await lerPasta(forcar);
+      if (r.mudou) aplicarPasta(r);
+      PASTA.quando = new Date();
+    } catch (e) {
+      PASTA.ok = false; PASTA.resumo = "não consegui ler a pasta (" + esc(e.message) + ")";
+    }
+    PASTA.lendo = false; painelPasta();
+  }
+  async function conectarPasta() {
+    if (!temPasta) { setMsg("Este navegador não deixa conectar pastas. Use o Edge ou o Chrome.", "err", 8000); return; }
+    var dir;
+    try { dir = await window.showDirectoryPicker({ id: "chuva-fazendas", mode: "read" }); } catch (e) { return; }
+    PASTA.handle = dir; PASTA.assinatura = ""; PASTA.resumo = "";
+    idbKv("pasta", "put", dir);
+    await atualizarDaPasta(true, true);
+  }
+  function painelPasta() {
+    var nome = PASTA.handle ? PASTA.handle.name : "";
+    var txt = !PASTA.handle ? "" :
+      PASTA.lendo ? "Lendo a pasta <b>" + esc(nome) + "</b>…" :
+      !PASTA.ok ? "Pasta <b>" + esc(nome) + "</b> conectada. Clique em <b>Ler pasta</b> e permita o acesso." :
+      "Pasta <b>" + esc(nome) + "</b>: " + PASTA.resumo + (PASTA.quando ? " · lida às " + PASTA.quando.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "");
+    ["pastaInfo", "stPastaInfo"].forEach(function (id) { var e = document.getElementById(id); e.innerHTML = txt; e.title = PASTA.errosTxt || ""; e.hidden = !txt; });
+    document.getElementById("btnPasta").textContent = PASTA.handle ? "Trocar pasta" : "Conectar pasta";
+    document.getElementById("stPasta").textContent = PASTA.handle ? (PASTA.ok ? "Ler pasta de novo" : "Ler pasta") : "Conectar pasta";
+    document.getElementById("btnPastaLer").hidden = !PASTA.handle;
+    document.getElementById("btnPastaOff").hidden = !PASTA.handle;
+    ["btnPasta", "stPasta"].forEach(function (id) { document.getElementById(id).hidden = !temPasta; });
+  }
+  document.getElementById("btnPasta").onclick = function () { conectarPasta(); };
+  document.getElementById("btnPastaLer").onclick = function () { atualizarDaPasta(true, true); };
+  document.getElementById("stPasta").onclick = function () { if (PASTA.handle) atualizarDaPasta(true, true); else conectarPasta(); };
+  document.getElementById("btnPastaOff").onclick = function () {
+    PASTA = { handle: null, assinatura: "", ok: false, quando: null, lendo: false, resumo: "" };
+    idbKv("pasta", "del"); painelPasta();
+  };
+
   // ---------- logo ----------
   function paintLogo() {
     var box = document.getElementById("logoBox");
@@ -2007,7 +2147,14 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   (state.cfgAreas ? Promise.resolve(state.cfgAreas).then(function (d) { idbAreas("put", d); return d; }) : idbAreas("get")).then(function (d) {
     if (d && d.geo) usarAreas(d, false); else painelAreas();
   });
-  setInterval(function () { if (started && !startOpen && !state.demo) refresh(false); }, REFRESH_MIN * 60000);
+  painelPasta();
+  idbKv("pasta", "get").then(function (h) {
+    if (h && h.kind === "directory") { PASTA.handle = h; painelPasta(); atualizarDaPasta(true, false); }
+  });
+  setInterval(function () {
+    if (PASTA.handle && PASTA.ok) atualizarDaPasta(false, false);
+    if (started && !startOpen && !state.demo) refresh(false);
+  }, REFRESH_MIN * 60000);
   setInterval(syncText, 60000);
 })();
 </script>

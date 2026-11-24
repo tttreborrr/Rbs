@@ -22,6 +22,15 @@ Embaixo do mapa, **Carregar áreas (shape, KML)** aceita: `.zip` do shapefile, o
 
 Cada área é ligada a uma fazenda da lista pelo código ou pelo nome (automático, ou escolhendo a coluna em "Ligar pela coluna") e fica com a cor da chuva da fazenda. A barra **Opacidade** deixa as áreas mais ou menos transparentes. As áreas ficam guardadas no navegador e vão junto no arquivo do mês (se não forem grandes demais).
 
+## Pasta conectada (lista e áreas lidas sozinhas)
+
+**Conectar pasta** (na tela inicial ou embaixo do mapa) escolhe uma pasta do computador, da rede ou do OneDrive. O painel lê dela:
+
+- a planilha de fazendas (a primeira `.xlsx`/`.csv` com colunas de fazenda e coordenadas; as que têm "fazenda" no nome vêm primeiro);
+- todas as áreas: shapefiles (`.shp` + `.dbf` + `.prj`, inclusive em subpastas), `.zip`, `.kml`, `.kmz`, `.geojson`.
+
+O navegador lembra a pasta. Em cada visita ele pede uma confirmação (o clique em **Iniciar** ou em **Ler pasta** já serve) e o painel lê a pasta de novo; enquanto aberto, confere a cada 30 minutos se algum arquivo mudou. Funciona no Edge e no Chrome.
+
 ## O que aparece
 
 - **Mapa**: mapa de verdade, com zoom, satélite e nomes de estradas (Esri). As fazendas são pintadas pela chuva do momento escolhido; fazenda com chuva pulsa. Se a rede bloquear o mapa, aparece um mapa simples no lugar.

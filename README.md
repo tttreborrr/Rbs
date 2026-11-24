@@ -16,9 +16,15 @@ Ao abrir, aparece a tela para escolher **frentes** e **fazendas**. Clique no nom
 
 A lista completa pode vir de uma **planilha do Excel** (.xlsx ou .csv): botão **Carregar planilha do Excel** ou arraste o arquivo para a tela inicial. O painel procura as colunas pelo nome do cabeçalho: nome da fazenda (`fazenda`), coordenadas (`Coordenadas`, ou `Latitude` e `Longitude`), e, se houver, `id`/`Código` e `Frente`. Sem coluna Frente, a frente é o que vem depois do " - " no nome.
 
+## Áreas das fazendas no mapa
+
+Embaixo do mapa, **Carregar áreas (shape, KML)** aceita: `.zip` do shapefile, os arquivos `.shp` + `.dbf` + `.prj` juntos, `.kml`, `.kmz` ou `.geojson`. Shapefile em UTM (SIRGAS 2000, zonas 21S/22S etc.) é convertido para graus no próprio navegador; em coordenadas geográficas também funciona. Outras projeções (por exemplo Policônica) precisam ser exportadas em UTM, geográfico ou KML.
+
+Cada área é ligada a uma fazenda da lista pelo código ou pelo nome (automático, ou escolhendo a coluna em "Ligar pela coluna") e fica com a cor da chuva da fazenda. A barra **Opacidade** deixa as áreas mais ou menos transparentes. As áreas ficam guardadas no navegador e vão junto no arquivo do mês (se não forem grandes demais).
+
 ## O que aparece
 
-- **Mapa**: mapa de verdade, com zoom e opção de satélite (OpenStreetMap e Esri). As fazendas são pintadas pela chuva do momento escolhido; fazenda com chuva pulsa. Se a rede bloquear o mapa, aparece um mapa simples no lugar.
+- **Mapa**: mapa de verdade, com zoom, satélite e nomes de estradas (Esri). As fazendas são pintadas pela chuva do momento escolhido; fazenda com chuva pulsa. Se a rede bloquear o mapa, aparece um mapa simples no lugar.
 - **Momento**: Agora, Hoje, Amanhã e os próximos dias. O botão ▶ passa os dias um a um, como um radar.
 - **Frente**: filtra as frentes de carregamento RRP, CPG, ACL etc. (o que vem depois do " - " no nome).
 - **Leitura geral**: quantas fazendas estão com chuva agora, no dia escolhido, nas próximas 24 h e quanto choveu nos últimos 7 dias.

@@ -116,6 +116,15 @@ button { cursor: pointer; }
 #map.far .pin em { display: none; }
 #map .leaflet-control-layers, #map .leaflet-bar a { font-family: var(--font-body); }
 .maplinks { display: flex; gap: 14px; flex-wrap: wrap; }
+.areas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 0 4px; border-bottom: 1px dashed var(--line); margin-bottom: 6px; font-size: 12.5px; }
+.areas .btn { font-size: 12.5px; padding: 5px 10px; cursor: pointer; }
+.ar-info { color: var(--ink-2); flex: 1 1 200px; min-width: 0; }
+.ar-ctl { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); }
+.ar-ctl input[type=range] { width: 130px; accent-color: var(--brand); }
+.ar-ctl output { min-width: 36px; font-size: 12px; }
+.ar-ctl select { font-size: 12.5px; padding: 3px 6px; border-radius: 6px; border: 1px solid var(--line-2); background: var(--panel); max-width: 160px; }
+.leaflet-tooltip.area-tip { background: var(--ink); color: var(--bg); border: 0; border-radius: 6px; font: 12px/1.4 var(--font-body); box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+.leaflet-tooltip.area-tip::before { display: none; }
 #map .graticule { stroke: var(--line); stroke-width: 1; }
 #map .glabel { fill: var(--muted); font: 10px var(--font-data); }
 #map .farm { cursor: pointer; }
@@ -444,6 +453,15 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     <div class="panel mapbox">
       <div class="maphead"><h2>Mapa</h2><span class="when" id="mapWhen"></span></div>
       <div id="map"></div>
+      <div class="areas" id="areasBar">
+        <label class="btn" for="shpFile">Carregar áreas (shape, KML)</label>
+        <input type="file" id="shpFile" multiple accept=".zip,.shp,.dbf,.prj,.cpg,.kml,.kmz,.geojson,.json" hidden>
+        <span class="ar-info" id="arInfo">Nenhuma área carregada</span>
+        <label class="ar-ctl" id="arOpBox" for="arOp" hidden>Opacidade <input type="range" id="arOp" min="0" max="100" step="5"> <output id="arOpV" class="num"></output></label>
+        <label class="ar-ctl" id="arCampoBox" for="arCampo" hidden>Ligar pela coluna <select id="arCampo"></select></label>
+        <button class="btn" id="arZoom" type="button" hidden>Ver áreas</button>
+        <button class="btn" id="arOff" type="button" hidden>Tirar áreas</button>
+      </div>
       <div class="legend">
         <span><span class="sw" style="background:var(--dry)"></span>Sem chuva (&lt; <span class="lo">4</span> mm)</span>
         <span><span class="sw" style="background:var(--rain-1)"></span>Chuva (<span class="lo">4</span> a <span class="hi">6</span> mm)</span>
@@ -642,7 +660,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     { key: "gfs", id: "gfs_seamless", name: "GFS", desc: "americano (NOAA)" },
     { key: "icon", id: "icon_seamless", name: "ICON", desc: "alemão (DWD)" }
   ];
-  var state = { text: "", params: {}, farms: [], data: null, raw: null, avail: [], modelSel: "ecmwf", sel: [], wantDemo: false, demo: false, region: "Todas", view: "now", sort: "rain", open: null, manual: {}, lastFetch: null, firstPaint: true };
+  var state = { text: "", params: {}, farms: [], data: null, raw: null, avail: [], modelSel: "ecmwf", sel: [], wantDemo: false, areaOp: 0.45, cfgAreas: null, demo: false, region: "Todas", view: "now", sort: "rain", open: null, manual: {}, lastFetch: null, firstPaint: true };
 
   // ---------- armazenamento local (falha em silêncio) ----------
   function load() {
@@ -657,13 +675,15 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     state.manual = (s && s.manual) || {};
     state.sort = (s && s.sort) || "rain";
     state.modelSel = (s && s.modelSel) || "ecmwf";
+    state.areaOp = s && s.areaOp != null ? s.areaOp : 0.45;
+    state.cfgAreas = useCfg && CFG.areas && CFG.areas.geo ? CFG.areas : null;
     // fazendas marcadas na tela inicial
     var selSalva = useCfg ? CFG.sel : s.sel;
     if (Array.isArray(selSalva)) state.sel = selSalva;
     else { var cat = parseTalhoes(state.text); state.sel = cat.length <= 30 ? cat.map(key) : []; }
   }
   function save() {
-    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp, sel: state.sel })); } catch (e) {}
+    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp, sel: state.sel, areaOp: state.areaOp })); } catch (e) {}
   }
 
   // ---------- números ----------
@@ -1126,12 +1146,17 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     if (!LM) {
       box.innerHTML = ""; box.classList.add("lf");
       LM = L.map(box, { scrollWheelZoom: true, zoomSnap: 0.5 });
-      var osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" });
-      var sat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Imagens © Esri" });
-      osm.addTo(LM);
-      L.control.layers({ "Mapa": osm, "Satélite": sat }, null, { position: "topright", collapsed: false }).addTo(LM);
+      var ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/";
+      var osm = L.tileLayer(ESRI + "World_Street_Map/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Mapa © Esri" });
+      var sat = L.tileLayer(ESRI + "World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Imagens © Esri" });
+      var nomes = L.layerGroup([
+        L.tileLayer(ESRI + "Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19 }),
+        L.tileLayer(ESRI + "Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19 })
+      ]);
+      sat.addTo(LM); nomes.addTo(LM);
+      L.control.layers({ "Mapa": osm, "Satélite": sat }, { "Nomes e estradas": nomes }, { position: "topright", collapsed: false }).addTo(LM);
       L.control.scale({ imperial: false }).addTo(LM);
-      [osm, sat].forEach(function (l) { l.on("tileerror", function () { if (++tileErrs === 8) setMsg("O mapa não conseguiu baixar as imagens. A rede pode estar bloqueando <b>tile.openstreetmap.org</b> ou <b>server.arcgisonline.com</b>. Os pontos e as cores continuam certos.", "err"); }); });
+      [osm, sat].forEach(function (l) { l.on("tileerror", function () { if (++tileErrs === 8) setMsg("O mapa não conseguiu baixar as imagens. A rede pode estar bloqueando <b>server.arcgisonline.com</b>. Os pontos e as cores continuam certos.", "err"); }); });
       LM.on("zoomend", function () { box.classList.toggle("far", LM.getZoom() < 10); });
       setTimeout(function () { LM.invalidateSize(); }, 0);
     }
@@ -1150,9 +1175,11 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       LM.fitBounds(L.latLngBounds(rows.map(function (r) { return [r.t.lat, r.t.lon]; })).pad(0.12), { animate: !reduce, maxZoom: 12 });
     }
     box.classList.toggle("far", LM.getZoom() < 10);
+    if (AREAS.geo && !areasLayer) desenharAreas();
     paintMap();
   }
   function paintMap() {
+    pintarAreas();
     document.querySelectorAll("#map .pin").forEach(function (g) {
       var r = state.all[+g.getAttribute("data-k")], st = viewStatus(r, state.view);
       g.className = "pin " + st + (r.k === state.open ? " sel" : "") + (r.ov ? " manual" : "");
@@ -1369,6 +1396,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     var cat = parseTalhoes(state.text), marcadas = {};
     state.sel.forEach(function (k) { marcadas[k] = true; });
     state.farms = cat.filter(function (t) { return marcadas[key(t)]; });
+    if (AREAS.geo) { ligarAreas(); painelAreas(); }
     if (!state.farms.length) { openStart(); return; }
     document.getElementById("syncTxt").innerHTML = '<span class="dot"></span>Buscando previsão…';
     (useDemo ? Promise.resolve({ list: demoMulti(), models: MODELS.map(function (m) { return m.key; }), note: "" }) : fetchData()).then(function (res) {
@@ -1543,13 +1571,16 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       arqs[dec.decode(new Uint8Array(buf, off + 46, nl))] = { metodo: u16(dv, off + 10), tam: u32(dv, off + 20), local: u32(dv, off + 42) };
       off += 46 + nl + xl + cl;
     }
-    return function ler(nome) {
+    function ler(nome, binario) {
       var a = arqs[nome]; if (!a) return Promise.resolve(null);
       var ini = a.local + 30 + u16(dv, a.local + 26) + u16(dv, a.local + 28), dados = new Uint8Array(buf, ini, a.tam);
-      if (a.metodo === 0) return Promise.resolve(dec.decode(dados));
+      if (a.metodo === 0) return Promise.resolve(binario ? dados.slice().buffer : dec.decode(dados));
       if (a.metodo !== 8 || typeof DecompressionStream === "undefined") return Promise.reject(new Error("este navegador não consegue abrir o arquivo; use o Edge ou o Chrome atualizados"));
-      return new Response(new Blob([dados]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();
-    };
+      var resp = new Response(new Blob([dados]).stream().pipeThrough(new DecompressionStream("deflate-raw")));
+      return binario ? resp.arrayBuffer() : resp.text();
+    }
+    ler.nomes = Object.keys(arqs);
+    return ler;
   }
   function lerXlsx(buf) {
     var ler = abrirZip(buf), P = new DOMParser();
@@ -1647,6 +1678,281 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   })();
 
 
+  // =================== áreas das fazendas (shapefile, KML, KMZ, GeoJSON) ===================
+  var AREAS = { geo: null, nome: "", campo: "" }, areasLayer = null, areaRows = {};
+
+  // guarda as áreas no navegador (IndexedDB aguenta arquivos grandes)
+  function idbAreas(modo, valor) {
+    return new Promise(function (ok) {
+      try {
+        var r = indexedDB.open("chuvaFazendas", 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore("kv"); };
+        r.onerror = function () { ok(null); };
+        r.onsuccess = function () {
+          try {
+            var tx = r.result.transaction("kv", modo === "get" ? "readonly" : "readwrite"), st = tx.objectStore("kv");
+            var q = modo === "get" ? st.get("areas") : modo === "del" ? st.delete("areas") : st.put(valor, "areas");
+            q.onsuccess = function () { ok(q.result || null); };
+            q.onerror = function () { ok(null); };
+          } catch (e) { ok(null); }
+        };
+      } catch (e) { ok(null); }
+    });
+  }
+
+  // Transversa de Mercator inversa (UTM e afins): metros -> graus
+  function tmInversa(p) {
+    var a = p.a, e2 = p.f * (2 - p.f), ep2 = e2 / (1 - e2), sq = Math.sqrt(1 - e2), e1 = (1 - sq) / (1 + sq), rad = Math.PI / 180;
+    var m1 = 1 - e2 / 4 - 3 * e2 * e2 / 64 - 5 * e2 * e2 * e2 / 256;
+    function arco(phi) {
+      return a * (m1 * phi - (3 * e2 / 8 + 3 * e2 * e2 / 32 + 45 * e2 * e2 * e2 / 1024) * Math.sin(2 * phi) +
+        (15 * e2 * e2 / 256 + 45 * e2 * e2 * e2 / 1024) * Math.sin(4 * phi) - (35 * e2 * e2 * e2 / 3072) * Math.sin(6 * phi));
+    }
+    var M0 = arco(p.lat0 * rad);
+    return function (x, y) {
+      var mu = (M0 + (y - p.fn) / p.k0) / (a * m1);
+      var phi1 = mu + (3 * e1 / 2 - 27 * Math.pow(e1, 3) / 32) * Math.sin(2 * mu) + (21 * e1 * e1 / 16 - 55 * Math.pow(e1, 4) / 32) * Math.sin(4 * mu) +
+        (151 * Math.pow(e1, 3) / 96) * Math.sin(6 * mu) + (1097 * Math.pow(e1, 4) / 512) * Math.sin(8 * mu);
+      var s = Math.sin(phi1), c = Math.cos(phi1), t = Math.tan(phi1);
+      var C1 = ep2 * c * c, T1 = t * t, N1 = a / Math.sqrt(1 - e2 * s * s), R1 = a * (1 - e2) / Math.pow(1 - e2 * s * s, 1.5), D = (x - p.fe) / (N1 * p.k0);
+      var lat = phi1 - (N1 * t / R1) * (D * D / 2 - (5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * ep2) * Math.pow(D, 4) / 24 +
+        (61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * ep2 - 3 * C1 * C1) * Math.pow(D, 6) / 720);
+      var lon = p.lon0 * rad + (D - (1 + 2 * T1 + C1) * Math.pow(D, 3) / 6 + (5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * ep2 + 24 * T1 * T1) * Math.pow(D, 5) / 120) / c;
+      return [lon / rad, lat / rad];
+    };
+  }
+  // lê o .prj: graus (null) ou uma função que converte metros em graus
+  function conversorDoPrj(wkt) {
+    if (!wkt || !/PROJCS/i.test(wkt)) return null;
+    if (!/Transverse_Mercator/i.test(wkt)) {
+      var nomeProj = (/PROJCS\["([^"]+)"/i.exec(wkt) || [])[1] || "desconhecida";
+      throw new Error("o shape está numa projeção que o painel não converte (" + nomeProj + "). Exporte em SIRGAS 2000 geográfico, em UTM ou em KML");
+    }
+    function par(n, padrao) { var m = new RegExp('PARAMETER\\["' + n + '"\\s*,\\s*([-\\d.eE+]+)', "i").exec(wkt); return m ? parseFloat(m[1]) : padrao; }
+    var esf = /SPHEROID\["[^"]*"\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i.exec(wkt);
+    var invf = esf ? parseFloat(esf[2]) : 298.257222101;
+    return tmInversa({ a: esf ? parseFloat(esf[1]) : 6378137, f: invf ? 1 / invf : 0, lon0: par("central_meridian", 0), lat0: par("latitude_of_origin", 0),
+      k0: par("scale_factor", 0.9996), fe: par("false_easting", 500000), fn: par("false_northing", 0) });
+  }
+  function arred(p) { return [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6]; }
+  function lerShp(buf, prj) {
+    var dv = new DataView(buf), conv = conversorDoPrj(prj), out = [], off = 100;
+    while (off + 8 <= buf.byteLength) {
+      var tam = dv.getInt32(off + 4, false) * 2, ini = off + 8; off = ini + tam;
+      if (tam < 4 || ini + tam > buf.byteLength) { out.push(null); continue; }
+      var tipo = dv.getInt32(ini, true);
+      if (tipo !== 5 && tipo !== 15 && tipo !== 25) { out.push(null); continue; }
+      var np = dv.getInt32(ini + 36, true), npt = dv.getInt32(ini + 40, true), pts = ini + 44 + np * 4, aneis = [];
+      for (var i = 0; i < np; i++) {
+        var a0 = dv.getInt32(ini + 44 + i * 4, true), a1 = i + 1 < np ? dv.getInt32(ini + 48 + i * 4, true) : npt, anel = [];
+        for (var j = a0; j < a1; j++) {
+          var x = dv.getFloat64(pts + j * 16, true), y = dv.getFloat64(pts + j * 16 + 8, true);
+          if (!conv && (Math.abs(x) > 180 || Math.abs(y) > 90)) throw new Error("as coordenadas estão em metros e faltou o arquivo .prj junto do .shp");
+          anel.push(arred(conv ? conv(x, y) : [x, y]));
+        }
+        if (anel.length > 2) aneis.push(anel);
+      }
+      out.push(aneis.length ? aneis : null);
+    }
+    return out;
+  }
+  function decodificador(cpg) {
+    var r = (cpg || "").trim().toLowerCase();
+    if (/utf-?8|65001/.test(r)) { var u8 = new TextDecoder("utf-8"); return function (b) { return u8.decode(b); }; }
+    if (/1252/.test(r)) { var w = new TextDecoder("windows-1252"); return function (b) { return w.decode(b); }; }
+    if (/8859|latin/.test(r)) { var l1 = new TextDecoder("iso-8859-1"); return function (b) { return l1.decode(b); }; }
+    var uf = new TextDecoder("utf-8", { fatal: true }), wf = new TextDecoder("windows-1252");
+    return function (b) { try { return uf.decode(b); } catch (e) { return wf.decode(b); } };
+  }
+  function lerDbf(buf, cpg) {
+    var dv = new DataView(buf), n = dv.getUint32(4, true), hl = dv.getUint16(8, true), rl = dv.getUint16(10, true), campos = [], o = 32, dec = decodificador(cpg);
+    while (o + 32 <= hl && dv.getUint8(o) !== 0x0D) {
+      campos.push({ nome: dec(new Uint8Array(buf, o, 11)).split("\0")[0].trim(), tam: dv.getUint8(o + 16) });
+      o += 32;
+    }
+    var regs = [];
+    for (var i = 0; i < n; i++) {
+      var p = hl + i * rl + 1, obj = {};
+      if (p + rl - 1 > buf.byteLength) break;
+      campos.forEach(function (c) { obj[c.nome] = dec(new Uint8Array(buf, p, c.tam)).trim(); p += c.tam; });
+      regs.push(obj);
+    }
+    return regs;
+  }
+  function shpParaFeicoes(shp, dbf, prj, cpg) {
+    var geoms = lerShp(shp, prj), props = dbf ? lerDbf(dbf, cpg) : [];
+    var out = [];
+    geoms.forEach(function (g, i) { if (g) out.push({ type: "Feature", properties: props[i] || {}, geometry: { type: "Polygon", coordinates: g } }); });
+    return out;
+  }
+  function lerKml(txt) {
+    var d = new DOMParser().parseFromString(txt, "application/xml"), feats = [];
+    function coords(el) {
+      return el.textContent.trim().split(/\s+/).map(function (s) { var p = s.split(","); return arred([+p[0], +p[1]]); })
+        .filter(function (p) { return !isNaN(p[0]) && !isNaN(p[1]); });
+    }
+    Array.prototype.forEach.call(d.getElementsByTagName("Placemark"), function (pm) {
+      var props = {}, nm = pm.getElementsByTagName("name")[0], ds = pm.getElementsByTagName("description")[0];
+      if (nm) props.name = nm.textContent.trim();
+      if (ds) {
+        var h = new DOMParser().parseFromString(ds.textContent, "text/html");
+        Array.prototype.forEach.call(h.querySelectorAll("tr"), function (tr) { var td = tr.querySelectorAll("td"); if (td.length === 2) props[td[0].textContent.trim()] = td[1].textContent.trim(); });
+      }
+      Array.prototype.forEach.call(pm.getElementsByTagName("Data"), function (x) { var v = x.getElementsByTagName("value")[0]; props[x.getAttribute("name")] = v ? v.textContent.trim() : ""; });
+      Array.prototype.forEach.call(pm.getElementsByTagName("SimpleData"), function (x) { props[x.getAttribute("name")] = x.textContent.trim(); });
+      var polis = Array.prototype.map.call(pm.getElementsByTagName("Polygon"), function (pg) {
+        return Array.prototype.map.call(pg.getElementsByTagName("coordinates"), coords).filter(function (r) { return r.length > 2; });
+      }).filter(function (p) { return p.length; });
+      if (polis.length) feats.push({ type: "Feature", properties: props, geometry: polis.length === 1 ? { type: "Polygon", coordinates: polis[0] } : { type: "MultiPolygon", coordinates: polis } });
+    });
+    return feats;
+  }
+  function lerGeoJson(txt) {
+    var g = JSON.parse(txt), feats = g.type === "FeatureCollection" ? g.features : g.type === "Feature" ? [g] : [{ type: "Feature", properties: {}, geometry: g }];
+    feats = feats.filter(function (f) { return f && f.geometry && /Polygon/.test(f.geometry.type); });
+    var amostra = JSON.stringify(feats.slice(0, 3).map(function (f) { return f.geometry.coordinates; })).match(/-?\d+(\.\d+)?/g) || [];
+    if (amostra.some(function (v) { return Math.abs(+v) > 180; })) throw new Error("o GeoJSON está em metros (UTM). Exporte em graus (WGS 84 / SIRGAS 2000 geográfico)");
+    return feats.map(function (f) { return { type: "Feature", properties: f.properties || {}, geometry: f.geometry }; });
+  }
+  function extensao(n) { return (/\.([^.]+)$/.exec(n) || [])[1] ? (/\.([^.]+)$/.exec(n))[1].toLowerCase() : ""; }
+  // aceita: .zip com shapefile ou KML, .kmz, .kml, .geojson/.json, ou os arquivos .shp/.dbf/.prj/.cpg soltos
+  function lerArquivosDeArea(files) {
+    files = Array.prototype.slice.call(files);
+    var porExt = {}; files.forEach(function (f) { porExt[extensao(f.name)] = f; });
+    function txt(f) { return f ? f.text() : Promise.resolve(""); }
+    function bin(f) { return f ? f.arrayBuffer() : Promise.resolve(null); }
+    if (porExt.shp) return Promise.all([bin(porExt.shp), bin(porExt.dbf), txt(porExt.prj), txt(porExt.cpg)]).then(function (r) { return shpParaFeicoes(r[0], r[1], r[2], r[3]); });
+    if (porExt.kml) return porExt.kml.text().then(lerKml);
+    if (porExt.geojson || porExt.json) return (porExt.geojson || porExt.json).text().then(lerGeoJson);
+    if (porExt.zip || porExt.kmz) return (porExt.zip || porExt.kmz).arrayBuffer().then(function (buf) {
+      var z = abrirZip(buf), nomes = z.nomes, feats = [];
+      function achar(base, ext) { return nomes.filter(function (n) { return n.toLowerCase() === (base + "." + ext).toLowerCase(); })[0]; }
+      var shps = nomes.filter(function (n) { return /\.shp$/i.test(n) && !/__MACOSX/.test(n); });
+      if (shps.length) {
+        return shps.reduce(function (pr, s) {
+          var base = s.replace(/\.shp$/i, "");
+          return pr.then(function () {
+            return Promise.all([z(s, true), achar(base, "dbf") ? z(achar(base, "dbf"), true) : null, achar(base, "prj") ? z(achar(base, "prj")) : "", achar(base, "cpg") ? z(achar(base, "cpg")) : ""])
+              .then(function (r) { feats = feats.concat(shpParaFeicoes(r[0], r[1], r[2], r[3])); });
+          });
+        }, Promise.resolve()).then(function () { return feats; });
+      }
+      var kml = nomes.filter(function (n) { return /\.kml$/i.test(n); })[0];
+      if (kml) return z(kml).then(lerKml);
+      var gj = nomes.filter(function (n) { return /\.(geo)?json$/i.test(n); })[0];
+      if (gj) return z(gj).then(lerGeoJson);
+      throw new Error("não achei shapefile (.shp), KML ou GeoJSON dentro do arquivo compactado");
+    });
+    return Promise.reject(new Error("formato não reconhecido. Use .zip do shapefile, .shp com .dbf e .prj, .kml, .kmz ou .geojson"));
+  }
+
+  // liga cada área a uma fazenda da lista, pelo código ou pelo nome
+  function indiceFazendas() {
+    var idx = {};
+    parseTalhoes(state.text).forEach(function (t) {
+      var k = key(t);
+      if (t.id) { idx[normTxt(t.id)] = k; if (/^\d+$/.test(t.id)) idx[String(+t.id)] = k; }
+      idx[normTxt(t.nome)] = k; idx[normTxt(t.nome.replace(/\s-\s*[^-]+$/, ""))] = k;
+    });
+    return idx;
+  }
+  function ligarAreas() {
+    if (!AREAS.geo) return 0;
+    var idx = indiceFazendas(), n = 0;
+    AREAS.geo.features.forEach(function (f) {
+      var k = null, p = f.properties || {};
+      if (AREAS.campo) { var v = normTxt(p[AREAS.campo]); k = idx[v] || (/^\d+$/.test(v) ? idx[String(+v)] : null) || null; }
+      else for (var c in p) { var v2 = normTxt(p[c]); if (v2 && (idx[v2] || (/^\d+$/.test(v2) && idx[String(+v2)]))) { k = idx[v2] || idx[String(+v2)]; break; } }
+      f.__k = k; if (k) n++;
+    });
+    return n;
+  }
+  var COR_AREA = { chuva: "#1d5fbf", fraca: "#8fc0f2", seco: "#f2f4ef" };
+  function estiloArea(f) {
+    var r = f.__k ? areaRows[f.__k] : null, st = r ? viewStatus(r, state.view) : null, op = state.areaOp;
+    if (!r) return { color: "#ffffff", weight: 1, opacity: .55, fillColor: "#ffffff", fillOpacity: op * .25 };
+    return { color: st === "seco" ? "#ffffff" : COR_AREA[st], weight: 1.8, opacity: .95, fillColor: COR_AREA[st], fillOpacity: op };
+  }
+  function rotuloArea(f) {
+    var p = f.properties || {}, linhas = [], nomes = Object.keys(p);
+    var principal = nomes.filter(function (c) { return /fazenda|faz|nome|name|projeto/i.test(c) && p[c]; })[0];
+    var talhao = nomes.filter(function (c) { return /talh|quadra|bloco/i.test(c) && p[c]; })[0];
+    if (principal) linhas.push("<b>" + esc(p[principal]) + "</b>");
+    if (talhao) linhas.push("Talhão " + esc(p[talhao]));
+    var r = f.__k ? areaRows[f.__k] : null;
+    if (r) linhas.push(farmTip(r, state.view));
+    else linhas.push(f.__k ? "Fazenda não marcada na tela inicial" : "Área sem fazenda correspondente na lista");
+    return linhas.join("<br>");
+  }
+  function desenharAreas() {
+    if (areasLayer) { areasLayer.remove(); areasLayer = null; }
+    if (!LM || !AREAS.geo) return;
+    areaRows = {}; (state.all || []).forEach(function (r) { areaRows[key(r.t)] = r; });
+    areasLayer = L.geoJSON(AREAS.geo, {
+      renderer: L.canvas({ padding: .4 }),
+      style: estiloArea,
+      onEachFeature: function (f, layer) {
+        layer.bindTooltip(function () { return rotuloArea(f); }, { sticky: true, className: "area-tip" });
+        layer.on("click", function () { var r = f.__k ? areaRows[f.__k] : null; if (r) openFarm(r.k, true); });
+      }
+    }).addTo(LM);
+  }
+  function pintarAreas() {
+    if (!areasLayer) return;
+    areaRows = {}; (state.all || []).forEach(function (r) { areaRows[key(r.t)] = r; });
+    areasLayer.setStyle(estiloArea);
+  }
+  function painelAreas() {
+    var tem = !!AREAS.geo, info = document.getElementById("arInfo");
+    ["arOpBox", "arCampoBox", "arOff", "arZoom"].forEach(function (id) { document.getElementById(id).hidden = !tem; });
+    if (!tem) { info.textContent = window.L ? "Nenhuma área carregada" : "As áreas aparecem quando o mapa com zoom carrega"; return; }
+    var lig = AREAS.geo.features.filter(function (f) { return f.__k; }).length;
+    info.innerHTML = "<b>" + esc(AREAS.nome) + "</b>: " + AREAS.geo.features.length + " área" + (AREAS.geo.features.length > 1 ? "s" : "") + ", " + lig + " ligada" + (lig === 1 ? "" : "s") + " a fazendas da lista";
+    var campos = {}; AREAS.geo.features.slice(0, 200).forEach(function (f) { Object.keys(f.properties || {}).forEach(function (c) { campos[c] = true; }); });
+    document.getElementById("arCampo").innerHTML = '<option value="">Automático</option>' + Object.keys(campos).map(function (c) { return '<option value="' + attr(c) + '"' + (c === AREAS.campo ? " selected" : "") + ">" + esc(c) + "</option>"; }).join("");
+    document.getElementById("arOp").value = Math.round(state.areaOp * 100);
+    document.getElementById("arOpV").textContent = Math.round(state.areaOp * 100) + "%";
+  }
+  function usarAreas(dados, guardar) {
+    AREAS = { geo: dados.geo, nome: dados.nome || "áreas", campo: dados.campo || "" };
+    ligarAreas(); painelAreas(); desenharAreas();
+    if (guardar) idbAreas("put", { geo: AREAS.geo, nome: AREAS.nome, campo: AREAS.campo });
+  }
+  document.getElementById("shpFile").addEventListener("change", function (e) {
+    var fs = e.target.files; if (!fs || !fs.length) return;
+    var nome = Array.prototype.map.call(fs, function (f) { return f.name; }).filter(function (n) { return !/\.(dbf|prj|cpg|shx)$/i.test(n); })[0] || fs[0].name;
+    document.getElementById("arInfo").textContent = "Lendo " + nome + "…";
+    lerArquivosDeArea(fs).then(function (feats) {
+      if (!feats.length) throw new Error("o arquivo não tem polígonos");
+      usarAreas({ geo: { type: "FeatureCollection", features: feats }, nome: nome.replace(/\.[^.]+$/, ""), campo: "" }, true);
+      if (LM && areasLayer && !AREAS.geo.features.some(function (f) { return f.__k; })) LM.fitBounds(areasLayer.getBounds(), { maxZoom: 14 });
+      setMsg("Áreas carregadas: " + feats.length + ". Use a barra de opacidade embaixo do mapa para ver o que está por baixo.", "", 6000);
+    }).catch(function (err) {
+      document.getElementById("arInfo").textContent = "Nenhuma área carregada";
+      setMsg("Não consegui ler as áreas: " + esc(err.message) + ".", "err", 12000);
+    });
+    e.target.value = "";
+  });
+  document.getElementById("arOp").addEventListener("input", function (e) {
+    state.areaOp = (+e.target.value) / 100;
+    document.getElementById("arOpV").textContent = e.target.value + "%";
+    pintarAreas();
+  });
+  document.getElementById("arOp").addEventListener("change", function () { save(); });
+  document.getElementById("arCampo").addEventListener("change", function (e) {
+    AREAS.campo = e.target.value; ligarAreas(); painelAreas(); pintarAreas();
+    idbAreas("put", { geo: AREAS.geo, nome: AREAS.nome, campo: AREAS.campo });
+  });
+  document.getElementById("arOff").onclick = function () {
+    AREAS = { geo: null, nome: "", campo: "" }; if (areasLayer) { areasLayer.remove(); areasLayer = null; }
+    idbAreas("del"); painelAreas();
+  };
+  document.getElementById("arZoom").onclick = function () {
+    if (!LM || !areasLayer) return;
+    var lig = areasLayer.getLayers().filter(function (l) { return l.feature.__k && areaRows[l.feature.__k]; });
+    LM.fitBounds((lig.length ? L.featureGroup(lig) : areasLayer).getBounds(), { maxZoom: 15, animate: !reduce });
+  };
+
   // ---------- logo ----------
   function paintLogo() {
     var box = document.getElementById("logoBox");
@@ -1681,6 +1987,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     var now = new Date();
     var nome = (document.getElementById("expName").value.trim() || MES[now.getMonth()] + "-" + now.getFullYear()).replace(/[^\w\-]+/g, "-");
     var cfg = { stamp: now.toISOString(), text: state.text, params: state.params, logo: state.logo, sel: state.sel };
+    if (AREAS.geo) { var aj = JSON.stringify(AREAS.geo); if (aj.length < 6e6) cfg.areas = { geo: AREAS.geo, nome: AREAS.nome, campo: AREAS.campo }; else setMsg("As áreas são grandes demais para ir dentro do arquivo do mês. Quem abrir vai precisar carregá-las de novo.", "", 8000); }
     var json = JSON.stringify(cfg).replace(/</g, "\\u003c");
     var html = PRISTINE.replace(/(<script type="application\/json" id="painel-config">)[\s\S]*?(<\/script>)/, function (_, a, b) { return a + json + b; });
     var url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
@@ -1697,6 +2004,9 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   state.wantDemo = /[?&]demo/.test(location.search);
   openStart();
   loadLeaflet();
+  (state.cfgAreas ? Promise.resolve(state.cfgAreas).then(function (d) { idbAreas("put", d); return d; }) : idbAreas("get")).then(function (d) {
+    if (d && d.geo) usarAreas(d, false); else painelAreas();
+  });
   setInterval(function () { if (started && !startOpen && !state.demo) refresh(false); }, REFRESH_MIN * 60000);
   setInterval(syncText, 60000);
 })();

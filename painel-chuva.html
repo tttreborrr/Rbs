@@ -294,7 +294,84 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
 .howto b { color: var(--ink); }
 .src { font-size: 12px; color: var(--muted); }
 .src a { color: var(--ink-2); }
-#tip { position: fixed; z-index: 3000; pointer-events: none; background: var(--ink); color: var(--bg); padding: 7px 10px; border-radius: 6px; font-size: 12px; line-height: 1.4; max-width: 240px; display: none; }
+/* tela inicial: escolha de frentes e fazendas */
+.start { position: fixed; inset: 0; z-index: 5000; overflow-y: auto; color: #fff;
+  background: radial-gradient(120% 90% at 15% 0%, #2a7650 0%, var(--brand) 45%, var(--brand-deep) 100%); }
+.start[hidden] { display: none !important; }
+.start.enter { animation: stEnter .6s cubic-bezier(.2,.7,.2,1) both; }
+.start.out { animation: stOut .55s cubic-bezier(.6,0,.4,1) both; pointer-events: none; }
+#rain { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: .5; }
+.st-wrap { position: relative; max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 140px; }
+.st-head { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.st-head .logo { border-right-color: rgba(255,255,255,.3); }
+.st-head h1 { margin: 0; font-family: var(--font-display); font-stretch: 78%; font-weight: 800; text-transform: uppercase; font-size: clamp(30px, 5vw, 52px); line-height: .95; letter-spacing: .01em; }
+.st-head p { margin: 8px 0 0; color: rgba(255,255,255,.8); font-size: 15px; max-width: 60ch; }
+.st-head > *, .st-tools { animation: stRise .6s cubic-bezier(.2,.7,.2,1) both; }
+.st-head > :nth-child(2) { animation-delay: .08s; }
+.st-tools { animation-delay: .16s; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 26px 0 8px; }
+.st-search { flex: 1 1 260px; min-width: 0; font: inherit; font-size: 15px; color: #fff; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.28); border-radius: 10px; padding: 10px 14px; }
+.st-search::placeholder { color: rgba(255,255,255,.6); }
+.st-search:focus { outline: 2px solid var(--lime); outline-offset: 1px; }
+.st-btn { font: 600 14px var(--font-body); color: #fff; background: transparent; border: 1px solid rgba(255,255,255,.35); border-radius: 10px; padding: 10px 14px; cursor: pointer; white-space: nowrap; transition: background .2s, border-color .2s; }
+.st-btn:hover { background: rgba(255,255,255,.1); border-color: #fff; }
+.st-btn.xls { background: var(--lime); color: #0c1a10; border-color: var(--lime); }
+.st-msg { min-height: 22px; font-size: 13.5px; color: rgba(255,255,255,.85); margin-bottom: 10px; }
+.st-msg.err { color: #ffd2b8; }
+.st-msg.ok { color: var(--lime); }
+.st-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; align-items: start; }
+@media (max-width: 520px) { .st-grid { grid-template-columns: 1fr; } }
+.fr { background: var(--panel); color: var(--ink); border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.18); animation: stCard .55s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--i) * 70ms + .2s); transition: box-shadow .25s, transform .25s; }
+.fr.full { box-shadow: 0 0 0 3px var(--lime), 0 10px 30px rgba(0,0,0,.18); }
+.fr-h { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 16px 18px 14px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.fr-h:hover { background: color-mix(in srgb, var(--bg) 60%, transparent); }
+.fr-ring { width: 38px; height: 38px; }
+.fr-ring circle { fill: none; stroke-width: 4; }
+.fr-ring .bg { stroke: var(--line); }
+.fr-ring .fg { stroke: var(--brand); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset .45s cubic-bezier(.2,.7,.2,1); }
+:root[data-theme="dark"] .fr-ring .fg { stroke: var(--lime); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fr-ring .fg { stroke: var(--lime); } }
+.fr-name { font-family: var(--font-display); font-stretch: 78%; font-weight: 800; font-size: 28px; line-height: 1; text-transform: uppercase; letter-spacing: .02em; }
+.fr-meta { display: block; font-size: 12.5px; color: var(--ink-2); margin-top: 4px; }
+.fr-name { display: block; }
+.fr-act { font-size: 12px; font-weight: 600; color: var(--ink-2); border: 1px solid var(--line-2); border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+.fr-b { display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 16px 16px; }
+.fz { font: 600 12.5px var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line-2); border-radius: 999px; padding: 5px 11px 5px 9px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background .2s, color .2s, border-color .2s, transform .15s; animation: stChip .4s ease both; animation-delay: calc(var(--i) * 70ms + var(--j) * 14ms + .3s); }
+.fz:hover { border-color: var(--ink-2); }
+.fz:active { transform: scale(.96); }
+.fz .ck { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--line-2); display: inline-grid; place-items: center; transition: background .2s, border-color .2s; flex: none; }
+.fz .ck svg { width: 9px; height: 9px; stroke: #fff; stroke-width: 2.4; fill: none; stroke-dasharray: 14; stroke-dashoffset: 14; transition: stroke-dashoffset .25s ease .05s; }
+.fz small { font: 400 10.5px var(--font-data); color: var(--muted); }
+.fz.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+.fz.on small { color: rgba(255,255,255,.7); }
+.fz.on .ck { background: var(--lime); border-color: var(--lime); }
+.fz.on .ck svg { stroke-dashoffset: 0; stroke: #0c1a10; }
+.fz.pop { animation: stPop .3s ease; }
+.fr-empty { padding: 30px; text-align: center; color: rgba(255,255,255,.8); grid-column: 1 / -1; }
+.st-foot { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; background: rgba(8, 28, 18, .82); backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,.12); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.st-foot .in { max-width: 1240px; margin: 0 auto; padding: 14px max(16px, env(safe-area-inset-right, 0px)) 14px max(16px, env(safe-area-inset-left, 0px)); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.st-count { font-size: 15px; color: rgba(255,255,255,.85); }
+.st-count b { font-family: var(--font-display); font-stretch: 85%; font-size: 30px; color: #fff; margin-right: 4px; font-variant-numeric: tabular-nums; }
+.st-count small { display: block; font-size: 12.5px; color: rgba(255,255,255,.6); }
+.st-go { font: 800 17px var(--font-display); letter-spacing: .04em; text-transform: uppercase; color: #0c1a10; background: var(--lime); border: 0; border-radius: 12px; padding: 14px 26px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 6px 24px rgba(140,198,63,.35); transition: transform .2s, box-shadow .2s, opacity .2s; }
+.st-go:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(140,198,63,.45); }
+.st-go svg { width: 18px; height: 18px; transition: transform .25s; }
+.st-go:hover svg { transform: translateX(4px); }
+.st-go:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+.st-go.ready { animation: stReady 2.4s ease-in-out infinite; }
+.start.drag::after { content: "Solte a planilha aqui"; position: fixed; inset: 14px; border: 3px dashed var(--lime); border-radius: 18px; display: grid; place-items: center; font: 800 28px var(--font-display); text-transform: uppercase; background: rgba(8,28,18,.75); z-index: 3; }
+.band .btn:not(.solid) { background: transparent; color: #fff; border-color: rgba(255,255,255,.4); }
+.band .btn:not(.solid):hover { border-color: #fff; }
+body.reveal .over, body.reveal .board-head, body.reveal .board { animation: stRise .6s cubic-bezier(.2,.7,.2,1) both; }
+body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation-delay: .16s; }
+@keyframes stEnter { from { opacity: 0; } }
+@keyframes stOut { to { opacity: 0; transform: translateY(-3%) scale(1.015); } }
+@keyframes stRise { from { opacity: 0; transform: translateY(14px); } }
+@keyframes stCard { from { opacity: 0; transform: translateY(22px) scale(.98); } }
+@keyframes stChip { from { opacity: 0; transform: translateY(6px); } }
+@keyframes stPop { 40% { transform: scale(1.08); } }
+@keyframes stReady { 0%, 100% { box-shadow: 0 6px 24px rgba(140,198,63,.35); } 50% { box-shadow: 0 6px 34px rgba(140,198,63,.7); } }
+@media (prefers-reduced-motion: reduce) { #rain { display: none; } }
+#tip { position: fixed; z-index: 6000; pointer-events: none; background: var(--ink); color: var(--bg); padding: 7px 10px; border-radius: 6px; font-size: 12px; line-height: 1.4; max-width: 240px; display: none; }
 #tip b { font-weight: 700; }
 
 @keyframes ripple { 0% { opacity: .8; transform: scale(1); } 100% { opacity: 0; transform: scale(3.2); } }
@@ -310,6 +387,31 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
 </style>
 </head>
 <body>
+<div id="start" class="start" role="dialog" aria-modal="true" aria-labelledby="stTitle">
+  <canvas id="rain" aria-hidden="true"></canvas>
+  <div class="st-wrap">
+    <div class="st-head">
+      <div class="logo" id="stLogo"></div>
+      <div>
+        <h1 id="stTitle">Chuva nas Fazendas</h1>
+        <p>Escolha as frentes e as fazendas que você quer acompanhar agora. Clique no nome da frente para marcar todas dela.</p>
+      </div>
+    </div>
+    <div class="st-tools">
+      <input type="search" id="stSearch" class="st-search" placeholder="Buscar fazenda ou código" aria-label="Buscar fazenda ou código">
+      <button type="button" class="st-btn" id="stAll">Marcar todas</button>
+      <button type="button" class="st-btn" id="stNone">Limpar</button>
+      <label class="st-btn xls" for="xlsFile">Carregar planilha do Excel</label>
+    </div>
+    <div class="st-msg" id="stMsg" role="status"></div>
+    <div class="st-grid" id="stGrid"></div>
+  </div>
+  <div class="st-foot"><div class="in">
+    <div class="st-count" id="stCount"></div>
+    <button type="button" class="st-go" id="stGo">Iniciar <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M3 9h11M10 4l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div></div>
+</div>
+<input type="file" id="xlsFile" accept=".xlsx,.csv,.txt" hidden>
 <header class="band"><div class="wrap top">
   <div class="brand">
     <div class="logo" id="logoBox"><span class="wm">MS <span>Florestal</span></span></div>
@@ -320,6 +422,7 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
   </div>
   <div class="sync">
     <span id="syncTxt"><span class="dot"></span>Carregando…</span>
+    <button class="btn" id="btnPick" type="button">Trocar fazendas</button>
     <button class="btn solid" id="btnRefresh" type="button">Atualizar</button>
   </div>
 </div></header>
@@ -476,11 +579,13 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
   </details>
 
   <details class="cfg" id="cfg">
-    <summary>Lista de fazendas, logo e arquivo do mês</summary>
-    <p>Para trocar a lista, selecione no Excel as colunas <b>id, fazenda, Coordenadas</b>, copie (Ctrl+C) e cole aqui (Ctrl+V). As coordenadas podem estar em graus (19°52'39.33"S 53°01'08.98"W) ou em decimal, em duas colunas. A frente é o que vem depois do “ - ” no nome.</p>
+    <summary>Lista completa de fazendas, logo e arquivo do mês</summary>
+    <p>Esta é a lista com <b>todas</b> as fazendas. As que aparecem no painel são as que você marca na tela inicial (botão <b>Trocar fazendas</b>, no topo).</p>
+    <div class="grp" style="margin-bottom:10px"><label class="btn solid" for="xlsFile" style="cursor:pointer">Carregar planilha do Excel</label><span style="font-size:12.5px;color:var(--ink-2)">A planilha precisa ter uma coluna com o nome da fazenda e outra com as coordenadas. Se tiver uma coluna “Frente”, ela é usada.</span></div>
+    <p>Ou, para trocar a lista na mão, selecione no Excel as colunas <b>id, fazenda, Coordenadas</b>, copie (Ctrl+C) e cole aqui (Ctrl+V). As coordenadas podem estar em graus (19°52'39.33"S 53°01'08.98"W) ou em decimal, em duas colunas. A frente é o que vem depois do “ - ” no nome.</p>
     <textarea id="txtFarms" spellcheck="false"></textarea>
     <div class="grp" style="margin-top:10px">
-      <button class="btn solid" id="btnSave" type="button">Salvar lista</button>
+      <button class="btn solid" id="btnSave" type="button">Salvar lista e escolher fazendas</button>
       <button class="btn" id="btnReset" type="button">Voltar para a lista original</button>
       <button class="btn" id="btnDemo" type="button">Ver com dados de exemplo</button>
     </div>
@@ -537,7 +642,7 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     { key: "gfs", id: "gfs_seamless", name: "GFS", desc: "americano (NOAA)" },
     { key: "icon", id: "icon_seamless", name: "ICON", desc: "alemão (DWD)" }
   ];
-  var state = { text: "", params: {}, farms: [], data: null, raw: null, avail: [], modelSel: "ecmwf", demo: false, region: "Todas", view: "now", sort: "rain", open: null, manual: {}, lastFetch: null, firstPaint: true };
+  var state = { text: "", params: {}, farms: [], data: null, raw: null, avail: [], modelSel: "ecmwf", sel: [], wantDemo: false, demo: false, region: "Todas", view: "now", sort: "rain", open: null, manual: {}, lastFetch: null, firstPaint: true };
 
   // ---------- armazenamento local (falha em silêncio) ----------
   function load() {
@@ -552,9 +657,13 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     state.manual = (s && s.manual) || {};
     state.sort = (s && s.sort) || "rain";
     state.modelSel = (s && s.modelSel) || "ecmwf";
+    // fazendas marcadas na tela inicial
+    var selSalva = useCfg ? CFG.sel : s.sel;
+    if (Array.isArray(selSalva)) state.sel = selSalva;
+    else { var cat = parseTalhoes(state.text); state.sel = cat.length <= 30 ? cat.map(key) : []; }
   }
   function save() {
-    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp })); } catch (e) {}
+    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp, sel: state.sel })); } catch (e) {}
   }
 
   // ---------- números ----------
@@ -604,11 +713,12 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
       if (isNaN(lat) || isNaN(lon)) return; // cabeçalho ou linha sem coordenada
       var first = Math.min(ci, cj), last = Math.max(ci, cj);
       var before = cols.slice(0, first).filter(Boolean), after = cols.slice(last + 1).filter(isNum).map(num);
+      var frenteCol = cols.slice(last + 1).filter(function (c) { return c && !isNum(c); })[0];
       var id = "", nome = "";
       before.forEach(function (c) { if (isNum(c) && !id) id = c; else if (!nome) nome = c; });
       nome = nome || id || ("Ponto " + (out.length + 1));
       var reg = (nome.match(/\s-\s*([^-]+)$/) || [])[1];
-      out.push({ id: id, nome: nome, regiao: reg ? reg.trim() : "Outras", lat: lat, lon: lon,
+      out.push({ id: id, nome: nome, regiao: frenteCol ? frenteCol.trim().toUpperCase() : reg ? reg.trim() : "Outras", lat: lat, lon: lon,
         area: after[0] > 0 ? after[0] : 0, prio: after[1] ? Math.max(1, Math.min(5, after[1])) : 3 });
     });
     return out;
@@ -1256,8 +1366,10 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     el.innerHTML = '<span class="dot ' + (state.demo ? "" : "live") + '"></span>' + (state.demo ? "Dados de exemplo" : "Atualizado " + (mins < 1 ? "agora" : "há " + mins + " min")) + " · " + state.lastFetch.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   }
   function refresh(useDemo) {
-    state.farms = parseTalhoes(state.text);
-    if (!state.farms.length) { setMsg("Nenhuma fazenda com coordenada válida. Abra “Lista de fazendas” no fim da página e cole as colunas do Excel.", "err"); return; }
+    var cat = parseTalhoes(state.text), marcadas = {};
+    state.sel.forEach(function (k) { marcadas[k] = true; });
+    state.farms = cat.filter(function (t) { return marcadas[key(t)]; });
+    if (!state.farms.length) { openStart(); return; }
     document.getElementById("syncTxt").innerHTML = '<span class="dot"></span>Buscando previsão…';
     (useDemo ? Promise.resolve({ list: demoMulti(), models: MODELS.map(function (m) { return m.key; }), note: "" }) : fetchData()).then(function (res) {
       state.raw = res.list.map(function (o) { return splitModels(o, res.models); });
@@ -1277,14 +1389,269 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
   }
 
   document.getElementById("btnRefresh").onclick = function () { refresh(false); };
-  document.getElementById("btnSave").onclick = function () { state.text = document.getElementById("txtFarms").value; save(); refresh(false); };
-  document.getElementById("btnReset").onclick = function () { state.text = DEFAULT_TALHOES; document.getElementById("txtFarms").value = state.text; save(); refresh(false); };
-  document.getElementById("btnDemo").onclick = function () { state.text = document.getElementById("txtFarms").value; refresh(true); };
+  document.getElementById("btnSave").onclick = function () { state.text = document.getElementById("txtFarms").value; save(); openStart(); };
+  document.getElementById("btnReset").onclick = function () { state.text = DEFAULT_TALHOES; document.getElementById("txtFarms").value = state.text; save(); openStart(); };
+  document.getElementById("btnDemo").onclick = function () { state.text = document.getElementById("txtFarms").value; state.wantDemo = true; refresh(true); };
+  document.getElementById("btnRefresh").addEventListener("click", function () { state.wantDemo = false; });
+
+  // =================== tela inicial: escolher frentes e fazendas ===================
+  var started = false, startOpen = false;
+  var CHECK = '<span class="ck"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 5.2l2 2 4-4.4"/></svg></span>';
+  function normTxt(s) { return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim(); }
+  function catalogo() { return parseTalhoes(state.text); }
+  function grupos(list) {
+    var g = {};
+    list.forEach(function (t) { (g[t.regiao] = g[t.regiao] || []).push(t); });
+    return Object.keys(g).sort(function (a, b) { return (a === "Outras") - (b === "Outras") || a.localeCompare(b, "pt-BR"); })
+      .map(function (k) { return { nome: k, farms: g[k].sort(function (a, b) { return a.nome.localeCompare(b.nome, "pt-BR"); }) }; });
+  }
+  function stMsg(html, cls) { var e = document.getElementById("stMsg"); e.className = "st-msg " + (cls || ""); e.innerHTML = html || ""; }
+  function ring(n, total) {
+    var c = 2 * Math.PI * 15, off = c * (1 - (total ? n / total : 0));
+    return '<svg class="fr-ring" viewBox="0 0 38 38" aria-hidden="true"><circle class="bg" cx="19" cy="19" r="15"/><circle class="fg" cx="19" cy="19" r="15" stroke-dasharray="' + c.toFixed(2) + '" stroke-dashoffset="' + off.toFixed(2) + '"/></svg>';
+  }
+  function renderStart(anim) {
+    var list = catalogo(), q = normTxt(document.getElementById("stSearch").value), sel = {};
+    state.sel.forEach(function (k) { sel[k] = true; });
+    var gs = grupos(list), html = "", i = 0;
+    gs.forEach(function (g) {
+      var vis = g.farms.filter(function (t) { return !q || normTxt(t.nome).indexOf(q) >= 0 || normTxt(t.id).indexOf(q) >= 0 || normTxt(g.nome) === q; });
+      if (!vis.length) return;
+      var n = g.farms.filter(function (t) { return sel[key(t)]; }).length;
+      html += '<section class="fr' + (n === g.farms.length ? " full" : "") + '" data-fr="' + attr(g.nome) + '" style="--i:' + (anim ? i : 0) + (anim ? "" : ";animation:none") + '">' +
+        '<button type="button" class="fr-h" aria-label="Marcar ou desmarcar todas da frente ' + attr(g.nome) + '">' + ring(n, g.farms.length) +
+        '<span><span class="fr-name">' + esc(g.nome) + '</span><span class="fr-meta">' + n + " de " + g.farms.length + " fazenda" + (g.farms.length > 1 ? "s" : "") + " marcada" + (n === 1 ? "" : "s") + "</span></span>" +
+        '<span class="fr-act">' + (n === g.farms.length ? "Desmarcar todas" : "Marcar todas") + "</span></button>" +
+        '<div class="fr-b">' + vis.map(function (t, j) {
+          var on = !!sel[key(t)];
+          return '<button type="button" class="fz' + (on ? " on" : "") + '" data-key="' + attr(key(t)) + '" aria-pressed="' + on + '" style="--i:' + (anim ? i : 0) + ";--j:" + Math.min(j, 24) + (anim ? "" : ";animation:none") + '">' + CHECK +
+            esc(t.nome.replace(/\s-\s*[^-]+$/, "")) + (t.id ? " <small>#" + esc(t.id) + "</small>" : "") + "</button>";
+        }).join("") + "</div></section>";
+      i++;
+    });
+    document.getElementById("stGrid").innerHTML = html || '<div class="fr-empty">' + (list.length ? "Nenhuma fazenda encontrada com essa busca." : "Nenhuma fazenda cadastrada ainda. Clique em <b>Carregar planilha do Excel</b>.") + "</div>";
+    paintCount();
+  }
+  function paintCount() {
+    var list = catalogo(), sel = {}, frs = {};
+    state.sel.forEach(function (k) { sel[k] = true; });
+    var chosen = list.filter(function (t) { return sel[key(t)]; });
+    chosen.forEach(function (t) { frs[t.regiao] = true; });
+    var nf = Object.keys(frs).length;
+    document.getElementById("stCount").innerHTML = chosen.length
+      ? "<b>" + chosen.length + "</b> fazenda" + (chosen.length > 1 ? "s" : "") + " em " + nf + " frente" + (nf > 1 ? "s" : "") +
+        "<small>de " + list.length + " cadastradas" + (chosen.length > 80 ? " · muitas fazendas deixam a busca mais lenta" : "") + "</small>"
+      : "<b>0</b> fazendas marcadas<small>Marque pelo menos uma para começar</small>";
+    var go = document.getElementById("stGo");
+    go.disabled = !chosen.length; go.classList.toggle("ready", !!chosen.length && !reduce);
+    // atualiza contadores das frentes sem redesenhar (sem repetir a animação)
+    grupos(list).forEach(function (g) {
+      var card = document.querySelector('.fr[data-fr="' + (window.CSS && CSS.escape ? CSS.escape(g.nome) : g.nome) + '"]'); if (!card) return;
+      var n = g.farms.filter(function (t) { return sel[key(t)]; }).length, c = 2 * Math.PI * 15;
+      card.classList.toggle("full", n === g.farms.length);
+      card.querySelector(".fg").setAttribute("stroke-dashoffset", (c * (1 - n / g.farms.length)).toFixed(2));
+      card.querySelector(".fr-meta").textContent = n + " de " + g.farms.length + " fazenda" + (g.farms.length > 1 ? "s" : "") + " marcada" + (n === 1 ? "" : "s");
+      card.querySelector(".fr-act").textContent = n === g.farms.length ? "Desmarcar todas" : "Marcar todas";
+    });
+  }
+  function setSel(keys, on) {
+    var s = {}; state.sel.forEach(function (k) { s[k] = true; });
+    keys.forEach(function (k) { if (on) s[k] = true; else delete s[k]; });
+    state.sel = Object.keys(s); save();
+    keys.forEach(function (k) {
+      var b = document.querySelector('.fz[data-key="' + (window.CSS && CSS.escape ? CSS.escape(k) : k) + '"]'); if (!b) return;
+      b.classList.toggle("on", on); b.setAttribute("aria-pressed", on);
+      if (!reduce) { b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
+    });
+    paintCount();
+  }
+  document.getElementById("stGrid").addEventListener("click", function (e) {
+    var b = e.target.closest(".fz");
+    if (b) { var k = b.getAttribute("data-key"); setSel([k], state.sel.indexOf(k) < 0); return; }
+    var h = e.target.closest(".fr-h"); if (!h) return;
+    var nome = h.closest(".fr").getAttribute("data-fr");
+    var g = grupos(catalogo()).filter(function (x) { return x.nome === nome; })[0]; if (!g) return;
+    var keys = g.farms.map(key), all = keys.every(function (k) { return state.sel.indexOf(k) >= 0; });
+    setSel(keys, !all);
+  });
+  document.getElementById("stSearch").addEventListener("input", function () { renderStart(false); });
+  document.getElementById("stAll").onclick = function () {
+    setSel(Array.prototype.map.call(document.querySelectorAll("#stGrid .fz"), function (b) { return b.getAttribute("data-key"); }), true);
+  };
+  document.getElementById("stNone").onclick = function () { state.sel = []; save(); renderStart(false); };
+  document.getElementById("stGo").onclick = function () {
+    if (!state.sel.length) return;
+    closeStart(function () { started = true; refresh(state.wantDemo); });
+  };
+
+  function openStart() {
+    stopPlay();
+    var el = document.getElementById("start");
+    document.getElementById("stLogo").innerHTML = document.getElementById("logoBox").innerHTML;
+    el.hidden = false; el.classList.remove("out"); el.classList.add("enter");
+    document.documentElement.style.overflow = "hidden";
+    startOpen = true; renderStart(true); rainStart();
+    setTimeout(function () { el.classList.remove("enter"); }, 700);
+  }
+  function closeStart(done) {
+    var el = document.getElementById("start");
+    startOpen = false;
+    if (reduce) { el.hidden = true; document.documentElement.style.overflow = ""; rainStop(); done(); return; }
+    el.classList.add("out");
+    setTimeout(function () {
+      el.hidden = true; el.classList.remove("out"); document.documentElement.style.overflow = ""; rainStop();
+      document.body.classList.remove("reveal"); void document.body.offsetWidth; document.body.classList.add("reveal");
+      done();
+    }, 520);
+  }
+  document.getElementById("btnPick").onclick = function () { openStart(); };
+
+  // chuva caindo no fundo da tela inicial
+  var rainRaf = 0;
+  function rainStart() {
+    if (reduce || rainRaf) return;
+    var cv = document.getElementById("rain"), ctx = cv.getContext("2d"), drops = [], W = 0, H = 0, dpr = Math.min(2, window.devicePixelRatio || 1);
+    function size() { W = cv.clientWidth; H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+    size(); window.addEventListener("resize", size);
+    var n = Math.round(Math.min(160, W * H / 9000));
+    for (var i = 0; i < n; i++) drops.push({ x: Math.random() * W, y: Math.random() * H, l: 8 + Math.random() * 18, v: 4 + Math.random() * 7, a: .12 + Math.random() * .3 });
+    (function frame() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.lineWidth = 1; ctx.lineCap = "round";
+      drops.forEach(function (d) {
+        ctx.strokeStyle = "rgba(255,255,255," + d.a + ")";
+        ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d.x - d.l * .18, d.y + d.l); ctx.stroke();
+        d.y += d.v; d.x -= d.v * .18;
+        if (d.y > H) { d.y = -d.l; d.x = Math.random() * (W + 60); }
+      });
+      rainRaf = requestAnimationFrame(frame);
+    })();
+  }
+  function rainStop() { if (rainRaf) cancelAnimationFrame(rainRaf); rainRaf = 0; }
+
+  // =================== leitura da planilha do Excel (.xlsx) sem programas externos ===================
+  function u16(dv, o) { return dv.getUint16(o, true); }
+  function u32(dv, o) { return dv.getUint32(o, true); }
+  function abrirZip(buf) {
+    var dv = new DataView(buf), n = buf.byteLength, fim = -1, i;
+    for (i = n - 22; i >= Math.max(0, n - 65557); i--) if (u32(dv, i) === 0x06054b50) { fim = i; break; }
+    if (fim < 0) throw new Error("o arquivo não é uma planilha .xlsx");
+    var qtd = u16(dv, fim + 10), off = u32(dv, fim + 16), arqs = {}, dec = new TextDecoder();
+    for (i = 0; i < qtd; i++) {
+      if (u32(dv, off) !== 0x02014b50) break;
+      var nl = u16(dv, off + 28), xl = u16(dv, off + 30), cl = u16(dv, off + 32);
+      arqs[dec.decode(new Uint8Array(buf, off + 46, nl))] = { metodo: u16(dv, off + 10), tam: u32(dv, off + 20), local: u32(dv, off + 42) };
+      off += 46 + nl + xl + cl;
+    }
+    return function ler(nome) {
+      var a = arqs[nome]; if (!a) return Promise.resolve(null);
+      var ini = a.local + 30 + u16(dv, a.local + 26) + u16(dv, a.local + 28), dados = new Uint8Array(buf, ini, a.tam);
+      if (a.metodo === 0) return Promise.resolve(dec.decode(dados));
+      if (a.metodo !== 8 || typeof DecompressionStream === "undefined") return Promise.reject(new Error("este navegador não consegue abrir o arquivo; use o Edge ou o Chrome atualizados"));
+      return new Response(new Blob([dados]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();
+    };
+  }
+  function lerXlsx(buf) {
+    var ler = abrirZip(buf), P = new DOMParser();
+    function xml(s) { return P.parseFromString(s, "application/xml"); }
+    function tags(d, n) { return Array.prototype.slice.call(d.getElementsByTagName(n)); }
+    var textos = [];
+    return Promise.all([ler("xl/sharedStrings.xml"), ler("xl/workbook.xml"), ler("xl/_rels/workbook.xml.rels")]).then(function (r) {
+      if (r[0]) tags(xml(r[0]), "si").forEach(function (si) { textos.push(tags(si, "t").map(function (t) { return t.textContent; }).join("")); });
+      if (!r[1]) throw new Error("não encontrei as abas da planilha");
+      var rel = {};
+      if (r[2]) tags(xml(r[2]), "Relationship").forEach(function (x) { rel[x.getAttribute("Id")] = x.getAttribute("Target"); });
+      var abas = tags(xml(r[1]), "sheet").map(function (s) {
+        var alvo = (rel[s.getAttribute("r:id")] || "").replace(/^\/?(xl\/)?/, "");
+        return { nome: s.getAttribute("name"), caminho: "xl/" + alvo };
+      });
+      return Promise.all(abas.map(function (a) { return ler(a.caminho); })).then(function (xs) {
+        return abas.map(function (a, k) { return { nome: a.nome, linhas: xs[k] ? linhasDaAba(xml(xs[k]), textos) : [] }; });
+      });
+    });
+  }
+  function colunaDe(ref) {
+    var m = /^([A-Z]+)/.exec(ref || ""); if (!m) return -1;
+    var n = 0; for (var i = 0; i < m[1].length; i++) n = n * 26 + (m[1].charCodeAt(i) - 64);
+    return n - 1;
+  }
+  function linhasDaAba(doc, textos) {
+    return Array.prototype.map.call(doc.getElementsByTagName("row"), function (r) {
+      var linha = [], auto = 0;
+      Array.prototype.forEach.call(r.getElementsByTagName("c"), function (c) {
+        var i = colunaDe(c.getAttribute("r")); if (i < 0) i = auto; auto = i + 1;
+        var t = c.getAttribute("t"), v = c.getElementsByTagName("v")[0], val;
+        if (t === "s") val = textos[+(v && v.textContent)] || "";
+        else if (t === "inlineStr") val = Array.prototype.map.call(c.getElementsByTagName("t"), function (x) { return x.textContent; }).join("");
+        else val = v ? v.textContent : "";
+        linha[i] = val;
+      });
+      var out = []; for (var j = 0; j < linha.length; j++) out.push(linha[j] == null ? "" : String(linha[j]).trim());
+      return out;
+    });
+  }
+  function lerCsv(txt) {
+    var linhas = txt.replace(/^﻿/, "").split(/\r?\n/).filter(function (l) { return l.trim(); });
+    var amostra = linhas.slice(0, 5).join("\n");
+    var sep = amostra.indexOf("\t") >= 0 ? "\t" : (amostra.split(";").length >= amostra.split(",").length ? ";" : ",");
+    return [{ nome: "", linhas: linhas.map(function (l) { return l.split(sep).map(function (c) { return c.trim().replace(/^"(.*)"$/, "$1").replace(/""/g, '"'); }); }) }];
+  }
+  // acha as colunas pelo nome do cabeçalho e monta a lista no formato do painel
+  function abasParaTexto(abas) {
+    function achar(cab, res) { for (var r = 0; r < res.length; r++) for (var i = 0; i < cab.length; i++) if (res[r].test(cab[i])) return i; return -1; }
+    for (var a = 0; a < abas.length; a++) {
+      var linhas = abas[a].linhas;
+      for (var h = 0; h < Math.min(15, linhas.length); h++) {
+        var cab = linhas[h].map(normTxt);
+        var cNome = achar(cab, [/fazenda/, /^nome/, /^projeto/]);
+        var cCoord = achar(cab, [/coord/]), cLat = achar(cab, [/^lat/]), cLon = achar(cab, [/^lon/, /^long/]);
+        if (cNome < 0 || (cCoord < 0 && (cLat < 0 || cLon < 0))) continue;
+        var cId = achar(cab, [/^id$/, /^cod/, /^n[ºo°.]?$/, /^numero/]), cFr = achar(cab, [/frente/, /regiao/]);
+        var out = ["id\tfazenda\tCoordenadas\tFrente"];
+        linhas.slice(h + 1).forEach(function (l) {
+          var nome = l[cNome] || "", coord = cCoord >= 0 ? (l[cCoord] || "") : ((l[cLat] || "") && (l[cLon] || "") ? l[cLat] + "\t" + l[cLon] : "");
+          if (!nome || !coord) return;
+          out.push([cId >= 0 ? l[cId] || "" : "", nome.replace(/\t/g, " "), coord, cFr >= 0 ? l[cFr] || "" : ""].join("\t"));
+        });
+        return { texto: out.join("\n"), aba: abas[a].nome };
+      }
+    }
+    // sem cabeçalho reconhecido: tenta ler as colunas na ordem id, fazenda, coordenadas
+    return { texto: (abas[0] ? abas[0].linhas : []).map(function (l) { return l.join("\t"); }).join("\n"), aba: abas[0] ? abas[0].nome : "" };
+  }
+  function importarArquivo(f) {
+    if (!startOpen) openStart();
+    stMsg("Lendo " + esc(f.name) + "…");
+    var csv = /\.(csv|txt)$/i.test(f.name);
+    var p = csv ? f.text().then(lerCsv) : f.arrayBuffer().then(lerXlsx);
+    p.then(abasParaTexto).then(function (r) {
+      var farms = parseTalhoes(r.texto);
+      if (!farms.length) throw new Error("não encontrei fazendas com coordenadas" + (r.aba ? " na aba “" + r.aba + "”" : "") + ". A planilha precisa ter uma coluna com o nome da fazenda e outra com as coordenadas");
+      state.text = r.texto; document.getElementById("txtFarms").value = r.texto;
+      var existe = {}; farms.forEach(function (t) { existe[key(t)] = true; });
+      state.sel = state.sel.filter(function (k) { return existe[k]; });
+      save(); renderStart(true);
+      var nfr = grupos(farms).length;
+      stMsg(farms.length + " fazendas em " + nfr + " frente" + (nfr > 1 ? "s" : "") + " carregadas de <b>" + esc(f.name) + "</b>" + (r.aba ? " (aba " + esc(r.aba) + ")" : "") + ". Agora marque o que quer consultar.", "ok");
+    }).catch(function (err) {
+      stMsg("Não consegui ler a planilha: " + esc(err.message) + ". Outra opção: copie as colunas no Excel e cole em “Lista completa de fazendas”, no fim do painel.", "err");
+    });
+  }
+  document.getElementById("xlsFile").addEventListener("change", function (e) { var f = e.target.files && e.target.files[0]; if (f) importarArquivo(f); e.target.value = ""; });
+  (function () {
+    var el = document.getElementById("start"), n = 0;
+    el.addEventListener("dragenter", function (e) { e.preventDefault(); n++; el.classList.add("drag"); });
+    el.addEventListener("dragover", function (e) { e.preventDefault(); });
+    el.addEventListener("dragleave", function () { if (--n <= 0) { n = 0; el.classList.remove("drag"); } });
+    el.addEventListener("drop", function (e) { e.preventDefault(); n = 0; el.classList.remove("drag"); var f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) importarArquivo(f); });
+  })();
+
 
   // ---------- logo ----------
   function paintLogo() {
     var box = document.getElementById("logoBox");
     box.innerHTML = state.logo ? '<img src="' + state.logo + '" alt="MS Florestal">' : '<span class="wm">MS <span>Florestal</span></span>';
+    document.getElementById("stLogo").innerHTML = box.innerHTML;
   }
   document.getElementById("logoFile").addEventListener("change", function (e) {
     var f = e.target.files && e.target.files[0]; if (!f) return;
@@ -1313,7 +1680,7 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
     if (!farms.length) { setMsg("A lista não tem nenhuma fazenda com coordenada válida.", "err", 5000); return; }
     var now = new Date();
     var nome = (document.getElementById("expName").value.trim() || MES[now.getMonth()] + "-" + now.getFullYear()).replace(/[^\w\-]+/g, "-");
-    var cfg = { stamp: now.toISOString(), text: state.text, params: state.params, logo: state.logo };
+    var cfg = { stamp: now.toISOString(), text: state.text, params: state.params, logo: state.logo, sel: state.sel };
     var json = JSON.stringify(cfg).replace(/</g, "\\u003c");
     var html = PRISTINE.replace(/(<script type="application\/json" id="painel-config">)[\s\S]*?(<\/script>)/, function (_, a, b) { return a + json + b; });
     var url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
@@ -1327,9 +1694,10 @@ details.cfg p { color: var(--ink-2); font-size: 13px; max-width: 75ch; }
   paintLogo();
   (function () { var n = new Date(); document.getElementById("expName").value = MES[n.getMonth()] + "-" + n.getFullYear(); })();
   document.getElementById("txtFarms").value = state.text;
-  refresh(/[?&]demo/.test(location.search));
+  state.wantDemo = /[?&]demo/.test(location.search);
+  openStart();
   loadLeaflet();
-  setInterval(function () { if (!state.demo) refresh(false); }, REFRESH_MIN * 60000);
+  setInterval(function () { if (started && !startOpen && !state.demo) refresh(false); }, REFRESH_MIN * 60000);
   setInterval(syncText, 60000);
 })();
 </script>

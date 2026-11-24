@@ -10,6 +10,12 @@ Usa os dados gratuitos da [Open-Meteo](https://open-meteo.com/), a mesma fonte d
 
 Ele já vem com as 16 fazendas e busca a previsão sozinho, de novo a cada 30 minutos.
 
+## Tela inicial
+
+Ao abrir, aparece a tela para escolher **frentes** e **fazendas**. Clique no nome da frente para marcar todas dela, ou em cada fazenda. Depois clique em **Iniciar**: o painel busca e mostra só as marcadas. O botão **Trocar fazendas** (no topo) volta para essa tela. A escolha fica salva.
+
+A lista completa pode vir de uma **planilha do Excel** (.xlsx ou .csv): botão **Carregar planilha do Excel** ou arraste o arquivo para a tela inicial. O painel procura as colunas pelo nome do cabeçalho: nome da fazenda (`fazenda`), coordenadas (`Coordenadas`, ou `Latitude` e `Longitude`), e, se houver, `id`/`Código` e `Frente`. Sem coluna Frente, a frente é o que vem depois do " - " no nome.
+
 ## O que aparece
 
 - **Mapa**: mapa de verdade, com zoom e opção de satélite (OpenStreetMap e Esri). As fazendas são pintadas pela chuva do momento escolhido; fazenda com chuva pulsa. Se a rede bloquear o mapa, aparece um mapa simples no lugar.

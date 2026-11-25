@@ -2591,21 +2591,47 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     avisoPrj = "O shape veio sem o arquivo .prj. Usei SIRGAS 2000 / UTM fuso " + fuso + (sul ? " S" : " N") + " (" + modo + "). Confira se ficou no lugar certo; se não, escolha o fuso em Configurações do mapa e carregue de novo.";
     return utmSirgas(fuso, sul);
   }
+  // lê o .prj nos formatos antigo (WKT1/ESRI) e novo (WKT2, do QGIS 3): devolve null se for graus
   function conversorDoPrj(wkt) {
-    if (!wkt || !/PROJCS/i.test(wkt)) return null;
-    if (!/Transverse_Mercator/i.test(wkt)) {
-      var nomeProj = (/PROJCS\["([^"]+)"/i.exec(wkt) || [])[1] || "desconhecida";
+    wkt = String(wkt || "").replace(/^﻿/, "");
+    var projetado = /PROJCS\s*\[|PROJCRS\s*\[|PROJECTEDCRS\s*\[/i.test(wkt);
+    if (!projetado) {
+      var epsg = /EPSG["':,\s]*(\d{4,5})/i.exec(wkt), cod = epsg ? +epsg[1] : 0;
+      // só o código EPSG (ex.: 31982 = SIRGAS 2000 / UTM 22S; 31981 = 21S; 32722 = WGS 84 / UTM 22S)
+      if ((cod >= 31978 && cod <= 31985) || (cod >= 32718 && cod <= 32725)) return utmSirgas(cod >= 32700 ? cod - 32700 : cod - 31960, true);
+      return null;
+    }
+    var nomeProj = (/(?:PROJCS|PROJCRS|PROJECTEDCRS)\s*\[\s*"([^"]+)"/i.exec(wkt) || [])[1] || "desconhecida";
+    if (!/Transverse[_ ]Mercator|Gauss[_ ]Kruger|UTM/i.test(wkt)) {
       throw new Error("o shape está numa projeção que o painel não converte (" + nomeProj + "). Exporte em SIRGAS 2000 geográfico, em UTM ou em KML");
     }
-    function par(n, padrao) { var m = new RegExp('PARAMETER\\["' + n + '"\\s*,\\s*([-\\d.eE+]+)', "i").exec(wkt); return m ? parseFloat(m[1]) : padrao; }
-    var esf = /SPHEROID\["[^"]*"\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i.exec(wkt);
+    function par(nomes, padrao) {
+      for (var i = 0; i < nomes.length; i++) {
+        var m = new RegExp('PARAMETER\\s*\\[\\s*"' + nomes[i] + '"\\s*,\\s*([-\\d.eE+]+)', "i").exec(wkt);
+        if (m) return parseFloat(m[1]);
+      }
+      return padrao;
+    }
+    var esf = /(?:SPHEROID|ELLIPSOID)\s*\[\s*"[^"]*"\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i.exec(wkt);
     var invf = esf ? parseFloat(esf[2]) : 298.257222101;
-    return tmInversa({ a: esf ? parseFloat(esf[1]) : 6378137, f: invf ? 1 / invf : 0, lon0: par("central_meridian", 0), lat0: par("latitude_of_origin", 0),
-      k0: par("scale_factor", 0.9996), fe: par("false_easting", 500000), fn: par("false_northing", 0) });
+    var lon0 = par(["central_meridian", "longitude of natural origin", "longitude_of_center"], NaN);
+    if (isNaN(lon0)) { // sem os parâmetros, mas com "UTM zone 22S" no nome
+      var z = /UTM[ _]?zone[ _]?(\d{1,2})\s*([NS])?/i.exec(wkt);
+      if (!z) throw new Error("não entendi o arquivo .prj (" + nomeProj + ")");
+      return utmSirgas(+z[1], !z[2] || z[2].toUpperCase() === "S");
+    }
+    return tmInversa({ a: esf ? parseFloat(esf[1]) : 6378137, f: invf ? 1 / invf : 0, lon0: lon0,
+      lat0: par(["latitude_of_origin", "latitude of natural origin"], 0),
+      k0: par(["scale_factor", "scale factor at natural origin"], 0.9996),
+      fe: par(["false_easting", "false easting"], 500000), fn: par(["false_northing", "false northing"], 0) });
   }
   function arred(p) { return [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6]; }
   function lerShp(buf, prj, manter) {
     var dv = new DataView(buf), conv = prj && prj.trim() ? conversorDoPrj(prj) : conversorSemPrj(dv), out = [], off = 100;
+    if (!conv && prj && prj.trim()) { // o .prj diz graus, mas as coordenadas estão em metros: usa o fuso UTM mais provável
+      conv = conversorSemPrj(dv);
+      if (conv) avisoPrj = avisoPrj.replace("O shape veio sem o arquivo .prj.", "O arquivo .prj diz que o shape está em graus, mas as coordenadas estão em metros.");
+    }
     while (off + 8 <= buf.byteLength) {
       var tam = dv.getInt32(off + 4, false) * 2, ini = off + 8; off = ini + tam;
       if (tam < 4 || ini + tam > buf.byteLength) { out.push(null); continue; }

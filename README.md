@@ -101,6 +101,18 @@ O ajuste vale só para o dia e fica salvo no navegador daquele computador.
 No fim da página, em **Lista de fazendas**, cole as colunas do Excel (`id`, `fazenda`, `Coordenadas`).
 As coordenadas podem estar em graus (`19°52'39.33"S 53°01'08.98"W`) ou em decimal, em duas colunas.
 
+## Memória e arquivos grandes
+
+- Planilhas são lidas aos pedaços: só o resumo por talhão fica na memória (250 mil linhas × 14 colunas: cerca de 13 MB, contra 104 MB antes).
+- Do shape de talhões só são guardados os talhões das fazendas da lista ou dos projetos da planilha de operações (se nenhum ligar, guarda todos). Um shape de 20 mil talhões com 48 da lista passou de 337 MB para 3 MB.
+- O mapa desenha por padrão só os talhões das fazendas marcadas ("Desenhar só talhões das fazendas marcadas", nas configurações do mapa).
+- A pasta conectada só é relida ao abrir se algum arquivo mudou; arquivos acima de 400 MB são ignorados e são lidos no máximo 80 arquivos.
+
+## Se o painel travar ou der "Out of Memory"
+
+- Abra com `?seguro` no fim do endereço (ex.: `.../painel-chuva.html?seguro`): o painel abre sem carregar os shapes, a planilha e a pasta guardados.
+- Para apagar tudo o que o painel guardou neste computador: botão **Apagar dados guardados neste computador** (no fim da página) ou abra com `?limpar` no fim do endereço.
+
 ## Se não carregar
 
 Se aparecer "Não foi possível buscar a previsão", a rede está bloqueando `api.open-meteo.com` no navegador.

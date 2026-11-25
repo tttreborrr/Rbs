@@ -1179,6 +1179,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
         <label class="btn" for="shpFile">Carregar talhões (shape, KML)</label>
         <input type="file" id="shpFile" multiple accept=".zip,.shp,.dbf,.prj,.cpg,.kml,.kmz,.geojson,.json" hidden>
         <span class="ar-info" id="arInfo">Nenhuma área carregada</span>
+        <label class="chk" for="arSo"><input type="checkbox" id="arSo"> Desenhar só talhões das fazendas marcadas</label>
         <label class="ar-ctl" id="arCampoBox" for="arCampo" hidden>Ligar pela coluna <select id="arCampo"></select></label>
         <button class="btn" id="arZoom" type="button" hidden>Ver áreas</button>
         <button class="btn" id="arOff" type="button" hidden>Tirar talhões</button>
@@ -1360,6 +1361,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       <button class="btn solid" id="btnSave" type="button">Salvar lista e escolher fazendas</button>
       <button class="btn" id="btnReset" type="button">Voltar para a lista original</button>
       <button class="btn" id="btnDemo" type="button">Ver com dados de exemplo</button>
+      <button class="btn" id="btnLimpar" type="button">Apagar dados guardados neste computador</button>
     </div>
     <p>A lista fica salva neste navegador: ao fechar e abrir de novo, ela continua. Em outro computador, ou se o histórico do navegador for apagado, ela volta para a original.</p>
 
@@ -1386,6 +1388,15 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
 <script>
 (function () {
   "use strict";
+  // ?limpar apaga o que o painel guardou neste computador; ?seguro abre sem carregar shapes, planilhas e pasta guardados
+  var SEGURO = /[?&]seguro\b/.test(location.search);
+  if (/[?&]limpar\b/.test(location.search)) {
+    try { localStorage.removeItem("chuvaFazendas.v1"); } catch (e) { }
+    var voltar = function () { location.replace(location.href.replace(/[?#].*$/, "")); }, del = null;
+    try { del = indexedDB.deleteDatabase("chuvaFazendas"); } catch (e) { }
+    if (del) { del.onsuccess = del.onerror = del.onblocked = voltar; } else voltar();
+    return;
+  }
   // cópia da página como foi aberta, usada para gerar o arquivo do mês
   var PRISTINE = "<!doctype html>\n" + document.documentElement.outerHTML;
   var CFG = {};
@@ -1438,7 +1449,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     state.sort = (s && s.sort) || "rain";
     state.modelSel = (s && s.modelSel) || "ecmwf";
     state.areaOp = s && s.areaOpV2 != null ? s.areaOpV2 : 1;
-    state.cfgMapa = !!(s && s.cfgMapa); state.verAreas = s ? s.verAreas : true; state.verEstradas = s ? s.verEstradas : true;
+    state.cfgMapa = !!(s && s.cfgMapa); state.areasSo = s && s.areasSo != null ? s.areasSo : true; state.pastaAssin = (s && s.pastaAssin) || ""; state.verAreas = s ? s.verAreas : true; state.verEstradas = s ? s.verEstradas : true;
     state.cfgAreas = useCfg && CFG.areas && CFG.areas.geo ? CFG.areas : null;
     state.cfgOps = useCfg && CFG.ops && CFG.ops.talhoes ? CFG.ops : null;
     state.cfgEst = useCfg && CFG.estradas && CFG.estradas.geo ? CFG.estradas : null;
@@ -1451,7 +1462,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     else { var cat = parseTalhoes(state.text); state.sel = cat.length <= 30 ? cat.map(key) : []; }
   }
   function save() {
-    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp, sel: state.sel, areaOpV2: state.areaOp, cfgMapa: state.cfgMapa, verAreas: state.verAreas, verEstradas: state.verEstradas, corAreas: state.corAreas, opSort: state.opSort, mapWide: state.mapWide })); } catch (e) {}
+    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp, sel: state.sel, areaOpV2: state.areaOp, cfgMapa: state.cfgMapa, areasSo: state.areasSo, pastaAssin: state.pastaAssin, verAreas: state.verAreas, verEstradas: state.verEstradas, corAreas: state.corAreas, opSort: state.opSort, mapWide: state.mapWide })); } catch (e) {}
   }
 
   // ---------- números ----------
@@ -1766,11 +1777,11 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   function setView(v) {
     state.view = v;
     document.querySelectorAll("#views button").forEach(function (b) { b.classList.toggle("on", String(v) === b.getAttribute("data-v")); });
-    paintMap(); markColumn(); renderFigs(false); renderOps();
+    paintMap(); markColumn(); renderFigs(false); if (!playTimer) renderOps();
   }
 
   var playTimer = null;
-  function stopPlay() { if (playTimer) { clearInterval(playTimer); playTimer = null; document.getElementById("playIco").setAttribute("d", "M2 1 L11 6 L2 11 Z"); } }
+  function stopPlay() { if (playTimer) { clearInterval(playTimer); playTimer = null; document.getElementById("playIco").setAttribute("d", "M2 1 L11 6 L2 11 Z"); renderOps(); } }
   document.getElementById("btnPlay").addEventListener("click", function () {
     if (playTimer) { stopPlay(); return; }
     var list = viewsList(), i = list.indexOf(state.view);
@@ -1902,7 +1913,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     return h;
   }
   // mapa de verdade (Leaflet + OpenStreetMap / satélite Esri), carregado depois; se não carregar, fica o mapa simples
-  var LM = null, LMLayer = null, lastFit = "", tileErrs = 0;
+  var LM = null, LMLayer = null, lastFit = "", tileErrs = 0, rendAreas = null, rendEstradas = null, ultimaSelAreas = "";
   function loadLeaflet() {
     if (window.L) { if (state.rows) renderMap(); return; } // já vem embutido no arquivo
     var css = document.createElement("link"); css.rel = "stylesheet"; css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"; document.head.appendChild(css);
@@ -1925,6 +1936,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       sat.addTo(LM); nomes.addTo(LM);
       LM.createPane("areasPane").style.zIndex = 405;
       LM.createPane("estradasPane").style.zIndex = 420;
+      rendAreas = L.canvas({ pane: "areasPane", padding: .4 }); rendEstradas = L.canvas({ pane: "estradasPane", padding: .4 });
       ctlCamadas = L.control.layers({ "Mapa": osm, "Satélite": sat }, { "Nomes e estradas": nomes }, { position: "topright", collapsed: false }).addTo(LM);
       LM.on("overlayadd overlayremove", function (e) {
         var on = e.type === "overlayadd";
@@ -2174,6 +2186,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     state.sel.forEach(function (k) { marcadas[k] = true; });
     state.farms = cat.filter(function (t) { return marcadas[key(t)]; });
     if (AREAS.geo) { ligarAreas(); painelAreas(); }
+    if (AREAS.geo && LM && state.areasSo && state.sel.slice().sort().join(",") !== ultimaSelAreas) desenharAreas();
     if (!state.farms.length) { openStart(); return; }
     document.getElementById("syncTxt").innerHTML = '<span class="dot"></span>Buscando previsão…';
     (useDemo ? Promise.resolve({ list: demoMulti(), models: MODELS.map(function (m) { return m.key; }), note: "" }) : fetchData()).then(function (res) {
@@ -2358,6 +2371,8 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       return binario ? resp.arrayBuffer() : resp.text();
     }
     ler.nomes = Object.keys(arqs);
+    ler.arqs = arqs; ler.ler = ler;
+    ler.dados = function (nome) { var a = arqs[nome]; return new Uint8Array(buf, a.local + 30 + u16(dv, a.local + 26) + u16(dv, a.local + 28), a.tam); };
     return ler;
   }
   function lerXlsx(buf) {
@@ -2465,20 +2480,17 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   }
   function importarArquivo(f) {
     if (!startOpen) openStart();
-    stMsg("Lendo " + esc(f.name) + "…");
-    var csv = /\.(csv|txt)$/i.test(f.name);
-    var p = csv ? f.text().then(lerCsv) : f.arrayBuffer().then(lerXlsx);
-    p.then(function (abas) {
-      var r = abasParaTexto(abas);
-      if (!parseTalhoes(r.texto).length) {
-        var op = lerOperacoes(abas);
-        if (op) {
-          usarOperacoes({ nome: f.name, aba: op.aba, talhoes: op.talhoes, nLinhas: op.nLinhas }, true);
-          stMsg("Essa é a planilha de operações: " + op.talhoes.length + " talhões lidos. A madeira segura e o TPC aparecem no mapa e na tabela depois de Iniciar.", "ok");
-          return null;
-        }
+    stMsg("Lendo " + esc(f.name) + "… (planilhas grandes podem levar alguns segundos)");
+    percorrerPlanilha(f, ["fazendas", "operacoes"]).then(function (r) {
+      if (r && r.tipo === "operacoes") {
+        usarOperacoes({ nome: f.name, aba: r.aba, talhoes: r.talhoes, nLinhas: r.nLinhas }, true);
+        stMsg("Essa é a planilha de operações: " + r.nLinhas.toLocaleString("pt-BR") + " linhas, " + r.talhoes.length.toLocaleString("pt-BR") + " talhões. O TPC aparece no mapa e na tabela depois de Iniciar.", "ok");
+        return null;
       }
-      return r;
+      if (r) return r;
+      // sem cabeçalho reconhecido (só para planilhas pequenas): colunas na ordem id, fazenda, coordenadas
+      if (f.size > 5e6) throw new Error("não reconheci as colunas");
+      return (/\.(csv|txt)$/i.test(f.name) ? f.text().then(lerCsv) : f.arrayBuffer().then(lerXlsx)).then(abasParaTexto);
     }).then(function (r) {
       if (!r) return;
       var farms = parseTalhoes(r.texto);
@@ -2508,6 +2520,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
 
   // guarda as áreas no navegador (IndexedDB aguenta arquivos grandes)
   function idbAreas(modo, valor) {
+    if (SEGURO && modo === "get") return Promise.resolve(null);
     return new Promise(function (ok) {
       try {
         var r = indexedDB.open("chuvaFazendas", 1);
@@ -2560,11 +2573,12 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       k0: par("scale_factor", 0.9996), fe: par("false_easting", 500000), fn: par("false_northing", 0) });
   }
   function arred(p) { return [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6]; }
-  function lerShp(buf, prj) {
+  function lerShp(buf, prj, manter) {
     var dv = new DataView(buf), conv = conversorDoPrj(prj), out = [], off = 100;
     while (off + 8 <= buf.byteLength) {
       var tam = dv.getInt32(off + 4, false) * 2, ini = off + 8; off = ini + tam;
       if (tam < 4 || ini + tam > buf.byteLength) { out.push(null); continue; }
+      if (manter && !manter[out.length]) { out.push(null); continue; }
       var tipo = dv.getInt32(ini, true);
       var ehLinha = tipo === 3 || tipo === 13 || tipo === 23;
       if (!ehLinha && tipo !== 5 && tipo !== 15 && tipo !== 25) { out.push(null); continue; }
@@ -2605,8 +2619,10 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     }
     return regs;
   }
-  function shpParaFeicoes(shp, dbf, prj, cpg) {
-    var geoms = lerShp(shp, prj), props = dbf ? lerDbf(dbf, cpg) : [];
+  function shpParaFeicoes(shp, dbf, prj, cpg, aceitar) {
+    var props = dbf ? lerDbf(dbf, cpg) : [], manter = null;
+    if (aceitar && props.length) { manter = props.map(aceitar); if (!manter.some(Boolean)) manter = null; }
+    var geoms = lerShp(shp, prj, manter);
     var out = [];
     geoms.forEach(function (g, i) { if (g) out.push({ type: "Feature", properties: props[i] || {}, geometry: g }); });
     return out;
@@ -2645,14 +2661,33 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   }
   function extensao(n) { return (/\.([^.]+)$/.exec(n) || [])[1] ? (/\.([^.]+)$/.exec(n))[1].toLowerCase() : ""; }
   // aceita: .zip com shapefile ou KML, .kmz, .kml, .geojson/.json, ou os arquivos .shp/.dbf/.prj/.cpg soltos
-  function lerArquivosDeArea(files) {
+  // só guarda as áreas ligadas às fazendas da lista (ou aos projetos da planilha de operações); se nenhuma ligar, guarda todas
+  function aceitarAreaFn(texto, talhoesOps) {
+    var idx = {}, n = 0;
+    parseTalhoes(texto || "").forEach(function (t) {
+      if (t.id) { idx[normTxt(t.id)] = 1; if (/^\d+$/.test(t.id)) idx[String(+t.id)] = 1; }
+      idx[normTxt(t.nome)] = 1; idx[normTxt(t.nome.replace(/\s-\s*[^-]+$/, ""))] = 1; n++;
+    });
+    (talhoesOps || []).forEach(function (t) { var pj = normProj(t.proj); if (pj) idx[pj] = 1; t.ids.forEach(function (id) { idx[normTxt(id)] = 1; }); n++; });
+    if (!n) return null;
+    return function (props) {
+      for (var c in props) { var v = normTxt(props[c]); if (v && (idx[v] || (/^\d+$/.test(v) && idx[String(+v)]))) return true; }
+      return false;
+    };
+  }
+  function filtrarFeicoes(feats, aceitar) {
+    if (!aceitar) return feats;
+    var k = feats.filter(function (f) { return aceitar(f.properties || {}); });
+    return k.length ? k : feats;
+  }
+  function lerArquivosDeArea(files, aceitar) {
     files = Array.prototype.slice.call(files);
     var porExt = {}; files.forEach(function (f) { porExt[extensao(f.name)] = f; });
     function txt(f) { return f ? f.text() : Promise.resolve(""); }
     function bin(f) { return f ? f.arrayBuffer() : Promise.resolve(null); }
-    if (porExt.shp) return Promise.all([bin(porExt.shp), bin(porExt.dbf), txt(porExt.prj), txt(porExt.cpg)]).then(function (r) { return shpParaFeicoes(r[0], r[1], r[2], r[3]); });
-    if (porExt.kml) return porExt.kml.text().then(lerKml);
-    if (porExt.geojson || porExt.json) return (porExt.geojson || porExt.json).text().then(lerGeoJson);
+    if (porExt.shp) return Promise.all([bin(porExt.shp), bin(porExt.dbf), txt(porExt.prj), txt(porExt.cpg)]).then(function (r) { return shpParaFeicoes(r[0], r[1], r[2], r[3], aceitar); });
+    if (porExt.kml) return porExt.kml.text().then(lerKml).then(function (fs) { return filtrarFeicoes(fs, aceitar); });
+    if (porExt.geojson || porExt.json) return (porExt.geojson || porExt.json).text().then(lerGeoJson).then(function (fs) { return filtrarFeicoes(fs, aceitar); });
     if (porExt.zip || porExt.kmz) return (porExt.zip || porExt.kmz).arrayBuffer().then(function (buf) {
       var z = abrirZip(buf), nomes = z.nomes, feats = [];
       function achar(base, ext) { return nomes.filter(function (n) { return n.toLowerCase() === (base + "." + ext).toLowerCase(); })[0]; }
@@ -2662,14 +2697,14 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
           var base = s.replace(/\.shp$/i, "");
           return pr.then(function () {
             return Promise.all([z(s, true), achar(base, "dbf") ? z(achar(base, "dbf"), true) : null, achar(base, "prj") ? z(achar(base, "prj")) : "", achar(base, "cpg") ? z(achar(base, "cpg")) : ""])
-              .then(function (r) { feats = feats.concat(shpParaFeicoes(r[0], r[1], r[2], r[3])); });
+              .then(function (r) { feats = feats.concat(shpParaFeicoes(r[0], r[1], r[2], r[3], aceitar)); });
           });
         }, Promise.resolve()).then(function () { return feats; });
       }
       var kml = nomes.filter(function (n) { return /\.kml$/i.test(n); })[0];
-      if (kml) return z(kml).then(lerKml);
+      if (kml) return z(kml).then(lerKml).then(function (fs) { return filtrarFeicoes(fs, aceitar); });
       var gj = nomes.filter(function (n) { return /\.(geo)?json$/i.test(n); })[0];
-      if (gj) return z(gj).then(lerGeoJson);
+      if (gj) return z(gj).then(lerGeoJson).then(function (fs) { return filtrarFeicoes(fs, aceitar); });
       throw new Error("não achei shapefile (.shp), KML ou GeoJSON dentro do arquivo compactado");
     });
     return Promise.reject(new Error("formato não reconhecido. Use .zip do shapefile, .shp com .dbf e .prj, .kml, .kmz ou .geojson"));
@@ -2713,14 +2748,24 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     else linhas.push(f.__k ? "Fazenda não marcada na tela inicial" : "Área sem fazenda correspondente na lista");
     return linhas.join("<br>") + rotuloOps(f);
   }
+  function filtroAreas() {
+    if (!state.areasSo || !AREAS.geo) return null;
+    var selK = {}, selP = {};
+    state.sel.forEach(function (k) { selK[k] = 1; });
+    parseTalhoes(state.text).forEach(function (t) { if (selK[key(t)] && t.id) selP[normProj(t.id)] = 1; });
+    var ok = function (f) { return !!((f.__k && selK[f.__k]) || (f.__t && selP[f.__t.split("|")[0]])); };
+    return AREAS.geo.features.some(ok) ? ok : null; // se nenhuma área liga às fazendas marcadas, mostra todas
+  }
   function desenharAreas() {
+    ultimaSelAreas = state.sel.slice().sort().join(",");
     if (areasLayer) { if (ctlCamadas) ctlCamadas.removeLayer(areasLayer); areasLayer.remove(); areasLayer = null; }
     if (!LM || !AREAS.geo) return;
     areaRows = {}; (state.all || []).forEach(function (r) { areaRows[key(r.t)] = r; });
     areasLayer = L.geoJSON(AREAS.geo, {
       smoothFactor: 1.5,
       pane: "areasPane",
-      renderer: L.canvas({ pane: "areasPane", padding: .4 }),
+      renderer: rendAreas,
+      filter: filtroAreas() || undefined,
       style: estiloArea,
       onEachFeature: function (f, layer) {
         layer.bindTooltip(function () { return rotuloArea(f); }, { sticky: true, className: "area-tip" });
@@ -2757,7 +2802,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     var fs = e.target.files; if (!fs || !fs.length) return;
     var nome = Array.prototype.map.call(fs, function (f) { return f.name; }).filter(function (n) { return !/\.(dbf|prj|cpg|shx)$/i.test(n); })[0] || fs[0].name;
     document.getElementById("arInfo").textContent = "Lendo " + nome + "…";
-    lerArquivosDeArea(fs).then(function (todas) {
+    lerArquivosDeArea(fs, aceitarAreaFn(state.text, OPS && OPS.talhoes)).then(function (todas) {
       var sep = separarGeometrias(todas), feats = sep.polis;
       if (sep.linhas.length) usarEstradas({ geo: { type: "FeatureCollection", features: sep.linhas }, nome: nome.replace(/\.[^.]+$/, "") }, true);
       if (!feats.length) { if (sep.linhas.length) { painelAreas(); setMsg("Esse arquivo tem linhas: foi carregado como estradas.", "", 6000); return; } throw new Error("o arquivo não tem polígonos"); }
@@ -2796,6 +2841,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   var PASTA = { handle: null, assinatura: "", ok: false, quando: null, lendo: false, resumo: "" };
   var temPasta = typeof window.showDirectoryPicker === "function";
   function idbKv(chave, modo, valor) {
+    if (SEGURO && modo === "get") return Promise.resolve(null);
     return new Promise(function (ok) {
       try {
         var r = indexedDB.open("chuvaFazendas", 1);
@@ -2822,41 +2868,51 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     }
     return out;
   }
+  var LIMITE_ARQ = 400 * 1048576, MAX_ARQ = 80;
   async function lerPasta(forcar) {
     var itens = await listarPasta(PASTA.handle, 0, "");
     var arqs = await Promise.all(itens.map(function (i) { return i.h.getFile().then(function (f) { return { caminho: i.caminho, f: f }; }); }));
     var assinatura = arqs.map(function (x) { return x.caminho + ":" + x.f.size + ":" + x.f.lastModified; }).sort().join("|");
     if (!forcar && assinatura === PASTA.assinatura) return { mudou: false };
     PASTA.assinatura = assinatura;
-    // planilha de fazendas: a primeira que tiver colunas de fazenda e coordenadas (as com "fazenda" no nome primeiro)
-    var lista = null, planilhas = arqs.filter(function (x) { return /\.(xlsx|csv)$/i.test(x.f.name); })
-      .sort(function (a, b) { return /fazend/i.test(b.f.name) - /fazend/i.test(a.f.name); });
-    for (var i = 0; i < planilhas.length && !lista; i++) {
-      try {
-        var x = planilhas[i], abas = /\.csv$/i.test(x.f.name) ? lerCsv(await x.f.text()) : await lerXlsx(await x.f.arrayBuffer());
-        var r = abasParaTexto(abas);
-        if (parseTalhoes(r.texto).length) lista = { texto: r.texto, nome: x.caminho };
-      } catch (e) { /* planilha que não é de fazendas: ignora */ }
+    var erros = [];
+    arqs = arqs.filter(function (x) {
+      if (x.f.size <= LIMITE_ARQ) return true;
+      erros.push(x.caminho + ": muito grande (" + Math.round(x.f.size / 1048576) + " MB), não foi lido");
+      return false;
+    });
+    if (arqs.length > MAX_ARQ) {
+      erros.push("a pasta tem " + arqs.length + " arquivos; foram lidos só os " + MAX_ARQ + " primeiros. Conecte uma pasta só com os arquivos do painel");
+      arqs = arqs.slice(0, MAX_ARQ);
     }
-    // áreas: shapefiles agrupados pelo nome; .zip, .kml, .kmz e .geojson um por um
-    var feats = [], erros = [], grupos = {};
+    // planilhas: primeiro só o cabeçalho, para saber o que é cada uma; depois lê inteira só as escolhidas
+    var tipos = [];
+    for (var i = 0; i < arqs.length; i++) {
+      if (!/\.(xlsx|csv)$/i.test(arqs[i].f.name)) continue;
+      try { var c = await percorrerPlanilha(arqs[i].f, ["fazendas", "operacoes"], true); if (c) tipos.push({ x: arqs[i], tipo: c.tipo }); } catch (e) { /* não é planilha do painel */ }
+    }
+    var candF = tipos.filter(function (t) { return t.tipo === "fazendas"; }).sort(function (a, b) { return /fazend/i.test(b.x.f.name) - /fazend/i.test(a.x.f.name); });
+    var candO = tipos.filter(function (t) { return t.tipo === "operacoes"; }).sort(function (a, b) { return b.x.f.lastModified - a.x.f.lastModified; });
+    var lista = null, ops = null;
+    if (candF.length) {
+      try { var rf = await percorrerPlanilha(candF[0].x.f, ["fazendas"]); if (rf && parseTalhoes(rf.texto).length) lista = { texto: rf.texto, nome: candF[0].x.caminho }; }
+      catch (e) { erros.push(candF[0].x.caminho + ": " + e.message); }
+    }
+    if (candO.length) {
+      try { var ro = await percorrerPlanilha(candO[0].x.f, ["operacoes"]); if (ro) ops = { nome: candO[0].x.caminho, aba: ro.aba, talhoes: ro.talhoes, nLinhas: ro.nLinhas }; }
+      catch (e) { erros.push(candO[0].x.caminho + ": " + e.message); }
+    }
+    // áreas: shapefiles agrupados pelo nome; .zip, .kml, .kmz e .geojson um por um (só as ligadas à lista)
+    var aceitar = aceitarAreaFn(lista ? lista.texto : state.text, ops ? ops.talhoes : (OPS && OPS.talhoes));
+    var feats = [], grupos = {};
     arqs.forEach(function (x) { var m = /^(.*)\.(shp|dbf|prj|cpg)$/i.exec(x.caminho); if (m) (grupos[m[1].toLowerCase()] = grupos[m[1].toLowerCase()] || []).push(x.f); });
     for (var g in grupos) {
       if (!grupos[g].some(function (f) { return /\.shp$/i.test(f.name); })) continue;
-      try { feats = feats.concat(await lerArquivosDeArea(grupos[g])); } catch (e) { erros.push(g + ".shp: " + e.message); }
+      try { feats = feats.concat(await lerArquivosDeArea(grupos[g], aceitar)); } catch (e) { erros.push(g + ".shp: " + e.message); }
     }
     var outros = arqs.filter(function (x) { return /\.(zip|kmz|kml|geojson|json)$/i.test(x.f.name); });
     for (var j = 0; j < outros.length; j++) {
-      try { feats = feats.concat(await lerArquivosDeArea([outros[j].f])); } catch (e) { erros.push(outros[j].caminho + ": " + e.message); }
-    }
-    // planilha de operações (madeira segura, volume, TPC): a mais recente que tiver essas colunas
-    var ops = null, recentes = planilhas.slice().sort(function (a, b) { return b.f.lastModified - a.f.lastModified; });
-    for (var o = 0; o < recentes.length && !ops; o++) {
-      if (lista && recentes[o].caminho === lista.nome) continue;
-      try {
-        var ab = /\.csv$/i.test(recentes[o].f.name) ? lerCsv(await recentes[o].f.text()) : await lerXlsx(await recentes[o].f.arrayBuffer());
-        var rr = lerOperacoes(ab); if (rr) ops = { nome: recentes[o].caminho, aba: rr.aba, talhoes: rr.talhoes, nLinhas: rr.nLinhas };
-      } catch (e) { /* ignora */ }
+      try { feats = feats.concat(await lerArquivosDeArea([outros[j].f], aceitar)); } catch (e) { erros.push(outros[j].caminho + ": " + e.message); }
     }
     return { mudou: true, lista: lista, feats: feats, ops: ops, erros: erros, nArq: arqs.length };
   }
@@ -2903,7 +2959,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     PASTA.ok = true; PASTA.lendo = true; painelPasta();
     try {
       var r = await lerPasta(forcar);
-      if (r.mudou) aplicarPasta(r);
+      if (r.mudou) { aplicarPasta(r); state.pastaAssin = PASTA.assinatura; save(); }
       PASTA.quando = new Date();
     } catch (e) {
       PASTA.ok = false; PASTA.resumo = "não consegui ler a pasta (" + esc(e.message) + ")";
@@ -3213,8 +3269,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   document.getElementById("opsFile").addEventListener("change", function (e) {
     var f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
     document.getElementById("opsInfo").textContent = "Lendo " + f.name + "…";
-    lerPlanilhaQualquer(f).then(function (abas) {
-      var r = lerOperacoes(abas);
+    percorrerPlanilha(f, ["operacoes"]).then(function (r) {
       if (!r) throw new Error("não achei as colunas. A planilha precisa ter uma coluna de talhão (cd_talhao) e uma de madeira segura ou de volume");
       usarOperacoes({ nome: f.name, aba: r.aba, talhoes: r.talhoes, nLinhas: r.nLinhas }, true);
       setMsg(r.talhoes.length + " talhões lidos de " + esc(f.name) + ".", "", 5000);
@@ -3240,7 +3295,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     return out.length >= 4 ? out : pts;
   }
   function simplificarFeicoes(feats) {
-    var antes = 0, depois = 0, tol = 0.00001; // cerca de 1 metro
+    var antes = 0, depois = 0, tol = 0.00002; // cerca de 2 metros
     feats.forEach(function (f) {
       var g = f.geometry; if (!g) return;
       if (g.type === "LineString") { antes += g.coordinates.length; g.coordinates = simplificarAnel(g.coordinates, tol); depois += g.coordinates.length; return; }
@@ -3292,7 +3347,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   function desenharEstradas() {
     if (estradasLayer) { if (ctlCamadas) ctlCamadas.removeLayer(estradasLayer); estradasLayer.remove(); estradasLayer = null; }
     if (!LM || !ESTRADAS.geo) return;
-    var base = { renderer: L.canvas({ pane: "estradasPane", padding: .4 }), pane: "estradasPane", smoothFactor: 1.5 };
+    var base = { renderer: rendEstradas, pane: "estradasPane", smoothFactor: 1.5 };
     var contorno = L.geoJSON(ESTRADAS.geo, Object.assign({ interactive: false, style: { color: "#2b1d0e", weight: 7, opacity: .85, lineCap: "round", lineJoin: "round" } }, base));
     var linha = L.geoJSON(ESTRADAS.geo, Object.assign({
       style: { color: "#f1dca4", weight: 3.5, opacity: 1, lineCap: "round", lineJoin: "round" },
@@ -3347,6 +3402,162 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   }
   document.getElementById("btnCfgMapa").onclick = function () { state.cfgMapa = !state.cfgMapa; save(); aplicarCfgMapa(); };
 
+  // =================== leitura de planilhas em fluxo (lê aos pedaços, guarda só o resumo) ===================
+  function acharCol(cab, res) { for (var r = 0; r < res.length; r++) for (var i = 0; i < cab.length; i++) if (res[r].test(cab[i])) return i; return -1; }
+  // cada "leitor" reconhece um tipo de planilha pelo cabeçalho e processa as linhas uma a uma
+  function leitorFazendas(cab) {
+    var cNome = acharCol(cab, [/fazenda/, /^nome/, /^projeto/]);
+    var cCoord = acharCol(cab, [/coord/]), cLat = acharCol(cab, [/^lat/]), cLon = acharCol(cab, [/^lon/, /^long/]);
+    if (cNome < 0 || (cCoord < 0 && (cLat < 0 || cLon < 0))) return null;
+    var cId = acharCol(cab, [/^id$/, /^cod/, /^n[ºo°.]?$/, /^numero/]), cFr = acharCol(cab, [/frente/, /regiao/]);
+    var out = ["id\tfazenda\tCoordenadas\tFrente"];
+    return {
+      tipo: "fazendas",
+      linha: function (l) {
+        var nome = l[cNome] || "", coord = cCoord >= 0 ? (l[cCoord] || "") : ((l[cLat] || "") && (l[cLon] || "") ? l[cLat] + "\t" + l[cLon] : "");
+        if (nome && coord) out.push([cId >= 0 ? l[cId] || "" : "", nome.replace(/\t/g, " "), coord, cFr >= 0 ? l[cFr] || "" : ""].join("\t"));
+      },
+      resultado: function () { return { texto: out.join("\n") }; }
+    };
+  }
+  function leitorOperacoes(cab) {
+    var cT = acharCol(cab, [/talh/]), cM = acharCol(cab, [/madeira/, /segura/]), cV = acharCol(cab, [/volume/, /^vlr/]);
+    if (cT < 0 || (cM < 0 && cV < 0)) return null;
+    var cP = acharCol(cab, [/projeto/, /^id.?faz/, /^cod.*faz/, /fazenda/]), cId = acharCol(cab, [/^id$/]), cD = acharCol(cab, [/data/]), cTpc = acharCol(cab, [/^tpc$/, /^tcp$/, /tpc/]);
+    var mapa = {}, nLin = 0;
+    return {
+      tipo: "operacoes",
+      linha: function (l) {
+        var talh = l[cT]; if (!talh) return;
+        nLin++;
+        var proj = cP >= 0 ? l[cP] : "";
+        if (!proj && cId >= 0 && l[cId]) { var dg = String(l[cId]).replace(/\D/g, ""); proj = dg.slice(0, Math.max(0, dg.length - String(talh).replace(/\D/g, "").length)); }
+        var k = normProj(proj) + "|" + normTalh(talh);
+        var t = mapa[k] || (mapa[k] = { proj: String(proj).trim(), talhao: String(talh).trim(), ids: {}, vol: 0, volMs: 0, msW: 0, msS: 0, msN: 0, n: 0, dMin: null, dMax: null, tpcCol: null });
+        var vol = cV >= 0 ? num(l[cV]) : NaN, ms = cM >= 0 ? pctDe(l[cM]) : null, d = cD >= 0 ? dataDe(l[cD]) : null, tpc = cTpc >= 0 ? num(l[cTpc]) : NaN;
+        t.n++;
+        if (cId >= 0 && l[cId]) t.ids[String(l[cId]).trim()] = 1;
+        if (!isNaN(vol)) { t.vol += vol; if (ms != null) { t.volMs += vol; t.msW += vol * ms; } }
+        if (ms != null) { t.msS += ms; t.msN++; }
+        if (d) { if (t.dMin == null || +d < t.dMin) t.dMin = +d; if (t.dMax == null || +d > t.dMax) t.dMax = +d; }
+        if (!isNaN(tpc)) t.tpcCol = t.tpcCol == null ? tpc : Math.max(t.tpcCol, tpc);
+      },
+      resultado: function () {
+        var talhoes = Object.keys(mapa).map(function (k) {
+          var t = mapa[k];
+          return { chave: k, proj: t.proj, talhao: t.talhao, ids: Object.keys(t.ids), vol: t.vol, n: t.n, dMin: t.dMin, dMax: t.dMax, tpcCol: t.tpcCol,
+            ms: t.msN ? (t.volMs > 0 ? t.msW / t.volMs : t.msS / t.msN) : null };
+        });
+        return talhoes.length ? { talhoes: talhoes, nLinhas: nLin } : null;
+      }
+    };
+  }
+  var LEITORES = { fazendas: leitorFazendas, operacoes: leitorOperacoes };
+  // procura o cabeçalho nas 15 primeiras linhas e passa o resto para o leitor certo
+  function novoPercurso(tipos, soCabecalho) {
+    var vistas = 0, leitor = null;
+    return {
+      linha: function (l) {
+        if (leitor) { leitor.linha(l); return true; }
+        vistas++;
+        var cab = l.map(normTxt);
+        for (var i = 0; i < tipos.length && !leitor; i++) leitor = LEITORES[tipos[i]](cab);
+        if (leitor && soCabecalho) return false;
+        return leitor ? true : vistas < 15;
+      },
+      fim: function () {
+        if (!leitor) return null;
+        if (soCabecalho) return { tipo: leitor.tipo };
+        var r = leitor.resultado();
+        return r ? Object.assign({ tipo: leitor.tipo }, r) : null;
+      }
+    };
+  }
+  function fluxoDeTexto(z, nome) {
+    var a = z.arqs[nome]; if (!a) return null;
+    var dados = z.dados(nome), bruto = new Blob([dados]).stream();
+    if (a.metodo === 8) {
+      if (typeof DecompressionStream === "undefined") throw new Error("este navegador não consegue abrir o arquivo; use o Edge ou o Chrome atualizados");
+      bruto = bruto.pipeThrough(new DecompressionStream("deflate-raw"));
+    }
+    return bruto.pipeThrough(new TextDecoderStream());
+  }
+  // entrega blocos de texto terminados em `fimTag` (ex.: "</row>") sem nunca juntar o arquivo inteiro
+  async function emBlocos(fluxo, fimTag, aoBloco) {
+    var leitor = fluxo.getReader(), resto = "", parar = false;
+    while (!parar) {
+      var r = await leitor.read();
+      if (r.done) break;
+      resto += r.value;
+      var fim = resto.lastIndexOf(fimTag);
+      if (fim < 0) continue;
+      var bloco = resto.slice(0, fim + fimTag.length);
+      resto = resto.slice(fim + fimTag.length);
+      if (aoBloco(bloco) === false) parar = true;
+    }
+    if (parar) { try { await leitor.cancel(); } catch (e) { } }
+    else if (resto) aoBloco(resto);
+  }
+  async function textosEmFluxo(z) {
+    var out = [], f = fluxoDeTexto(z, "xl/sharedStrings.xml");
+    if (!f) return out;
+    await emBlocos(f, "</si>", function (bloco) {
+      var m, re = /<si\b[^>]*?(?:\/>|>([\s\S]*?)<\/si>)/g;
+      while ((m = re.exec(bloco))) out.push(juntarT((m[1] || "").replace(/<rPh\b[\s\S]*?<\/rPh>/g, "")));
+    });
+    return out;
+  }
+  async function abasDoLivro(z) {
+    var P = new DOMParser(), wb = await z.ler("xl/workbook.xml"), rels = await z.ler("xl/_rels/workbook.xml.rels");
+    if (!wb) throw new Error("não encontrei as abas da planilha");
+    var rel = {};
+    if (rels) Array.prototype.forEach.call(P.parseFromString(rels, "application/xml").getElementsByTagName("Relationship"), function (x) { rel[x.getAttribute("Id")] = x.getAttribute("Target"); });
+    return Array.prototype.map.call(P.parseFromString(wb, "application/xml").getElementsByTagName("sheet"), function (s) {
+      return { nome: s.getAttribute("name"), caminho: "xl/" + (rel[s.getAttribute("r:id")] || "").replace(/^\/?(xl\/)?/, "") };
+    });
+  }
+  async function percorrerXlsx(file, tipos, soCabecalho) {
+    var z = abrirZip(await file.arrayBuffer());
+    var textos = await textosEmFluxo(z), abas = await abasDoLivro(z);
+    for (var a = 0; a < abas.length; a++) {
+      var f = fluxoDeTexto(z, abas[a].caminho); if (!f) continue;
+      var perc = novoPercurso(tipos, soCabecalho), parou = false;
+      await emBlocos(f, "</row>", function (bloco) {
+        var linhas = linhasDaAbaTexto(bloco, textos);
+        for (var i = 0; i < linhas.length; i++) if (perc.linha(linhas[i]) === false) { parou = true; return false; }
+      });
+      var r = perc.fim();
+      if (r) { r.aba = abas[a].nome; return r; }
+    }
+    return null;
+  }
+  async function percorrerCsv(file, tipos, soCabecalho) {
+    var amostra = new Uint8Array(await file.slice(0, 65536).arrayBuffer()), codif = "utf-8";
+    try { new TextDecoder("utf-8", { fatal: true }).decode(amostra); } catch (e) { codif = "windows-1252"; }
+    var sep = null, perc = novoPercurso(tipos, soCabecalho);
+    await emBlocos(file.stream().pipeThrough(new TextDecoderStream(codif)), "\n", function (bloco) {
+      var ls = bloco.replace(/^﻿/, "").split(/\r?\n/);
+      for (var i = 0; i < ls.length; i++) {
+        var l = ls[i]; if (!l.trim()) continue;
+        if (!sep) sep = l.indexOf("\t") >= 0 ? "\t" : (l.split(";").length >= l.split(",").length ? ";" : ",");
+        var cols = l.split(sep).map(function (c) { return c.trim().replace(/^"(.*)"$/, "$1").replace(/""/g, '"'); });
+        if (perc.linha(cols) === false) return false;
+      }
+    });
+    return perc.fim();
+  }
+  function percorrerPlanilha(file, tipos, soCabecalho) {
+    return /\.(csv|txt)$/i.test(file.name) ? percorrerCsv(file, tipos, soCabecalho) : percorrerXlsx(file, tipos, soCabecalho);
+  }
+
+  document.getElementById("arSo").checked = state.areasSo;
+  document.getElementById("arSo").addEventListener("change", function (e) { state.areasSo = e.target.checked; save(); desenharAreas(); });
+  document.getElementById("btnLimpar").onclick = function () {
+    if (!confirm("Apagar a lista, os shapes, a planilha de operações, os ajustes e a pasta guardados neste computador?")) return;
+    location.href = location.href.replace(/[?#].*$/, "") + "?limpar";
+  };
+  if (SEGURO) setTimeout(function () { setMsg("Modo seguro: o painel abriu sem carregar os shapes, a planilha de operações e a pasta guardados. Para apagar o que está guardado, use <b>Apagar dados guardados</b> no fim da página.", "", 15000); }, 1500);
+
   // ---------- logo ----------
   function paintLogo() {
     var box = document.getElementById("logoBox");
@@ -3400,8 +3611,9 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   state.wantDemo = /[?&]demo/.test(location.search);
   openStart();
   loadLeaflet();
-  (state.cfgAreas ? Promise.resolve(state.cfgAreas).then(function (d) { idbAreas("put", d); return d; }) : idbAreas("get")).then(function (d) {
+  var areasProntas = (state.cfgAreas ? Promise.resolve(state.cfgAreas).then(function (d) { idbAreas("put", d); return d; }) : idbAreas("get")).then(function (d) {
     if (d && d.geo) usarAreas(d, false); else painelAreas();
+    return !!(d && d.geo);
   });
   painelPasta();
   pintarModoCor(); aplicarMapaGrande(); painelOps(); aplicarCfgMapa(); painelEstradas();
@@ -3411,8 +3623,11 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   (state.cfgOps ? Promise.resolve(state.cfgOps).then(function (d) { idbKv("operacoes", "put", d); return d; }) : idbKv("operacoes", "get")).then(function (d) {
     if (d && d.talhoes) usarOperacoes(d, false);
   });
-  idbKv("pasta", "get").then(function (h) {
-    if (h && h.kind === "directory") { PASTA.handle = h; painelPasta(); atualizarDaPasta(true, false); }
+  Promise.all([areasProntas, idbKv("pasta", "get")]).then(function (r) {
+    var h = r[1];
+    if (!h || h.kind !== "directory") return;
+    PASTA.handle = h; PASTA.assinatura = r[0] ? state.pastaAssin : ""; // com as áreas já guardadas, só relê se algum arquivo mudou
+    painelPasta(); atualizarDaPasta(false, false);
   });
   setInterval(function () {
     if (PASTA.handle && PASTA.ok) atualizarDaPasta(false, false);

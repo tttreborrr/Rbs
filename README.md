@@ -31,6 +31,21 @@ Cada área é ligada a uma fazenda da lista pelo código ou pelo nome (automáti
 
 O navegador lembra a pasta. Em cada visita ele pede uma confirmação (o clique em **Iniciar** ou em **Ler pasta** já serve) e o painel lê a pasta de novo; enquanto aberto, confere a cada 30 minutos se algum arquivo mudou. Funciona no Edge e no Chrome.
 
+## Madeira segura, volume e TPC por talhão
+
+**Carregar planilha de operações** (embaixo do mapa, ou deixando a planilha na pasta conectada) lê uma planilha com as colunas `ID`, `id_projeto`, `cd_talhao`, `data_operacao`, `vlr_volume_ajustado`, `% Madeira Segura` e `TPC`. As linhas são juntadas por talhão:
+
+- volume ajustado: soma;
+- madeira segura: média ponderada pelo volume;
+- TPC: dias desde a operação mais antiga do talhão, contados até hoje (a planilha mostra que TPC = hoje − data da operação);
+- primeira e última operação.
+
+Cada talhão é ligado ao shape pelo código do projeto + código do talhão (007-01, 7-01 e 00701 valem igual) ou pelo ID completo (6194007-01). Se a ligação automática falhar, escolha as colunas do shape em "Ligar talhões".
+
+No mapa, **Colorir: Chuva / Madeira segura / TPC** troca a cor das áreas (madeira segura em 5 faixas de 1 a 100%, sem cor quando não tem; TPC em 5 faixas de dias). Passando o mouse aparecem volume, madeira segura, TPC e datas. A tabela **Madeira nos talhões** ordena por fazenda, talhão, madeira segura, volume, TPC, última operação ou chuva; o botão **Ver** leva o mapa até o talhão. **Expandir mapa** recolhe a leitura geral e aumenta o mapa.
+
+Para o mapa continuar leve, os contornos são simplificados ao carregar (tolerância de cerca de 1 metro) e desenhados em canvas.
+
 ## O que aparece
 
 - **Mapa**: mapa de verdade, com zoom, satélite e nomes de estradas (Esri). As fazendas são pintadas pela chuva do momento escolhido; fazenda com chuva pulsa. Se a rede bloquear o mapa, aparece um mapa simples no lugar.

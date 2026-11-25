@@ -1192,6 +1192,13 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
           <button class="btn" id="estOff" type="button" hidden>Tirar estradas</button>
         </span>
         <span class="pasta-row">
+          <span class="cfg-tit">Sem .prj</span>
+          <label class="ar-ctl" for="fusoSemPrj">Shapes sem o arquivo .prj: UTM fuso
+            <select id="fusoSemPrj"><option value="">Automático</option><option value="21">21 S</option><option value="22">22 S</option><option value="23">23 S</option></select>
+          </label>
+          <span class="ar-info">SIRGAS 2000. Mato Grosso do Sul fica nos fusos 21 e 22. Depois de mudar, carregue o shape de novo.</span>
+        </span>
+        <span class="pasta-row">
           <span class="cfg-tit">Pasta</span>
           <button class="btn" id="btnPasta" type="button">Conectar pasta</button>
           <button class="btn" id="btnPastaLer" type="button" hidden>Ler pasta</button>
@@ -1449,7 +1456,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     state.sort = (s && s.sort) || "rain";
     state.modelSel = (s && s.modelSel) || "ecmwf";
     state.areaOp = s && s.areaOpV2 != null ? s.areaOpV2 : 1;
-    state.cfgMapa = !!(s && s.cfgMapa); state.areasSo = s && s.areasSo != null ? s.areasSo : true; state.pastaAssin = (s && s.pastaAssin) || ""; state.verAreas = s ? s.verAreas : true; state.verEstradas = s ? s.verEstradas : true;
+    state.cfgMapa = !!(s && s.cfgMapa); state.areasSo = s && s.areasSo != null ? s.areasSo : true; state.pastaAssin = (s && s.pastaAssin) || ""; state.fusoSemPrj = (s && s.fusoSemPrj) || ""; state.verAreas = s ? s.verAreas : true; state.verEstradas = s ? s.verEstradas : true;
     state.cfgAreas = useCfg && CFG.areas && CFG.areas.geo ? CFG.areas : null;
     state.cfgOps = useCfg && CFG.ops && CFG.ops.talhoes ? CFG.ops : null;
     state.cfgEst = useCfg && CFG.estradas && CFG.estradas.geo ? CFG.estradas : null;
@@ -1462,7 +1469,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     else { var cat = parseTalhoes(state.text); state.sel = cat.length <= 30 ? cat.map(key) : []; }
   }
   function save() {
-    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp, sel: state.sel, areaOpV2: state.areaOp, cfgMapa: state.cfgMapa, areasSo: state.areasSo, pastaAssin: state.pastaAssin, verAreas: state.verAreas, verEstradas: state.verEstradas, corAreas: state.corAreas, opSort: state.opSort, mapWide: state.mapWide })); } catch (e) {}
+    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp, sel: state.sel, areaOpV2: state.areaOp, cfgMapa: state.cfgMapa, areasSo: state.areasSo, pastaAssin: state.pastaAssin, fusoSemPrj: state.fusoSemPrj, verAreas: state.verAreas, verEstradas: state.verEstradas, corAreas: state.corAreas, opSort: state.opSort, mapWide: state.mapWide })); } catch (e) {}
   }
 
   // ---------- números ----------
@@ -2560,6 +2567,30 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     };
   }
   // lê o .prj: graus (null) ou uma função que converte metros em graus
+  // shape sem .prj: se as coordenadas estiverem em metros, supõe SIRGAS 2000 / UTM e escolhe o fuso
+  // que deixa o shape mais perto das fazendas da lista (ou o fuso escolhido nas configurações do mapa)
+  var avisoPrj = "";
+  function utmSirgas(fuso, sul) { return tmInversa({ a: 6378137, f: 1 / 298.257222101, lon0: -183 + 6 * fuso, lat0: 0, k0: 0.9996, fe: 500000, fn: sul ? 10000000 : 0 }); }
+  function conversorSemPrj(dv) {
+    var xmin = dv.getFloat64(36, true), ymin = dv.getFloat64(44, true), xmax = dv.getFloat64(52, true), ymax = dv.getFloat64(60, true);
+    if (Math.abs(xmin) <= 180 && Math.abs(xmax) <= 180 && Math.abs(ymin) <= 90 && Math.abs(ymax) <= 90) return null; // já está em graus
+    var sul = ymin > 1000000, cx = (xmin + xmax) / 2, cy = (ymin + ymax) / 2, fuso = +state.fusoSemPrj || 0, modo = "escolhido nas configurações";
+    if (!fuso) {
+      var ref = parseTalhoes(state.text), rlon, rlat;
+      if (ref.length) { rlon = ref.reduce(function (a, t) { return a + t.lon; }, 0) / ref.length; rlat = ref.reduce(function (a, t) { return a + t.lat; }, 0) / ref.length; }
+      if (rlon == null) { fuso = 22; modo = "padrão, sem fazendas para comparar"; }
+      else {
+        var melhor = 1e9;
+        for (var z = 18; z <= 25; z++) {
+          var ll = utmSirgas(z, sul)(cx, cy), d = Math.hypot((ll[0] - rlon) * Math.cos(rlat * Math.PI / 180), ll[1] - rlat);
+          if (d < melhor) { melhor = d; fuso = z; }
+        }
+        modo = "o que deixa o shape mais perto das fazendas da lista";
+      }
+    }
+    avisoPrj = "O shape veio sem o arquivo .prj. Usei SIRGAS 2000 / UTM fuso " + fuso + (sul ? " S" : " N") + " (" + modo + "). Confira se ficou no lugar certo; se não, escolha o fuso em Configurações do mapa e carregue de novo.";
+    return utmSirgas(fuso, sul);
+  }
   function conversorDoPrj(wkt) {
     if (!wkt || !/PROJCS/i.test(wkt)) return null;
     if (!/Transverse_Mercator/i.test(wkt)) {
@@ -2574,7 +2605,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   }
   function arred(p) { return [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6]; }
   function lerShp(buf, prj, manter) {
-    var dv = new DataView(buf), conv = conversorDoPrj(prj), out = [], off = 100;
+    var dv = new DataView(buf), conv = prj && prj.trim() ? conversorDoPrj(prj) : conversorSemPrj(dv), out = [], off = 100;
     while (off + 8 <= buf.byteLength) {
       var tam = dv.getInt32(off + 4, false) * 2, ini = off + 8; off = ini + tam;
       if (tam < 4 || ini + tam > buf.byteLength) { out.push(null); continue; }
@@ -2587,7 +2618,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
         var a0 = dv.getInt32(ini + 44 + i * 4, true), a1 = i + 1 < np ? dv.getInt32(ini + 48 + i * 4, true) : npt, anel = [];
         for (var j = a0; j < a1; j++) {
           var x = dv.getFloat64(pts + j * 16, true), y = dv.getFloat64(pts + j * 16 + 8, true);
-          if (!conv && (Math.abs(x) > 180 || Math.abs(y) > 90)) throw new Error("as coordenadas estão em metros e faltou o arquivo .prj junto do .shp");
+          if (!conv && (Math.abs(x) > 180 || Math.abs(y) > 90)) throw new Error("as coordenadas estão em metros e não consegui descobrir o sistema. Envie o arquivo .prj junto do .shp");
           anel.push(arred(conv ? conv(x, y) : [x, y]));
         }
         if (anel.length > (ehLinha ? 1 : 2)) aneis.push(anel);
@@ -2802,13 +2833,14 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     var fs = e.target.files; if (!fs || !fs.length) return;
     var nome = Array.prototype.map.call(fs, function (f) { return f.name; }).filter(function (n) { return !/\.(dbf|prj|cpg|shx)$/i.test(n); })[0] || fs[0].name;
     document.getElementById("arInfo").textContent = "Lendo " + nome + "…";
+    avisoPrj = "";
     lerArquivosDeArea(fs, aceitarAreaFn(state.text, OPS && OPS.talhoes)).then(function (todas) {
       var sep = separarGeometrias(todas), feats = sep.polis;
       if (sep.linhas.length) usarEstradas({ geo: { type: "FeatureCollection", features: sep.linhas }, nome: nome.replace(/\.[^.]+$/, "") }, true);
       if (!feats.length) { if (sep.linhas.length) { painelAreas(); setMsg("Esse arquivo tem linhas: foi carregado como estradas.", "", 6000); return; } throw new Error("o arquivo não tem polígonos"); }
       usarAreas({ geo: { type: "FeatureCollection", features: feats }, nome: nome.replace(/\.[^.]+$/, ""), campo: "" }, true);
       if (LM && areasLayer && !AREAS.geo.features.some(function (f) { return f.__k; })) LM.fitBounds(areasLayer.getBounds(), { maxZoom: 14 });
-      setMsg("Áreas carregadas: " + feats.length + ". Use a barra de opacidade embaixo do mapa para ver o que está por baixo.", "", 6000);
+      setMsg("Talhões carregados: " + feats.length + "." + (avisoPrj ? " " + esc(avisoPrj) : ""), "", avisoPrj ? 15000 : 6000);
     }).catch(function (err) {
       document.getElementById("arInfo").textContent = "Nenhuma área carregada";
       setMsg("Não consegui ler as áreas: " + esc(err.message) + ".", "err", 12000);
@@ -3381,11 +3413,12 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     var fs = e.target.files; if (!fs || !fs.length) return;
     var nome = Array.prototype.map.call(fs, function (f) { return f.name; }).filter(function (n) { return !/\.(dbf|prj|cpg|shx)$/i.test(n); })[0] || fs[0].name;
     document.getElementById("estInfo").textContent = "Lendo " + nome + "…";
+    avisoPrj = "";
     lerArquivosDeArea(fs).then(function (feats) {
       var sep = separarGeometrias(feats);
       if (!sep.linhas.length) throw new Error("o arquivo não tem linhas. O shape de estradas precisa ser do tipo linha");
       usarEstradas({ geo: { type: "FeatureCollection", features: sep.linhas }, nome: nome.replace(/\.[^.]+$/, "") }, true);
-      setMsg("Estradas carregadas: " + sep.linhas.length + " trechos.", "", 5000);
+      setMsg("Estradas carregadas: " + sep.linhas.length + " trechos." + (avisoPrj ? " " + esc(avisoPrj) : ""), "", avisoPrj ? 15000 : 5000);
     }).catch(function (err) { painelEstradas(); setMsg("Não consegui ler as estradas: " + esc(err.message) + ".", "err", 10000); });
     e.target.value = "";
   });
@@ -3551,6 +3584,8 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   }
 
   document.getElementById("arSo").checked = state.areasSo;
+  document.getElementById("fusoSemPrj").value = state.fusoSemPrj || "";
+  document.getElementById("fusoSemPrj").addEventListener("change", function (e) { state.fusoSemPrj = e.target.value; save(); });
   document.getElementById("arSo").addEventListener("change", function (e) { state.areasSo = e.target.checked; save(); desenharAreas(); });
   document.getElementById("btnLimpar").onclick = function () {
     if (!confirm("Apagar a lista, os shapes, a planilha de operações, os ajustes e a pasta guardados neste computador?")) return;

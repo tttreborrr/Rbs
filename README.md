@@ -42,9 +42,9 @@ O navegador lembra a pasta. Em cada visita ele pede uma confirmação (o clique 
 
 Cada talhão é ligado ao shape pelo código do projeto + código do talhão (007-01, 7-01 e 00701 valem igual) ou pelo ID completo (6194007-01). Se a ligação automática falhar, escolha as colunas do shape em "Ligar talhões".
 
-No mapa, **Colorir: Chuva / Madeira segura / TPC** troca a cor das áreas (madeira segura em 5 faixas de 1 a 100%, sem cor quando não tem; TPC em 5 faixas de dias). Passando o mouse aparecem volume, madeira segura, TPC e datas. A tabela **Madeira nos talhões** ordena por fazenda, talhão, madeira segura, volume, TPC, última operação ou chuva; o botão **Ver** leva o mapa até o talhão. **Expandir mapa** recolhe a leitura geral e aumenta o mapa.
+No mapa, **Colorir: Chuva / Madeira segura / TPC** troca a cor das áreas (madeira segura em 5 faixas de verde de 1 a 100%, sem cor quando não tem; TPC em 5 faixas de verde por dias; contorno branco para destacar do satélite). Passando o mouse aparecem volume, madeira segura, TPC e datas. A tabela **Madeira nos talhões** ordena por fazenda, talhão, madeira segura, volume, TPC, última operação ou chuva; o botão **Ver** leva o mapa até o talhão. **Expandir mapa** recolhe a leitura geral e aumenta o mapa.
 
-Para o mapa continuar leve, os contornos são simplificados ao carregar (tolerância de cerca de 1 metro) e desenhados em canvas.
+O componente do mapa (Leaflet 1.9.4, licença BSD-2) vem embutido no arquivo; da internet vêm só as imagens do satélite e das ruas (server.arcgisonline.com). Para o mapa continuar leve, os contornos são simplificados ao carregar (tolerância de cerca de 1 metro) e desenhados em canvas.
 
 ## O que aparece
 

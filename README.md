@@ -42,9 +42,17 @@ O navegador lembra a pasta. Em cada visita ele pede uma confirmação (o clique 
 
 Cada talhão é ligado ao shape pelo código do projeto + código do talhão (007-01, 7-01 e 00701 valem igual) ou pelo ID completo (6194007-01). Se a ligação automática falhar, escolha as colunas do shape em "Ligar talhões".
 
-No mapa, **Colorir: Chuva / Madeira segura / TPC** troca a cor das áreas (madeira segura em 5 faixas de verde de 1 a 100%, sem cor quando não tem; TPC em 5 faixas de verde por dias; contorno branco para destacar do satélite). Passando o mouse aparecem volume, madeira segura, TPC e datas. A tabela **Madeira nos talhões** ordena por fazenda, talhão, madeira segura, volume, TPC, última operação ou chuva; o botão **Ver** leva o mapa até o talhão. **Expandir mapa** recolhe a leitura geral e aumenta o mapa.
+No mapa, **Colorir: Chuva / TPC** troca a cor dos talhões. TPC: **vermelho** abaixo de 30 dias, **amarelo** de 30 a 45 dias, **verde** acima de 45 dias (contorno branco para destacar do satélite). A madeira segura aparece na tabela e ao passar o mouse. Passando o mouse aparecem volume, madeira segura, TPC e datas. A tabela **Madeira nos talhões** ordena por fazenda, talhão, madeira segura, volume, TPC, última operação ou chuva; o botão **Ver** leva o mapa até o talhão. **Expandir mapa** recolhe a leitura geral e aumenta o mapa.
 
 O componente do mapa (Leaflet 1.9.4, licença BSD-2) vem embutido no arquivo; da internet vêm só as imagens do satélite e das ruas (server.arcgisonline.com). Para o mapa continuar leve, os contornos são simplificados ao carregar (tolerância de cerca de 1 metro) e desenhados em canvas.
+
+## Estradas cascalhadas
+
+Em **Configurações do mapa › Estradas**, carregue o shape de estradas (linhas: `.zip`, `.shp`+`.dbf`+`.prj`, `.kml`, `.kmz`, `.geojson`). Elas ficam numa camada separada, por cima dos talhões, em bege com contorno escuro, e podem ser ligadas e desligadas no canto do mapa ("Estradas cascalhadas"). Na pasta conectada, arquivos de linhas viram estradas e de polígonos viram talhões automaticamente.
+
+## Configurações do mapa
+
+Os botões de carregar talhões, estradas, pasta e planilha de operações ficam em **⚙ Configurações do mapa** (recolhido). Embaixo do mapa ficam visíveis só a opacidade (100% por padrão) e um resumo do que está carregado.
 
 ## O que aparece
 

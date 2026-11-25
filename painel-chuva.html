@@ -818,7 +818,13 @@ button { cursor: pointer; }
 .dc.mini { display: inline-block; padding: 2px 8px; font-size: 11.5px; font-weight: 600; border-radius: 5px; }
 .opmais { padding: 10px; text-align: center; }
 .opmais:empty { display: none; }
-.areas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 0 4px; border-bottom: 1px dashed var(--line); margin-bottom: 6px; font-size: 12.5px; }
+.mapbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 0 6px; font-size: 12.5px; }
+.mapbar .ar-info { flex: 1 1 200px; }
+#btnCfgMapa { font-size: 12.5px; padding: 5px 12px; }
+.areas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 12px 8px; margin-bottom: 8px; font-size: 12.5px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; animation: rise .25s ease both; }
+.cfg-row { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.cfg-tit { font-family: var(--font-display); font-stretch: 78%; text-transform: uppercase; letter-spacing: .06em; font-weight: 800; font-size: 11.5px; color: var(--ink-2); min-width: 78px; }
+.swl { display: inline-block; width: 22px; height: 5px; border-radius: 3px; background: #f1dca4; box-shadow: 0 0 0 1.5px #2b1d0e; margin: 0 8px 0 2px; }
 .areas .btn { font-size: 12.5px; padding: 5px 10px; cursor: pointer; }
 .ar-info { color: var(--ink-2); flex: 1 1 200px; min-width: 0; }
 .pasta-row { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding-top: 6px; border-top: 1px dotted var(--line); }
@@ -1157,26 +1163,42 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   <section class="over">
     <div class="panel mapbox">
       <div class="maphead"><h2>Mapa</h2>
-        <div class="seg" id="corModo" role="group" aria-label="Colorir as áreas por"><button type="button" data-c="chuva">Chuva</button><button type="button" data-c="madeira">Madeira segura</button><button type="button" data-c="tpc">TPC</button></div>
+        <div class="seg" id="corModo" role="group" aria-label="Colorir as áreas por"><button type="button" data-c="chuva">Chuva</button><button type="button" data-c="tpc">TPC</button></div>
         <span class="when" id="mapWhen"></span>
         <button class="btn" id="btnWide" type="button" aria-pressed="false">⇤ Expandir mapa</button>
       </div>
       <div id="map"></div>
-      <div class="areas" id="areasBar">
-        <label class="btn" for="shpFile">Carregar áreas (shape, KML)</label>
+      <div class="mapbar">
+        <label class="ar-ctl" id="arOpBox" for="arOp" hidden>Opacidade dos talhões <input type="range" id="arOp" min="0" max="100" step="5"> <output id="arOpV" class="num"></output></label>
+        <span class="ar-info" id="mapResumo"></span>
+        <button class="btn" id="btnCfgMapa" type="button" aria-expanded="false" aria-controls="areasBar">⚙ Configurações do mapa</button>
+      </div>
+      <div class="areas" id="areasBar" hidden>
+        <span class="cfg-row">
+        <span class="cfg-tit">Talhões</span>
+        <label class="btn" for="shpFile">Carregar talhões (shape, KML)</label>
         <input type="file" id="shpFile" multiple accept=".zip,.shp,.dbf,.prj,.cpg,.kml,.kmz,.geojson,.json" hidden>
         <span class="ar-info" id="arInfo">Nenhuma área carregada</span>
-        <label class="ar-ctl" id="arOpBox" for="arOp" hidden>Opacidade <input type="range" id="arOp" min="0" max="100" step="5"> <output id="arOpV" class="num"></output></label>
         <label class="ar-ctl" id="arCampoBox" for="arCampo" hidden>Ligar pela coluna <select id="arCampo"></select></label>
         <button class="btn" id="arZoom" type="button" hidden>Ver áreas</button>
-        <button class="btn" id="arOff" type="button" hidden>Tirar áreas</button>
+        <button class="btn" id="arOff" type="button" hidden>Tirar talhões</button>
+        </span>
         <span class="pasta-row">
+          <span class="cfg-tit">Estradas</span>
+          <label class="btn" for="estFile">Carregar estradas (shape, KML)</label>
+          <input type="file" id="estFile" multiple accept=".zip,.shp,.dbf,.prj,.cpg,.kml,.kmz,.geojson,.json" hidden>
+          <span class="ar-info" id="estInfo">Nenhuma estrada carregada</span>
+          <button class="btn" id="estOff" type="button" hidden>Tirar estradas</button>
+        </span>
+        <span class="pasta-row">
+          <span class="cfg-tit">Pasta</span>
           <button class="btn" id="btnPasta" type="button">Conectar pasta</button>
           <button class="btn" id="btnPastaLer" type="button" hidden>Ler pasta</button>
           <button class="btn" id="btnPastaOff" type="button" hidden>Desconectar</button>
           <span class="ar-info" id="pastaInfo" hidden></span>
         </span>
         <span class="pasta-row">
+          <span class="cfg-tit">Operações</span>
           <label class="btn" for="opsFile">Carregar planilha de operações</label>
           <input type="file" id="opsFile" accept=".xlsx,.csv,.txt" hidden>
           <span class="ar-info" id="opsInfo">Nenhuma planilha de operações</span>
@@ -1185,6 +1207,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
         </span>
       </div>
       <div class="legend" id="legendOps" hidden></div>
+      <div class="legend" id="legendEst" hidden><span><span class="swl" aria-hidden="true"></span>Estradas cascalhadas</span></div>
       <div class="legend" id="legendChuva">
         <span><span class="sw" style="background:var(--dry)"></span>Sem chuva (&lt; <span class="lo">4</span> mm)</span>
         <span><span class="sw" style="background:var(--rain-1)"></span>Chuva (<span class="lo">4</span> a <span class="hi">6</span> mm)</span>
@@ -1215,7 +1238,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   <section class="opsec" id="opsSec" hidden>
     <div class="board-head">
       <div><h2>Madeira nos talhões</h2><p id="opsResumo"></p></div>
-      <label class="chk" for="opSo"><input type="checkbox" id="opSo" checked> Só das fazendas marcadas</label>
+      <div class="grp"><input type="search" id="opBusca" class="txt" placeholder="Buscar fazenda, projeto ou talhão" aria-label="Buscar na tabela"><label class="chk" for="opSo"><input type="checkbox" id="opSo"> Só das fazendas marcadas</label></div>
     </div>
     <div class="board opbox"><div class="scrollx"><table class="optab" id="opTab"></table></div><div class="opmais" id="opMais"></div></div>
   </section>
@@ -1399,7 +1422,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     { key: "gfs", id: "gfs_seamless", name: "GFS", desc: "americano (NOAA)" },
     { key: "icon", id: "icon_seamless", name: "ICON", desc: "alemão (DWD)" }
   ];
-  var state = { text: "", params: {}, farms: [], data: null, raw: null, avail: [], modelSel: "ecmwf", sel: [], wantDemo: false, areaOp: 0.45, cfgAreas: null, cfgOps: null, corAreas: "chuva", opSort: { c: "data", d: -1 }, mapWide: false, demo: false, region: "Todas", view: "now", sort: "rain", open: null, manual: {}, lastFetch: null, firstPaint: true };
+  var state = { text: "", params: {}, farms: [], data: null, raw: null, avail: [], modelSel: "ecmwf", sel: [], wantDemo: false, areaOp: 1, cfgAreas: null, cfgEst: null, cfgOps: null, corAreas: "chuva", opSort: { c: "data", d: -1 }, mapWide: false, demo: false, region: "Todas", view: "now", sort: "rain", open: null, manual: {}, lastFetch: null, firstPaint: true };
 
   // ---------- armazenamento local (falha em silêncio) ----------
   function load() {
@@ -1414,10 +1437,12 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     state.manual = (s && s.manual) || {};
     state.sort = (s && s.sort) || "rain";
     state.modelSel = (s && s.modelSel) || "ecmwf";
-    state.areaOp = s && s.areaOp != null ? s.areaOp : 0.45;
+    state.areaOp = s && s.areaOpV2 != null ? s.areaOpV2 : 1;
+    state.cfgMapa = !!(s && s.cfgMapa); state.verAreas = s ? s.verAreas : true; state.verEstradas = s ? s.verEstradas : true;
     state.cfgAreas = useCfg && CFG.areas && CFG.areas.geo ? CFG.areas : null;
     state.cfgOps = useCfg && CFG.ops && CFG.ops.talhoes ? CFG.ops : null;
-    if (s && s.corAreas) state.corAreas = s.corAreas;
+    state.cfgEst = useCfg && CFG.estradas && CFG.estradas.geo ? CFG.estradas : null;
+    if (s && s.corAreas) state.corAreas = s.corAreas === "madeira" ? "tpc" : s.corAreas;
     if (s && s.opSort) state.opSort = s.opSort;
     state.mapWide = !!(s && s.mapWide);
     // fazendas marcadas na tela inicial
@@ -1426,7 +1451,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     else { var cat = parseTalhoes(state.text); state.sel = cat.length <= 30 ? cat.map(key) : []; }
   }
   function save() {
-    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp, sel: state.sel, areaOp: state.areaOp, corAreas: state.corAreas, opSort: state.opSort, mapWide: state.mapWide })); } catch (e) {}
+    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp, sel: state.sel, areaOpV2: state.areaOp, cfgMapa: state.cfgMapa, verAreas: state.verAreas, verEstradas: state.verEstradas, corAreas: state.corAreas, opSort: state.opSort, mapWide: state.mapWide })); } catch (e) {}
   }
 
   // ---------- números ----------
@@ -1898,7 +1923,14 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
         L.tileLayer(ESRI + "Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19 })
       ]);
       sat.addTo(LM); nomes.addTo(LM);
-      L.control.layers({ "Mapa": osm, "Satélite": sat }, { "Nomes e estradas": nomes }, { position: "topright", collapsed: false }).addTo(LM);
+      LM.createPane("areasPane").style.zIndex = 405;
+      LM.createPane("estradasPane").style.zIndex = 420;
+      ctlCamadas = L.control.layers({ "Mapa": osm, "Satélite": sat }, { "Nomes e estradas": nomes }, { position: "topright", collapsed: false }).addTo(LM);
+      LM.on("overlayadd overlayremove", function (e) {
+        var on = e.type === "overlayadd";
+        if (e.layer === estradasLayer) { state.verEstradas = on; save(); }
+        if (e.layer === areasLayer) { state.verAreas = on; save(); }
+      });
       L.control.scale({ imperial: false }).addTo(LM);
       [osm, sat].forEach(function (l) { l.on("tileerror", function () { if (++tileErrs === 8) setMsg("O mapa não conseguiu baixar as imagens. A rede pode estar bloqueando <b>server.arcgisonline.com</b>. Os pontos e as cores continuam certos.", "err"); }); });
       LM.on("zoomend", function () { box.classList.toggle("far", LM.getZoom() < 10); });
@@ -1920,6 +1952,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     }
     box.classList.toggle("far", LM.getZoom() < 10);
     if (AREAS.geo && !areasLayer) desenharAreas();
+    if (ESTRADAS.geo && !estradasLayer) desenharEstradas();
     paintMap();
   }
   function paintMap() {
@@ -2333,7 +2366,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     function tags(d, n) { return Array.prototype.slice.call(d.getElementsByTagName(n)); }
     var textos = [];
     return Promise.all([ler("xl/sharedStrings.xml"), ler("xl/workbook.xml"), ler("xl/_rels/workbook.xml.rels")]).then(function (r) {
-      if (r[0]) tags(xml(r[0]), "si").forEach(function (si) { textos.push(tags(si, "t").map(function (t) { return t.textContent; }).join("")); });
+      if (r[0]) textos = textosCompartilhados(r[0]);
       if (!r[1]) throw new Error("não encontrei as abas da planilha");
       var rel = {};
       if (r[2]) tags(xml(r[2]), "Relationship").forEach(function (x) { rel[x.getAttribute("Id")] = x.getAttribute("Target"); });
@@ -2342,7 +2375,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
         return { nome: s.getAttribute("name"), caminho: "xl/" + alvo };
       });
       return Promise.all(abas.map(function (a) { return ler(a.caminho); })).then(function (xs) {
-        return abas.map(function (a, k) { return { nome: a.nome, linhas: xs[k] ? linhasDaAba(xml(xs[k]), textos) : [] }; });
+        return abas.map(function (a, k) { return { nome: a.nome, linhas: xs[k] ? linhasDaAbaTexto(xs[k], textos) : [] }; });
       });
     });
   }
@@ -2350,6 +2383,41 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     var m = /^([A-Z]+)/.exec(ref || ""); if (!m) return -1;
     var n = 0; for (var i = 0; i < m[1].length; i++) n = n * 26 + (m[1].charCodeAt(i) - 64);
     return n - 1;
+  }
+  // leitura direta do texto do arquivo: bem mais rápida e leve que montar a árvore XML inteira
+  var ENT = { lt: "<", gt: ">", amp: "&", quot: '"', apos: "'" };
+  function desescapar(s) {
+    return s.indexOf("&") < 0 ? s : s.replace(/&(#x[0-9a-f]+|#\d+|\w+);/gi, function (m, e) {
+      if (e[0] === "#") return String.fromCodePoint(e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : +e.slice(1));
+      return ENT[e] != null ? ENT[e] : m;
+    });
+  }
+  function juntarT(xml) { var s = "", m, re = /<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/g; while ((m = re.exec(xml))) s += m[1]; return desescapar(s); }
+  function textosCompartilhados(xml) {
+    var out = [], m, re = /<si\b[^>]*?(?:\/>|>([\s\S]*?)<\/si>)/g;
+    while ((m = re.exec(xml))) out.push(juntarT((m[1] || "").replace(/<rPh\b[\s\S]*?<\/rPh>/g, "")));
+    return out;
+  }
+  function linhasDaAbaTexto(xml, textos) {
+    var linhas = [], rRow = /<row\b[^>]*?(?:\/>|>([\s\S]*?)<\/row>)/g, rC = /<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g, m, c;
+    while ((m = rRow.exec(xml))) {
+      var linha = [], auto = 0, corpo = m[1] || "";
+      rC.lastIndex = 0;
+      while ((c = rC.exec(corpo))) {
+        var at = c[1], ref = /\br="([A-Z]+)/.exec(at), tipo = /\bt="([^"]+)"/.exec(at), i = ref ? colunaDe(ref[1]) : auto, dentro = c[2] || "", val;
+        auto = i + 1;
+        if (tipo && tipo[1] === "inlineStr") val = juntarT(dentro);
+        else {
+          var v = /<v>([\s\S]*?)<\/v>/.exec(dentro);
+          val = v ? v[1] : "";
+          val = tipo && tipo[1] === "s" ? (textos[+val] || "") : desescapar(val);
+        }
+        linha[i] = val.trim();
+      }
+      var out = []; for (var j = 0; j < linha.length; j++) out.push(linha[j] == null ? "" : linha[j]);
+      linhas.push(out);
+    }
+    return linhas;
   }
   function linhasDaAba(doc, textos) {
     return Array.prototype.map.call(doc.getElementsByTagName("row"), function (r) {
@@ -2405,7 +2473,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       if (!parseTalhoes(r.texto).length) {
         var op = lerOperacoes(abas);
         if (op) {
-          usarOperacoes({ nome: f.name, aba: op.aba, talhoes: op.talhoes }, true);
+          usarOperacoes({ nome: f.name, aba: op.aba, talhoes: op.talhoes, nLinhas: op.nLinhas }, true);
           stMsg("Essa é a planilha de operações: " + op.talhoes.length + " talhões lidos. A madeira segura e o TPC aparecem no mapa e na tabela depois de Iniciar.", "ok");
           return null;
         }
@@ -2498,7 +2566,8 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       var tam = dv.getInt32(off + 4, false) * 2, ini = off + 8; off = ini + tam;
       if (tam < 4 || ini + tam > buf.byteLength) { out.push(null); continue; }
       var tipo = dv.getInt32(ini, true);
-      if (tipo !== 5 && tipo !== 15 && tipo !== 25) { out.push(null); continue; }
+      var ehLinha = tipo === 3 || tipo === 13 || tipo === 23;
+      if (!ehLinha && tipo !== 5 && tipo !== 15 && tipo !== 25) { out.push(null); continue; }
       var np = dv.getInt32(ini + 36, true), npt = dv.getInt32(ini + 40, true), pts = ini + 44 + np * 4, aneis = [];
       for (var i = 0; i < np; i++) {
         var a0 = dv.getInt32(ini + 44 + i * 4, true), a1 = i + 1 < np ? dv.getInt32(ini + 48 + i * 4, true) : npt, anel = [];
@@ -2507,9 +2576,9 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
           if (!conv && (Math.abs(x) > 180 || Math.abs(y) > 90)) throw new Error("as coordenadas estão em metros e faltou o arquivo .prj junto do .shp");
           anel.push(arred(conv ? conv(x, y) : [x, y]));
         }
-        if (anel.length > 2) aneis.push(anel);
+        if (anel.length > (ehLinha ? 1 : 2)) aneis.push(anel);
       }
-      out.push(aneis.length ? aneis : null);
+      out.push(aneis.length ? { type: ehLinha ? "MultiLineString" : "Polygon", coordinates: aneis } : null);
     }
     return out;
   }
@@ -2539,7 +2608,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   function shpParaFeicoes(shp, dbf, prj, cpg) {
     var geoms = lerShp(shp, prj), props = dbf ? lerDbf(dbf, cpg) : [];
     var out = [];
-    geoms.forEach(function (g, i) { if (g) out.push({ type: "Feature", properties: props[i] || {}, geometry: { type: "Polygon", coordinates: g } }); });
+    geoms.forEach(function (g, i) { if (g) out.push({ type: "Feature", properties: props[i] || {}, geometry: g }); });
     return out;
   }
   function lerKml(txt) {
@@ -2561,12 +2630,15 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
         return Array.prototype.map.call(pg.getElementsByTagName("coordinates"), coords).filter(function (r) { return r.length > 2; });
       }).filter(function (p) { return p.length; });
       if (polis.length) feats.push({ type: "Feature", properties: props, geometry: polis.length === 1 ? { type: "Polygon", coordinates: polis[0] } : { type: "MultiPolygon", coordinates: polis } });
+      var lins = Array.prototype.map.call(pm.getElementsByTagName("LineString"), function (ls) { var c = ls.getElementsByTagName("coordinates")[0]; return c ? coords(c) : []; })
+        .filter(function (l) { return l.length > 1; });
+      if (lins.length) feats.push({ type: "Feature", properties: props, geometry: { type: "MultiLineString", coordinates: lins } });
     });
     return feats;
   }
   function lerGeoJson(txt) {
     var g = JSON.parse(txt), feats = g.type === "FeatureCollection" ? g.features : g.type === "Feature" ? [g] : [{ type: "Feature", properties: {}, geometry: g }];
-    feats = feats.filter(function (f) { return f && f.geometry && /Polygon/.test(f.geometry.type); });
+    feats = feats.filter(function (f) { return f && f.geometry && /Polygon|LineString/.test(f.geometry.type); });
     var amostra = JSON.stringify(feats.slice(0, 3).map(function (f) { return f.geometry.coordinates; })).match(/-?\d+(\.\d+)?/g) || [];
     if (amostra.some(function (v) { return Math.abs(+v) > 180; })) throw new Error("o GeoJSON está em metros (UTM). Exporte em graus (WGS 84 / SIRGAS 2000 geográfico)");
     return feats.map(function (f) { return { type: "Feature", properties: f.properties || {}, geometry: f.geometry }; });
@@ -2642,18 +2714,21 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     return linhas.join("<br>") + rotuloOps(f);
   }
   function desenharAreas() {
-    if (areasLayer) { areasLayer.remove(); areasLayer = null; }
+    if (areasLayer) { if (ctlCamadas) ctlCamadas.removeLayer(areasLayer); areasLayer.remove(); areasLayer = null; }
     if (!LM || !AREAS.geo) return;
     areaRows = {}; (state.all || []).forEach(function (r) { areaRows[key(r.t)] = r; });
     areasLayer = L.geoJSON(AREAS.geo, {
       smoothFactor: 1.5,
-      renderer: L.canvas({ padding: .4 }),
+      pane: "areasPane",
+      renderer: L.canvas({ pane: "areasPane", padding: .4 }),
       style: estiloArea,
       onEachFeature: function (f, layer) {
         layer.bindTooltip(function () { return rotuloArea(f); }, { sticky: true, className: "area-tip" });
         layer.on("click", function () { clicarArea(f); });
       }
-    }).addTo(LM);
+    });
+    if (state.verAreas !== false) areasLayer.addTo(LM);
+    if (ctlCamadas) ctlCamadas.addOverlay(areasLayer, "Talhões");
   }
   function pintarAreas() {
     if (!areasLayer) return;
@@ -2670,6 +2745,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     document.getElementById("arCampo").innerHTML = '<option value="">Automático</option>' + Object.keys(campos).map(function (c) { return '<option value="' + attr(c) + '"' + (c === AREAS.campo ? " selected" : "") + ">" + esc(c) + "</option>"; }).join("");
     document.getElementById("arOp").value = Math.round(state.areaOp * 100);
     document.getElementById("arOpV").textContent = Math.round(state.areaOp * 100) + "%";
+    resumoMapa();
   }
   function usarAreas(dados, guardar) {
     if (guardar) simplificarFeicoes(dados.geo.features);
@@ -2681,8 +2757,10 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     var fs = e.target.files; if (!fs || !fs.length) return;
     var nome = Array.prototype.map.call(fs, function (f) { return f.name; }).filter(function (n) { return !/\.(dbf|prj|cpg|shx)$/i.test(n); })[0] || fs[0].name;
     document.getElementById("arInfo").textContent = "Lendo " + nome + "…";
-    lerArquivosDeArea(fs).then(function (feats) {
-      if (!feats.length) throw new Error("o arquivo não tem polígonos");
+    lerArquivosDeArea(fs).then(function (todas) {
+      var sep = separarGeometrias(todas), feats = sep.polis;
+      if (sep.linhas.length) usarEstradas({ geo: { type: "FeatureCollection", features: sep.linhas }, nome: nome.replace(/\.[^.]+$/, "") }, true);
+      if (!feats.length) { if (sep.linhas.length) { painelAreas(); setMsg("Esse arquivo tem linhas: foi carregado como estradas.", "", 6000); return; } throw new Error("o arquivo não tem polígonos"); }
       usarAreas({ geo: { type: "FeatureCollection", features: feats }, nome: nome.replace(/\.[^.]+$/, ""), campo: "" }, true);
       if (LM && areasLayer && !AREAS.geo.features.some(function (f) { return f.__k; })) LM.fitBounds(areasLayer.getBounds(), { maxZoom: 14 });
       setMsg("Áreas carregadas: " + feats.length + ". Use a barra de opacidade embaixo do mapa para ver o que está por baixo.", "", 6000);
@@ -2777,7 +2855,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       if (lista && recentes[o].caminho === lista.nome) continue;
       try {
         var ab = /\.csv$/i.test(recentes[o].f.name) ? lerCsv(await recentes[o].f.text()) : await lerXlsx(await recentes[o].f.arrayBuffer());
-        var rr = lerOperacoes(ab); if (rr) ops = { nome: recentes[o].caminho, aba: rr.aba, talhoes: rr.talhoes };
+        var rr = lerOperacoes(ab); if (rr) ops = { nome: recentes[o].caminho, aba: rr.aba, talhoes: rr.talhoes, nLinhas: rr.nLinhas };
       } catch (e) { /* ignora */ }
     }
     return { mudou: true, lista: lista, feats: feats, ops: ops, erros: erros, nArq: arqs.length };
@@ -2798,6 +2876,12 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       usarOperacoes(Object.assign({ campoProj: OPS ? OPS.campoProj : "", campoTalh: OPS ? OPS.campoTalh : "" }, r.ops), true);
       partes.push(r.ops.talhoes.length + " talhões de " + esc(r.ops.nome));
     }
+    var sepP = separarGeometrias(r.feats);
+    if (sepP.linhas.length) {
+      usarEstradas({ geo: { type: "FeatureCollection", features: sepP.linhas }, nome: "estradas da pasta " + PASTA.handle.name }, true);
+      partes.push(sepP.linhas.length + " trechos de estrada");
+    }
+    r.feats = sepP.polis;
     if (r.feats.length) {
       usarAreas({ geo: { type: "FeatureCollection", features: r.feats }, nome: "pasta " + PASTA.handle.name, campo: AREAS.campo }, true);
       partes.push(r.feats.length + " áreas");
@@ -2859,9 +2943,10 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   var OPS = null; // { nome, aba, talhoes: [...], idx: {chave: talhao}, ligados, campoProj, campoTalh }
   var ESCALA = {
     madeira: { titulo: "Madeira segura", cores: ["#7dbb45", "#58a13a", "#3d8634", "#2a6d2d", "#1d5a27"], limites: [20, 40, 60, 80], rotulos: ["1–20%", "21–40%", "41–60%", "61–80%", "81–100%"] },
-    tpc: { titulo: "TPC (dias desde a operação)", cores: ["#7dbb45", "#58a13a", "#3d8634", "#2a6d2d", "#1d5a27"], limites: [15, 30, 45, 60], rotulos: ["até 15", "16–30", "31–45", "46–60", "mais de 60"] }
+    tpc: { titulo: "TPC (dias desde a operação)", cores: ["#d93a2b", "#f2c230", "#2e9e44"], rotulos: ["menos de 30 dias", "30 a 45 dias", "mais de 45 dias"],
+      classe: function (v) { return v < 30 ? 0 : v <= 45 ? 1 : 2; }, textoEscuro: [false, true, false] }
   };
-  function classeDe(esc, v) { var i = 0; while (i < esc.limites.length && v > esc.limites[i]) i++; return i; }
+  function classeDe(esc, v) { if (esc.classe) return esc.classe(v); var i = 0; while (i < esc.limites.length && v > esc.limites[i]) i++; return i; }
   function soDigitos(v) { return String(v == null ? "" : v).replace(/\D/g, "").replace(/^0+(?=\d)/, ""); }
   function normProj(v) { var s = String(v == null ? "" : v).trim(); return /^\d+([.,]0+)?$/.test(s) ? String(parseInt(s, 10)) : normTxt(s); }
   function normTalh(v) {
@@ -2897,9 +2982,10 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
         var cT = achar(cab, [/talh/]), cM = achar(cab, [/madeira/, /segura/]), cV = achar(cab, [/volume/, /^vlr/]);
         if (cT < 0 || (cM < 0 && cV < 0)) continue;
         var cP = achar(cab, [/projeto/, /^id.?faz/, /^cod.*faz/, /fazenda/]), cId = achar(cab, [/^id$/]), cD = achar(cab, [/data/]), cTpc = achar(cab, [/^tpc$/, /^tcp$/, /tpc/]);
-        var mapa = {};
+        var mapa = {}, nLin = 0;
         linhas.slice(h + 1).forEach(function (l) {
           var talh = l[cT]; if (!talh) return;
+          nLin++;
           var proj = cP >= 0 ? l[cP] : "";
           if (!proj && cId >= 0 && l[cId]) { var dg = String(l[cId]).replace(/\D/g, ""); proj = dg.slice(0, Math.max(0, dg.length - String(talh).replace(/\D/g, "").length)); }
           var k = normProj(proj) + "|" + normTalh(talh);
@@ -2917,7 +3003,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
           return { chave: k, proj: t.proj, talhao: t.talhao, ids: Object.keys(t.ids), vol: t.vol, n: t.n, dMin: t.dMin, dMax: t.dMax, tpcCol: t.tpcCol,
             ms: t.msN ? (t.volMs > 0 ? t.msW / t.volMs : t.msS / t.msN) : null };
         });
-        if (talhoes.length) return { talhoes: talhoes, aba: abas[a].nome || "" };
+        if (talhoes.length) return { talhoes: talhoes, aba: abas[a].nome || "", nLinhas: nLin };
       }
     }
     return null;
@@ -3005,7 +3091,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   });
 
   // ---------- tabela de talhões ----------
-  var opLimite = 300;
+  var opLimite = 2000;
   function linhasOps() {
     var cat = {}, rows = {};
     parseTalhoes(state.text).forEach(function (t) { if (t.id) cat[normProj(t.id)] = t; });
@@ -3017,7 +3103,11 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     });
     var soMarcadas = lista.filter(function (x) { return x.r; });
     state.opFiltroVazio = document.getElementById("opSo").checked && !soMarcadas.length;
-    return document.getElementById("opSo").checked && soMarcadas.length ? soMarcadas : lista;
+    var base = document.getElementById("opSo").checked && soMarcadas.length ? soMarcadas : lista;
+    state.opTotal = OPS.talhoes.length;
+    var q = normTxt(document.getElementById("opBusca").value);
+    if (q) base = base.filter(function (x) { return (normTxt(x.nome) + " " + normTxt(x.t.proj) + " " + normTxt(x.t.talhao) + " " + normTalh(x.t.talhao).toLowerCase()).indexOf(q) >= 0; });
+    return base;
   }
   var OP_COLS = [
     { c: "faz", t: "Fazenda", v: function (x) { return x.nome + " " + x.t.talhao; } },
@@ -3035,7 +3125,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     lista.sort(function (a, b) { var va = col.v(a), vb = col.v(b); return (va < vb ? -1 : va > vb ? 1 : 0) * s.d || a.nome.localeCompare(b.nome, "pt-BR"); });
     var comMs = lista.filter(function (x) { return x.t.ms >= 0.5; }), vol = lista.reduce(function (a, x) { return a + x.t.vol; }, 0);
     var tpcMax = lista.reduce(function (a, x) { return x.tpc != null && x.tpc > a ? x.tpc : a; }, 0);
-    document.getElementById("opsResumo").innerHTML = "<b>" + lista.length + "</b> talhões · <b>" + comMs.length + "</b> com madeira segura · volume ajustado <b>" + fNum(vol, 1) + "</b> · TPC máximo <b>" + tpcMax + " dias</b>" +
+    document.getElementById("opsResumo").innerHTML = (OPS.nLinhas ? "<b>" + OPS.nLinhas.toLocaleString("pt-BR") + "</b> linhas lidas · " : "") + "mostrando <b>" + lista.length.toLocaleString("pt-BR") + "</b> de " + state.opTotal.toLocaleString("pt-BR") + " talhões · <b>" + comMs.length + "</b> com madeira segura · volume ajustado <b>" + fNum(vol, 1) + "</b> · TPC máximo <b>" + tpcMax + " dias</b>" +
       (AREAS.geo ? " · " + (OPS.ligados || 0) + " áreas do mapa ligadas" : " · carregue os shapes para ver no mapa") +
       (state.opFiltroVazio ? "<br>Nenhum talhão das fazendas marcadas; mostrando todos." : "") + '<br><span class="src">Planilha: ' + esc(OPS.nome) + (OPS.aba ? " (aba " + esc(OPS.aba) + ")" : "") + "</span>";
     var sw = function (k) { return s.c === k ? (s.d < 0 ? " ▼" : " ▲") : ""; };
@@ -3050,7 +3140,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
         "<td class='num'>" + esc(t.talhao) + "</td>" +
         "<td><span class='msbar'><i style='width:" + Math.max(0, Math.min(100, t.ms || 0)) + "%;background:" + msC + "'></i></span><span class='num'>" + (t.ms == null ? "–" : fNum(t.ms, 0) + "%") + "</span></td>" +
         "<td class='num r'>" + fNum(t.vol, 1) + "<br><span class='src'>" + t.n + " reg.</span></td>" +
-        "<td><span class='tpcchip' style='background:" + tpcC + (x.tpc != null && classeDe(ESCALA.tpc, x.tpc) >= 1 ? ";color:#fff;border-color:transparent" : "") + "'>" + (x.tpc == null ? "–" : x.tpc) + "</span></td>" +
+        "<td><span class='tpcchip' style='background:" + tpcC + (x.tpc != null ? ";border-color:transparent" + (ESCALA.tpc.textoEscuro[classeDe(ESCALA.tpc, x.tpc)] ? "" : ";color:#fff") : "") + "'>" + (x.tpc == null ? "–" : x.tpc) + "</span></td>" +
         "<td class='num'>" + fData(t.dMax) + (t.dMin != null && t.dMin !== t.dMax ? "<br><span class='src'>desde " + fData(t.dMin) + "</span>" : "") + "</td>" +
         "<td>" + (st ? '<span class="dc ' + st + ' mini">' + LABEL[st] + "</span>" : "<span class='src'>–</span>") + "</td>" +
         "<td>" + (x.mapa ? '<button type="button" class="btn ver">Ver</button>' : "<span class='src'>sem área</span>") + "</td></tr>";
@@ -3065,6 +3155,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     var tr = e.target.closest("tbody tr"); if (tr && tr.classList.contains("temmapa")) focarTalhao(tr.getAttribute("data-k"));
   });
   document.getElementById("opSo").addEventListener("change", renderOps);
+  document.getElementById("opBusca").addEventListener("input", renderOps);
 
   function focarTalhao(chave) {
     if (!LM || !areasLayer) return;
@@ -3086,19 +3177,21 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   }
 
   // ---------- carregar a planilha de operações ----------
+  function opsParaGuardar() { return { nome: OPS.nome, aba: OPS.aba, talhoes: OPS.talhoes, nLinhas: OPS.nLinhas, campoProj: OPS.campoProj, campoTalh: OPS.campoTalh }; }
   function usarOperacoes(dados, guardar) {
-    OPS = { nome: dados.nome, aba: dados.aba || "", talhoes: dados.talhoes, idx: {}, ligados: 0, campoProj: dados.campoProj || "", campoTalh: dados.campoTalh || "" };
+    OPS = { nome: dados.nome, aba: dados.aba || "", talhoes: dados.talhoes, nLinhas: dados.nLinhas || null, idx: {}, ligados: 0, campoProj: dados.campoProj || "", campoTalh: dados.campoTalh || "" };
     OPS.talhoes.forEach(function (t) { OPS.idx[t.chave] = t; });
-    if (state.corAreas === "chuva" && guardar) state.corAreas = "madeira";
+    if (state.corAreas !== "tpc" && guardar) state.corAreas = "tpc";
     ligarTalhoes(); pintarModoCor(); pintarAreas(); painelOps(); renderOps();
-    if (guardar) { save(); idbKv("operacoes", "put", { nome: OPS.nome, aba: OPS.aba, talhoes: OPS.talhoes, campoProj: OPS.campoProj, campoTalh: OPS.campoTalh }); }
+    if (guardar) { save(); idbKv("operacoes", "put", opsParaGuardar()); }
   }
   function painelOps() {
     var info = document.getElementById("opsInfo");
     document.getElementById("opsOff").hidden = !OPS;
     document.getElementById("opsCampos").hidden = !(OPS && AREAS.geo);
     if (!OPS) { info.textContent = "Nenhuma planilha de operações"; return; }
-    info.innerHTML = "<b>" + esc(OPS.nome) + "</b>: " + OPS.talhoes.length + " talhões" + (AREAS.geo ? ", " + (OPS.ligados || 0) + " áreas ligadas" : "");
+    resumoMapa();
+    info.innerHTML = "<b>" + esc(OPS.nome) + "</b>: " + (OPS.nLinhas ? OPS.nLinhas.toLocaleString("pt-BR") + " linhas → " : "") + OPS.talhoes.length.toLocaleString("pt-BR") + " talhões" + (AREAS.geo ? ", " + (OPS.ligados || 0) + " áreas ligadas" : "");
     if (AREAS.geo) {
       var campos = {}; AREAS.geo.features.slice(0, 200).forEach(function (f) { Object.keys(f.properties || {}).forEach(function (c) { campos[c] = 1; }); });
       var ops = function (sel) { return '<option value="">Automático</option>' + Object.keys(campos).map(function (c) { return '<option value="' + attr(c) + '"' + (c === sel ? " selected" : "") + ">" + esc(c) + "</option>"; }).join(""); };
@@ -3109,7 +3202,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   function trocarCampos() {
     OPS.campoProj = document.getElementById("opsProj").value; OPS.campoTalh = document.getElementById("opsTalh").value;
     ligarTalhoes(); painelOps(); pintarAreas(); renderOps();
-    idbKv("operacoes", "put", { nome: OPS.nome, aba: OPS.aba, talhoes: OPS.talhoes, campoProj: OPS.campoProj, campoTalh: OPS.campoTalh });
+    idbKv("operacoes", "put", opsParaGuardar());
   }
   document.getElementById("opsProj").addEventListener("change", trocarCampos);
   document.getElementById("opsTalh").addEventListener("change", trocarCampos);
@@ -3123,7 +3216,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     lerPlanilhaQualquer(f).then(function (abas) {
       var r = lerOperacoes(abas);
       if (!r) throw new Error("não achei as colunas. A planilha precisa ter uma coluna de talhão (cd_talhao) e uma de madeira segura ou de volume");
-      usarOperacoes({ nome: f.name, aba: r.aba, talhoes: r.talhoes }, true);
+      usarOperacoes({ nome: f.name, aba: r.aba, talhoes: r.talhoes, nLinhas: r.nLinhas }, true);
       setMsg(r.talhoes.length + " talhões lidos de " + esc(f.name) + ".", "", 5000);
     }).catch(function (err) { painelOps(); setMsg("Não consegui ler a planilha de operações: " + esc(err.message) + ".", "err", 10000); });
   });
@@ -3150,6 +3243,8 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     var antes = 0, depois = 0, tol = 0.00001; // cerca de 1 metro
     feats.forEach(function (f) {
       var g = f.geometry; if (!g) return;
+      if (g.type === "LineString") { antes += g.coordinates.length; g.coordinates = simplificarAnel(g.coordinates, tol); depois += g.coordinates.length; return; }
+      if (g.type === "MultiLineString") { g.coordinates = g.coordinates.map(function (l) { antes += l.length; var s2 = simplificarAnel(l, tol); depois += s2.length; return s2; }); return; }
       var polis = g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : [];
       polis.forEach(function (pol) { for (var r = 0; r < pol.length; r++) { antes += pol[r].length; pol[r] = simplificarAnel(pol[r], tol); depois += pol[r].length; } });
     });
@@ -3165,6 +3260,92 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     setTimeout(function () { if (LM) LM.invalidateSize({ pan: false }); }, 380);
   }
   document.getElementById("btnWide").onclick = function () { state.mapWide = !state.mapWide; save(); aplicarMapaGrande(); };
+
+  // =================== estradas cascalhadas (linhas), em camada separada ===================
+  var ESTRADAS = { geo: null, nome: "" }, estradasLayer = null, ctlCamadas = null;
+  function separarGeometrias(feats) {
+    var linhas = [], polis = [];
+    feats.forEach(function (f) {
+      var t = f.geometry && f.geometry.type;
+      if (/LineString/.test(t)) linhas.push(f); else if (/Polygon/.test(t)) polis.push(f);
+    });
+    return { linhas: linhas, polis: polis };
+  }
+  function kmDeLinhas(feats) {
+    var km = 0, R = 6371, rad = Math.PI / 180;
+    feats.forEach(function (f) {
+      var g = f.geometry, ls = g.type === "LineString" ? [g.coordinates] : g.coordinates;
+      ls.forEach(function (l) {
+        for (var i = 1; i < l.length; i++) {
+          var a = l[i - 1], b = l[i], dLat = (b[1] - a[1]) * rad, dLon = (b[0] - a[0]) * rad;
+          var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a[1] * rad) * Math.cos(b[1] * rad) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+          km += 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+        }
+      });
+    });
+    return km;
+  }
+  function rotuloEstrada(f) {
+    var p = f.properties || {}, ks = Object.keys(p).filter(function (k) { return p[k] !== "" && p[k] != null; }).slice(0, 5);
+    return "<b>Estrada cascalhada</b>" + (ks.length ? "<br>" + ks.map(function (k) { return esc(k) + ": " + esc(p[k]); }).join("<br>") : "");
+  }
+  function desenharEstradas() {
+    if (estradasLayer) { if (ctlCamadas) ctlCamadas.removeLayer(estradasLayer); estradasLayer.remove(); estradasLayer = null; }
+    if (!LM || !ESTRADAS.geo) return;
+    var base = { renderer: L.canvas({ pane: "estradasPane", padding: .4 }), pane: "estradasPane", smoothFactor: 1.5 };
+    var contorno = L.geoJSON(ESTRADAS.geo, Object.assign({ interactive: false, style: { color: "#2b1d0e", weight: 7, opacity: .85, lineCap: "round", lineJoin: "round" } }, base));
+    var linha = L.geoJSON(ESTRADAS.geo, Object.assign({
+      style: { color: "#f1dca4", weight: 3.5, opacity: 1, lineCap: "round", lineJoin: "round" },
+      onEachFeature: function (f, l) { l.bindTooltip(function () { return rotuloEstrada(f); }, { sticky: true, className: "area-tip" }); }
+    }, base));
+    estradasLayer = L.layerGroup([contorno, linha]);
+    if (state.verEstradas !== false) estradasLayer.addTo(LM);
+    if (ctlCamadas) ctlCamadas.addOverlay(estradasLayer, "Estradas cascalhadas");
+  }
+  function painelEstradas() {
+    var tem = !!ESTRADAS.geo, info = document.getElementById("estInfo");
+    document.getElementById("estOff").hidden = !tem;
+    document.getElementById("legendEst").hidden = !tem;
+    info.innerHTML = tem ? "<b>" + esc(ESTRADAS.nome) + "</b>: " + ESTRADAS.geo.features.length + " trecho" + (ESTRADAS.geo.features.length > 1 ? "s" : "") + ", " + fNum(kmDeLinhas(ESTRADAS.geo.features), 1) + " km" : "Nenhuma estrada carregada";
+    resumoMapa();
+  }
+  function usarEstradas(dados, guardar) {
+    if (guardar) simplificarFeicoes(dados.geo.features);
+    ESTRADAS = { geo: dados.geo, nome: dados.nome || "estradas" };
+    desenharEstradas(); painelEstradas();
+    if (guardar) idbKv("estradas", "put", { geo: ESTRADAS.geo, nome: ESTRADAS.nome });
+  }
+  function resumoMapa() {
+    var partes = [];
+    if (AREAS.geo) partes.push(AREAS.geo.features.length + " talhões");
+    if (ESTRADAS.geo) partes.push(fNum(kmDeLinhas(ESTRADAS.geo.features), 0) + " km de estradas");
+    if (OPS) partes.push("operações em " + OPS.talhoes.length + " talhões");
+    document.getElementById("mapResumo").textContent = partes.length ? partes.join(" · ") : "Nenhum shape carregado. Abra as configurações do mapa para carregar.";
+  }
+  document.getElementById("estFile").addEventListener("change", function (e) {
+    var fs = e.target.files; if (!fs || !fs.length) return;
+    var nome = Array.prototype.map.call(fs, function (f) { return f.name; }).filter(function (n) { return !/\.(dbf|prj|cpg|shx)$/i.test(n); })[0] || fs[0].name;
+    document.getElementById("estInfo").textContent = "Lendo " + nome + "…";
+    lerArquivosDeArea(fs).then(function (feats) {
+      var sep = separarGeometrias(feats);
+      if (!sep.linhas.length) throw new Error("o arquivo não tem linhas. O shape de estradas precisa ser do tipo linha");
+      usarEstradas({ geo: { type: "FeatureCollection", features: sep.linhas }, nome: nome.replace(/\.[^.]+$/, "") }, true);
+      setMsg("Estradas carregadas: " + sep.linhas.length + " trechos.", "", 5000);
+    }).catch(function (err) { painelEstradas(); setMsg("Não consegui ler as estradas: " + esc(err.message) + ".", "err", 10000); });
+    e.target.value = "";
+  });
+  document.getElementById("estOff").onclick = function () {
+    if (estradasLayer) { if (ctlCamadas) ctlCamadas.removeLayer(estradasLayer); estradasLayer.remove(); estradasLayer = null; }
+    ESTRADAS = { geo: null, nome: "" }; idbKv("estradas", "del"); painelEstradas();
+  };
+  // configurações do mapa recolhíveis
+  function aplicarCfgMapa() {
+    var aberto = !!state.cfgMapa, b = document.getElementById("btnCfgMapa");
+    document.getElementById("areasBar").hidden = !aberto;
+    b.setAttribute("aria-expanded", aberto);
+    b.innerHTML = aberto ? "⚙ Fechar configurações" : "⚙ Configurações do mapa";
+  }
+  document.getElementById("btnCfgMapa").onclick = function () { state.cfgMapa = !state.cfgMapa; save(); aplicarCfgMapa(); };
 
   // ---------- logo ----------
   function paintLogo() {
@@ -3200,7 +3381,8 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     var now = new Date();
     var nome = (document.getElementById("expName").value.trim() || MES[now.getMonth()] + "-" + now.getFullYear()).replace(/[^\w\-]+/g, "-");
     var cfg = { stamp: now.toISOString(), text: state.text, params: state.params, logo: state.logo, sel: state.sel };
-    if (OPS) cfg.ops = { nome: OPS.nome, aba: OPS.aba, talhoes: OPS.talhoes, campoProj: OPS.campoProj, campoTalh: OPS.campoTalh };
+    if (OPS) cfg.ops = opsParaGuardar();
+    if (ESTRADAS.geo && JSON.stringify(ESTRADAS.geo).length < 4e6) cfg.estradas = { geo: ESTRADAS.geo, nome: ESTRADAS.nome };
     if (AREAS.geo) { var aj = JSON.stringify(AREAS.geo); if (aj.length < 6e6) cfg.areas = { geo: AREAS.geo, nome: AREAS.nome, campo: AREAS.campo }; else setMsg("As áreas são grandes demais para ir dentro do arquivo do mês. Quem abrir vai precisar carregá-las de novo.", "", 8000); }
     var json = JSON.stringify(cfg).replace(/</g, "\\u003c");
     var html = PRISTINE.replace(/(<script type="application\/json" id="painel-config">)[\s\S]*?(<\/script>)/, function (_, a, b) { return a + json + b; });
@@ -3222,7 +3404,10 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     if (d && d.geo) usarAreas(d, false); else painelAreas();
   });
   painelPasta();
-  pintarModoCor(); aplicarMapaGrande(); painelOps();
+  pintarModoCor(); aplicarMapaGrande(); painelOps(); aplicarCfgMapa(); painelEstradas();
+  (state.cfgEst ? Promise.resolve(state.cfgEst).then(function (d) { idbKv("estradas", "put", d); return d; }) : idbKv("estradas", "get")).then(function (d) {
+    if (d && d.geo) usarEstradas(d, false);
+  });
   (state.cfgOps ? Promise.resolve(state.cfgOps).then(function (d) { idbKv("operacoes", "put", d); return d; }) : idbKv("operacoes", "get")).then(function (d) {
     if (d && d.talhoes) usarOperacoes(d, false);
   });

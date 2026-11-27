@@ -758,7 +758,7 @@ button { cursor: pointer; }
 .play svg { width: 12px; height: 12px; fill: var(--ink); }
 
 /* visão geral */
-.over { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 18px; padding-block: 18px; }
+.over { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; padding-block: 0 18px; }
 @media (max-width: 980px) { .over { grid-template-columns: 1fr; } }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
 .mapbox { padding: 14px 14px 10px; position: relative; }
@@ -766,7 +766,7 @@ button { cursor: pointer; }
 .maphead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .maphead .when { font-family: var(--font-data); font-size: 12.5px; color: var(--ink-2); }
 #map > svg { display: block; width: 100%; height: auto; }
-#map.lf { height: 460px; border-radius: 8px; overflow: hidden; background: var(--dry); }
+#map.lf { height: 560px; border-radius: 8px; overflow: hidden; background: var(--dry); }
 @media (max-width: 700px) { #map.lf { height: 360px; } }
 .lpin { background: none; border: 0; }
 .pin { position: relative; display: block; width: 20px; height: 20px; cursor: pointer; }
@@ -853,10 +853,50 @@ button { cursor: pointer; }
 .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; border: 1px solid var(--line-2); }
 
 .read { padding: 16px; display: grid; gap: 16px; align-content: start; }
-.figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+.resumo { padding: 14px 16px; margin-block: 18px; display: grid; gap: 10px; }
+.resumo h2 { margin: 0; font-family: var(--font-display); font-stretch: 78%; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; font-size: 15px; }
+.figs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+@media (max-width: 900px) { .figs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .figs { grid-template-columns: 1fr; } }
+details.ajustes { border-top: 1px solid var(--line); }
+details.ajustes summary { cursor: pointer; padding: 10px 0; font-family: var(--font-display); font-stretch: 78%; text-transform: uppercase; letter-spacing: .06em; font-weight: 800; font-size: 13px; color: var(--ink-2); }
+details.ajustes[open] summary { color: var(--ink); }
+details.ajustes .rules { max-width: 640px; }
+.aj-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 0; border-top: 1px dashed var(--line); }
+.aj-row h3 { margin: 0; min-width: 140px; font-size: 12px; font-family: var(--font-display); font-stretch: 78%; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.aj-row .src { color: var(--muted); font-size: 12px; }
+.transp { border-top: 1px solid var(--line); padding-top: 10px; display: grid; gap: 10px; }
+.transp-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.transp-h h3 { margin: 0; font-family: var(--font-display); font-stretch: 78%; text-transform: uppercase; letter-spacing: .04em; font-weight: 800; font-size: 14px; }
+.transp-h .btn { font-size: 12.5px; padding: 5px 10px; cursor: pointer; }
+.transp-h .seg button { padding: 4px 10px; font-size: 12px; }
+.transp-h .seg button:disabled { opacity: .45; cursor: not-allowed; }
+.tr-vazio { margin: 0; color: var(--ink-2); font-size: 13px; max-width: 80ch; }
+.tr-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 700px) { .tr-kpis { grid-template-columns: 1fr; } }
+.tr-kpi { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.tr-kpi.on { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
+.tr-kpi .k { font-size: 12px; color: var(--ink-2); }
+.tr-kpi .v { font-family: var(--font-display); font-stretch: 85%; font-weight: 800; font-size: 26px; font-variant-numeric: tabular-nums; }
+.tr-kpi .v .of { font-size: 14px; color: var(--muted); font-weight: 600; }
+.tr-kpi .s { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+.rchip { display: inline-block; padding: 1px 8px; border-radius: 999px; font: 600 12px var(--font-data); color: #fff; }
+.rchip.bom { background: #2e9e44; } .rchip.atencao { background: #f2c230; color: #12201a; } .rchip.ruim { background: #d93a2b; }
+.tr-graf { width: 100%; height: auto; display: block; }
+.tr-graf text { fill: var(--muted); font: 10px var(--font-data); }
+.tr-leg { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-2); }
+.tr-leg span { display: inline-flex; align-items: center; gap: 6px; }
+.tr-leg i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.tr-tab td, .tr-tab th { white-space: nowrap; }
+.tr-tab th { padding: 9px 10px; font: 700 11px var(--font-display); font-stretch: 78%; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.tr-tab th:nth-child(2), .tr-tab th:nth-child(3), .tr-tab th:nth-child(4) { text-align: right; }
+.transp .src { color: var(--muted); font-size: 11.5px; margin: 0; }
+.figs-old { display: none; }
 .fig { padding: 12px 0 12px; border-bottom: 1px solid var(--line); min-width: 0; }
-.fig:nth-child(odd) { padding-right: 14px; border-right: 1px solid var(--line); }
-.fig:nth-child(even) { padding-left: 14px; }
+.fig { padding-inline: 14px; border-left: 1px solid var(--line); }
+.fig:first-child { padding-left: 0; border-left: 0; }
+@media (max-width: 900px) { .fig:nth-child(3) { padding-left: 0; border-left: 0; } }
+@media (max-width: 480px) { .fig { padding-left: 0; border-left: 0; } }
 .fig .k { font-size: 12px; color: var(--ink-2); }
 .fig .v { font-family: var(--font-display); font-stretch: 85%; font-weight: 800; font-size: 34px; line-height: 1.05; margin-top: 2px; font-variant-numeric: tabular-nums; }
 .fig .v .of { font-size: 18px; color: var(--muted); font-weight: 600; }
@@ -1160,12 +1200,45 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
 
 <div class="wrap">
   <div id="msg"></div>
+  <section class="panel resumo" id="resumo">
+    <h2>Leitura geral</h2>
+    <div class="figs" id="figs"></div>
+    <details class="ajustes" id="ajustes">
+      <summary>Ajustes</summary>
+      <div class="rules">
+        <h3>Regras de chuva</h3>
+        <div class="rule"><div class="t">Chuva a partir de<small>abaixo disso, sem chuva</small></div><div class="step" data-p="lo"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar">+</button></div></div>
+        <div class="rule"><div class="t">Chuva forte acima de<small>no dia, por fazenda</small></div><div class="step" data-p="hi"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar">+</button></div></div>
+        <div class="rule"><div class="t">“Chovendo agora” a partir de<small>intensidade do modelo na hora atual</small></div><div class="step" data-p="now"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar">+</button></div></div>
+      </div>
+      <div class="aj-row">
+        <h3>Logo</h3>
+        <span class="grp"><label class="btn" for="logoFile">Escolher imagem da logo</label><input type="file" id="logoFile" accept="image/*" hidden><button class="btn" id="btnLogoOff" type="button">Tirar logo</button></span>
+      </div>
+      <div class="aj-row">
+        <h3>Dados guardados</h3>
+        <span class="grp"><span class="src">As planilhas e os shapes ficam só no navegador deste computador.</span><button class="btn" id="btnLimpar" type="button">Apagar dados guardados neste computador</button></span>
+      </div>
+    </details>
+    <div class="transp" id="transp">
+      <div class="transp-h">
+        <h3>Ritmo de transporte · real × previsto</h3>
+        <span class="grp">
+          <span class="seg" id="trPer"><button type="button" data-p="hoje">Hoje</button><button type="button" data-p="7">7 dias</button><button type="button" data-p="mes">Mês</button></span>
+          <label class="btn" for="trFile">Carregar planilha de transporte</label>
+          <input type="file" id="trFile" accept=".xlsx,.csv,.txt" hidden>
+          <button class="btn" id="trOff" type="button" hidden>Tirar</button>
+        </span>
+      </div>
+      <div id="trCorpo"></div>
+    </div>
+  </section>
+
   <section class="over">
     <div class="panel mapbox">
       <div class="maphead"><h2>Mapa</h2>
         <div class="seg" id="corModo" role="group" aria-label="Colorir as áreas por"><button type="button" data-c="chuva">Chuva</button><button type="button" data-c="tpc">TPC</button></div>
         <span class="when" id="mapWhen"></span>
-        <button class="btn" id="btnWide" type="button" aria-pressed="false">⇤ Expandir mapa</button>
       </div>
       <div id="map"></div>
       <div class="mapbar">
@@ -1223,16 +1296,6 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
         <span><span class="sw" style="background:transparent;border:2px solid var(--manual)"></span>Ajuste manual</span>
       </div>
     </div>
-    <div class="panel read">
-      <h2>Leitura geral</h2>
-      <div class="figs" id="figs"></div>
-      <div class="rules">
-        <h3>Regras</h3>
-        <div class="rule"><div class="t">Chuva a partir de<small>abaixo disso, sem chuva</small></div><div class="step" data-p="lo"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar">+</button></div></div>
-        <div class="rule"><div class="t">Chuva forte acima de<small>no dia, por fazenda</small></div><div class="step" data-p="hi"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar">+</button></div></div>
-        <div class="rule"><div class="t">“Chovendo agora” a partir de<small>intensidade do modelo na hora atual</small></div><div class="step" data-p="now"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar">+</button></div></div>
-      </div>
-    </div>
   </section>
 
   <div class="board-head">
@@ -1251,135 +1314,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     <div class="board opbox"><div class="scrollx"><table class="optab" id="opTab"></table></div><div class="opmais" id="opMais"></div></div>
   </section>
 
-  <details class="cfg" id="legenda">
-  <summary>Legenda: cores, siglas e modelos</summary>
-  <section class="guide">
-
-    <div class="g2">
-      <div>
-        <h3>Cores e símbolos</h3>
-        <dl class="gl">
-          <dt><span class="chip" style="background:var(--dry);border:1px solid var(--line-2)"></span></dt><dd><b>Sem chuva.</b> Menos de <span class="lo">4</span> mm no dia. Garoa abaixo disso não conta.</dd>
-          <dt><span class="chip" style="background:var(--rain-1)"></span></dt><dd><b>Chuva.</b> De <span class="lo">4</span> a <span class="hi">6</span> mm no dia. No mapa, o ponto pulsa.</dd>
-          <dt><span class="chip" style="background:var(--rain-2)"></span></dt><dd><b>Chuva forte.</b> Acima de <span class="hi">6</span> mm no dia.</dd>
-          <dt><span class="now on" style="padding:3px 8px"><span>Chovendo</span></span></dt><dd><b>Chovendo agora.</b> O modelo indica pelo menos <span class="nw">0,5</span> mm/h na hora atual, ou alguém confirmou no ajuste manual.</dd>
-          <dt><span class="cons" style="color:var(--ink)"><i></i><i class="fraca"></i><i class="chuva"></i></span></dt><dd><b>Bolinhas dos modelos.</b> Uma para cada modelo, na ordem ECMWF, GFS e ICON. Vazia = sem chuva, meio cheia = chuva, cheia = chuva forte. Todas iguais: os modelos concordam.</dd>
-          <dt><span class="ring"></span></dt><dd><b>Ajuste manual.</b> Contorno laranja no mapa e ponto laranja no dia: alguém informou a chuva medida ou se está chovendo. Vale só para o dia.</dd>
-          <dt><span class="chip" style="background:var(--dry);box-shadow:0 0 0 2px var(--ink)"></span></dt><dd><b>Dia selecionado</b> no botão Momento, o mesmo que o mapa está mostrando.</dd>
-        </dl>
-      </div>
-      <div>
-        <h3>Siglas e termos</h3>
-        <dl class="gl">
-          <dt class="ab">mm</dt><dd>Milímetros de chuva. <b>1 mm = 1 litro de água por metro quadrado.</b></dd>
-          <dt class="ab">mm/h</dt><dd>Intensidade: quantos milímetros caem em uma hora.</dd>
-          <dt class="ab">24 h</dt><dd>Soma prevista para as próximas 24 horas, a partir da hora atual. Cada barrinha é uma hora.</dd>
-          <dt class="ab">7 dias</dt><dd>Chuva que o modelo calculou para os últimos 7 dias. É estimativa, não medição.</dd>
-          <dt class="ab">%</dt><dd>Chance de chover no dia, quando o modelo informa.</dd>
-          <dt class="ab">RRP, CPG, ACL</dt><dd>Frente de carregamento, lida do final do nome da fazenda na planilha (o que vem depois do “ - ”). Fazendas sem sufixo ficam em “Outras”.</dd>
-          <dt class="ab">#1133</dt><dd>Código da fazenda (coluna id da planilha).</dd>
-          <dt class="ab">Modelo</dt><dd>Programa de computador que simula a atmosfera e calcula a previsão. Cada centro meteorológico tem o seu, e eles discordam.</dd>
-          <dt class="ab">Open-Meteo</dt><dd>Serviço gratuito que entrega os dados dos modelos. É de onde o painel puxa tudo.</dd>
-          <dt class="ab">Windy</dt><dd>Site e aplicativo que mostra os mesmos modelos em mapa. Por padrão exibe o ECMWF.</dd>
-        </dl>
-      </div>
-    </div>
-
-    <div>
-      <h3>Os modelos</h3>
-      <div class="models">
-        <article class="mcard">
-          <div class="mh"><span class="mn">ECMWF</span><span class="mo">Europa</span></div>
-          <div class="full">IFS, do Centro Europeu de Previsões Meteorológicas de Médio Prazo</div>
-          <dl>
-            <dt>Quem faz</dt><dd>Organização mantida por mais de 30 países europeus</dd>
-            <dt>Detalhe</dt><dd>9 km no modelo original; cerca de 25 km na versão gratuita usada aqui</dd>
-            <dt>Atualiza</dt><dd>4 vezes por dia</dd>
-            <dt>Feito para</dt><dd>Previsão do mundo todo, de 1 a 15 dias</dd>
-            <dt>Quem usa</dt><dd>Serviços meteorológicos, empresas de energia e agro; é o modelo padrão do Windy</dd>
-            <dt>Confiança</dt><dd>Costuma ser o modelo global mais preciso nas comparações internacionais. É a melhor referência única.</dd>
-          </dl>
-        </article>
-        <article class="mcard">
-          <div class="mh"><span class="mn">GFS</span><span class="mo">Estados Unidos</span></div>
-          <div class="full">Global Forecast System, da NOAA (serviço de clima e oceanos dos EUA)</div>
-          <dl>
-            <dt>Quem faz</dt><dd>Governo dos Estados Unidos (NOAA / NCEP)</dd>
-            <dt>Detalhe</dt><dd>Cerca de 13 a 25 km</dd>
-            <dt>Atualiza</dt><dd>4 vezes por dia</dd>
-            <dt>Feito para</dt><dd>Previsão do mundo todo, até 16 dias</dd>
-            <dt>Quem usa</dt><dd>Dados públicos e gratuitos: base da maioria dos aplicativos de clima</dd>
-            <dt>Confiança</dt><dd>Boa, mas em geral um pouco abaixo do ECMWF. Útil como segunda opinião.</dd>
-          </dl>
-        </article>
-        <article class="mcard">
-          <div class="mh"><span class="mn">ICON</span><span class="mo">Alemanha</span></div>
-          <div class="full">ICOsahedral Nonhydrostatic, do DWD (serviço meteorológico alemão)</div>
-          <dl>
-            <dt>Quem faz</dt><dd>DWD, com o Instituto Max Planck de Meteorologia</dd>
-            <dt>Detalhe</dt><dd>Cerca de 13 km (versão global, a que cobre o Brasil)</dd>
-            <dt>Atualiza</dt><dd>4 vezes por dia</dd>
-            <dt>Feito para</dt><dd>Previsão do mundo todo, até 7 dias e meio</dd>
-            <dt>Quem usa</dt><dd>Serviços meteorológicos europeus; aparece no Windy como opção</dd>
-            <dt>Confiança</dt><dd>Boa nos primeiros dias. Terceira opinião para desempatar.</dd>
-          </dl>
-        </article>
-      </div>
-      <p style="margin-top:12px"><b>Média</b> é a média simples dos três, calculada pelo painel. Ela reduz o erro de um modelo que exagera, mas suaviza pancadas fortes. Na prática: <b>quando os três concordam, confie; quando discordam, trate como incerto.</b></p>
-    </div>
-
-    <div class="g2">
-      <div>
-        <h3>Quanto confiar, por prazo</h3>
-        <div class="conf">
-          <div class="cr"><span>Hoje e amanhã</span><span class="track"><i style="width:85%"></i></span><span class="cv">alta</span></div>
-          <div class="cr"><span>3 a 5 dias</span><span class="track"><i style="width:58%"></i></span><span class="cv">média</span></div>
-          <div class="cr"><span>6 e 7 dias</span><span class="track"><i style="width:32%"></i></span><span class="cv">baixa</span></div>
-        </div>
-        <p style="margin-top:10px">Vale para saber <b>se</b> vai chover. Acertar <b>quantos mm</b> é mais difícil, em qualquer prazo.</p>
-      </div>
-      <div>
-        <h3>Limites de qualquer previsão</h3>
-        <p>Pancada de verão é pequena: podem cair 30 mm numa fazenda e nada na vizinha. Os modelos enxergam a região em quadrados de 9 a 25 km, então não acertam o ponto exato de uma tempestade isolada. O “agora” também é cálculo do modelo, não radar nem estação. Por isso existe o ajuste manual: o pluviômetro da fazenda é sempre a medida certa.</p>
-      </div>
-    </div>
-
-    <div>
-      <h3>Como este painel funciona</h3>
-      <ol class="howto">
-        <li><b>Arquivo único.</b> É uma página que roda no navegador (Edge ou Chrome). Não precisa instalar nada nem de servidor.</li>
-        <li><b>Busca os dados.</b> Ao abrir e a cada 30 minutos, pede à Open-Meteo a chuva na coordenada de cada fazenda: 7 dias para trás, 7 para a frente, hora a hora, nos três modelos.</li>
-        <li><b>Aplica as regras.</b> Compara os milímetros com os limites (<span class="lo">4</span> e <span class="hi">6</span> mm, ajustáveis com − e +) e pinta cada fazenda e cada dia.</li>
-        <li><b>Guarda os ajustes.</b> Regras, ajustes manuais e a lista de fazendas ficam salvos só no navegador deste computador. Nenhum dado da empresa é enviado: só as coordenadas vão para a Open-Meteo.</li>
-      </ol>
-    </div>
-
-    <p class="src">Dados: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (modelos ECMWF IFS, NOAA GFS e DWD ICON). Os valores são previsões e estimativas de modelo.</p>
-  </section>
-  </details>
-
-  <details class="cfg" id="cfg">
-    <summary>Lista completa de fazendas, logo e arquivo do mês</summary>
-    <p>Esta é a lista com <b>todas</b> as fazendas. As que aparecem no painel são as que você marca na tela inicial (botão <b>Trocar fazendas</b>, no topo).</p>
-    <div class="grp" style="margin-bottom:10px"><label class="btn solid" for="xlsFile" style="cursor:pointer">Carregar planilha do Excel</label><span style="font-size:12.5px;color:var(--ink-2)">A planilha precisa ter uma coluna com o nome da fazenda e outra com as coordenadas. Se tiver uma coluna “Frente”, ela é usada.</span></div>
-    <p>Ou, para trocar a lista na mão, selecione no Excel as colunas <b>id, fazenda, Coordenadas</b>, copie (Ctrl+C) e cole aqui (Ctrl+V). As coordenadas podem estar em graus (19°52'39.33"S 53°01'08.98"W) ou em decimal, em duas colunas. A frente é o que vem depois do “ - ” no nome.</p>
-    <textarea id="txtFarms" spellcheck="false"></textarea>
-    <div class="grp" style="margin-top:10px">
-      <button class="btn solid" id="btnSave" type="button">Salvar lista e escolher fazendas</button>
-      <button class="btn" id="btnReset" type="button">Voltar para a lista original</button>
-      <button class="btn" id="btnDemo" type="button">Ver com dados de exemplo</button>
-      <button class="btn" id="btnLimpar" type="button">Apagar dados guardados neste computador</button>
-    </div>
-    <p>A lista fica salva neste navegador: ao fechar e abrir de novo, ela continua. Em outro computador, ou se o histórico do navegador for apagado, ela volta para a original.</p>
-
-    <h3 class="cfgh">Arquivo do mês</h3>
-    <p>Gera um novo arquivo .html já com a lista acima, as regras e a logo dentro dele. Guarde um por mês ou mande pelo Teams: quem abrir vê exatamente esta lista, em qualquer computador.</p>
-    <div class="grp"><label for="expName" class="lbl">Nome</label><input type="text" id="expName" class="txt" maxlength="40"><button class="btn solid" id="btnExport" type="button">Baixar painel com esta lista</button></div>
-
-    <h3 class="cfgh">Logo</h3>
-    <p>Escolha a imagem da logo da MS Florestal (PNG ou JPG) salva no computador. Ela fica guardada neste navegador e vai junto no arquivo do mês.</p>
-    <div class="grp"><input type="file" id="logoFile" accept="image/*"><button class="btn" id="btnLogoOff" type="button">Tirar logo</button></div>
-  </details>
+  <textarea id="txtFarms" hidden></textarea>
 </div>
 <div id="tip" role="tooltip"></div>
 
@@ -1409,25 +1344,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   var CFG = {};
   try { CFG = JSON.parse(document.getElementById("painel-config").textContent) || {}; } catch (e) {}
 
-  var DEFAULT_TALHOES = [
-    "id\tfazenda\tCoordenadas",
-    "1133\tHORTO BONITO\t19°52'39.33\"S 53°01'08.98\"W",
-    "6163\tBETEL - ACL\t20°03'16.20\"S 52°51'56.52\"W",
-    "6220\tSANTA ANITA - RRP\t20°31'40.14\"S 54°10'03.81\"W",
-    "6172\tPARATY - RRP\t20°42'40.70\"S 54°01'10.66\"W",
-    "6213\tIGREJINHA - RRP\t20°42'52.67\"S 53°53'45.39\"W",
-    "6259\tSANTO ANTÔNIO - RRP\t20°42'22.59\"S 53°54'57.04\"W",
-    "6198\tSÃO FRANCISCO II - RRP\t20°38'13.53\"S 53°52'22.76\"W",
-    "6241\tJOANINHA - RRP\t20°43'50.56\"S 53°59'48.89\"W",
-    "6243\tMEDALHA - RRP\t20°41'24.07\"S 53°58'22.22\"W",
-    "6403\tMEDALHA II - RRP\t20°40'37.90\"S 53°57'06.18\"W",
-    "6206\tLAGO AZUL - RRP\t20°45'39.25\"S 54°00'08.29\"W",
-    "6240\tALEGRIA - CPG\t20°43'32.20\"S 54°20'45.28\"W",
-    "6315\tFLORESTA - CPG\t21°21'22.26\"S 53°59'39.30\"W",
-    "6290\tCAMPESTRE - CPG\t21°06'50.80\"S 53°51'28.62\"W",
-    "6279\tPRIMAVERA - CPG\t21°03'57.91\"S 53°56'31.16\"W",
-    "6199\tSANTA MARTA - CPG\t20°53'06.76\"S 54°06'45.45\"W"
-  ].join("\n");
+  var DEFAULT_TALHOES = ""; // o arquivo não leva nenhuma fazenda: cada usuário carrega a planilha na primeira vez
 
   var DEFAULT_PARAMS = { lo: 4, hi: 6, now: 0.5 };
   var STEP = { lo: 0.5, hi: 0.5, now: 0.1 };
@@ -1456,7 +1373,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     state.sort = (s && s.sort) || "rain";
     state.modelSel = (s && s.modelSel) || "ecmwf";
     state.areaOp = s && s.areaOpV2 != null ? s.areaOpV2 : 1;
-    state.cfgMapa = !!(s && s.cfgMapa); state.areasSo = s && s.areasSo != null ? s.areasSo : true; state.pastaAssin = (s && s.pastaAssin) || ""; state.fusoSemPrj = (s && s.fusoSemPrj) || ""; state.verAreas = s ? s.verAreas : true; state.verEstradas = s ? s.verEstradas : true;
+    state.cfgMapa = !!(s && s.cfgMapa); state.areasSo = s && s.areasSo != null ? s.areasSo : true; state.pastaAssin = (s && s.pastaAssin) || ""; state.fusoSemPrj = (s && s.fusoSemPrj) || ""; state.trPer = (s && s.trPer) || "7"; state.verAreas = s ? s.verAreas : true; state.verEstradas = s ? s.verEstradas : true;
     state.cfgAreas = useCfg && CFG.areas && CFG.areas.geo ? CFG.areas : null;
     state.cfgOps = useCfg && CFG.ops && CFG.ops.talhoes ? CFG.ops : null;
     state.cfgEst = useCfg && CFG.estradas && CFG.estradas.geo ? CFG.estradas : null;
@@ -1469,7 +1386,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     else { var cat = parseTalhoes(state.text); state.sel = cat.length <= 30 ? cat.map(key) : []; }
   }
   function save() {
-    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp, sel: state.sel, areaOpV2: state.areaOp, cfgMapa: state.cfgMapa, areasSo: state.areasSo, pastaAssin: state.pastaAssin, fusoSemPrj: state.fusoSemPrj, verAreas: state.verAreas, verEstradas: state.verEstradas, corAreas: state.corAreas, opSort: state.opSort, mapWide: state.mapWide })); } catch (e) {}
+    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp, sel: state.sel, areaOpV2: state.areaOp, cfgMapa: state.cfgMapa, areasSo: state.areasSo, pastaAssin: state.pastaAssin, fusoSemPrj: state.fusoSemPrj, trPer: state.trPer, verAreas: state.verAreas, verEstradas: state.verEstradas, corAreas: state.corAreas, opSort: state.opSort, mapWide: state.mapWide })); } catch (e) {}
   }
 
   // ---------- números ----------
@@ -1483,7 +1400,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   function f1(v) { return (Math.round(v * 10) / 10).toLocaleString("pt-BR", { minimumFractionDigits: v > 0 && v < 10 && v % 1 ? 1 : 0, maximumFractionDigits: 1 }); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
 
-  // aceita: "19°52'39.33"S 53°01'08.98"W" (graus, minutos, segundos) ou decimal (-19,877 / -53,019)
+  // aceita: "20°00'00.00"S 54°00'00.00"W" (graus, minutos, segundos) ou decimal (-20,000 / -54,000)
   var DMS = /(\d{1,3})\s*[°º]\s*(\d{1,2})\s*['’′]\s*([\d.,]+)?\s*(?:"|''|”|″)*\s*([NSEWOL])/gi;
   function dmsToDec(m) {
     var v = +m[1] + (+m[2]) / 60 + (m[3] ? num(m[3]) : 0) / 3600, h = m[4].toUpperCase();
@@ -2180,7 +2097,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   function render(o) {
     model(); renderRegions(); renderModels(); renderViews(); paintSteps();
     if (state.open != null && !state.rows.some(function (r) { return r.k === state.open; })) state.open = null;
-    renderMap(); renderFigs(true); renderBoard({ animate: o && o.animate }); renderOps();
+    renderMap(); renderFigs(true); renderBoard({ animate: o && o.animate }); renderOps(); renderTransporte();
   }
   function syncText() {
     var el = document.getElementById("syncTxt");
@@ -2214,9 +2131,6 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   }
 
   document.getElementById("btnRefresh").onclick = function () { refresh(false); };
-  document.getElementById("btnSave").onclick = function () { state.text = document.getElementById("txtFarms").value; save(); openStart(); };
-  document.getElementById("btnReset").onclick = function () { state.text = DEFAULT_TALHOES; document.getElementById("txtFarms").value = state.text; save(); openStart(); };
-  document.getElementById("btnDemo").onclick = function () { state.text = document.getElementById("txtFarms").value; state.wantDemo = true; refresh(true); };
   document.getElementById("btnRefresh").addEventListener("click", function () { state.wantDemo = false; });
 
   // =================== tela inicial: escolher frentes e fazendas ===================
@@ -2488,7 +2402,12 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   function importarArquivo(f) {
     if (!startOpen) openStart();
     stMsg("Lendo " + esc(f.name) + "… (planilhas grandes podem levar alguns segundos)");
-    percorrerPlanilha(f, ["fazendas", "operacoes"]).then(function (r) {
+    percorrerPlanilha(f, ["fazendas", "transporte", "operacoes"]).then(function (r) {
+      if (r && r.tipo === "transporte") {
+        usarTransporte({ nome: f.name, aba: r.aba, unidade: r.unidade, linhas: r.linhas, nLinhas: r.nLinhas, temData: r.temData, temGrupo: r.temGrupo }, true);
+        stMsg("Essa é a planilha de transporte: " + r.nLinhas.toLocaleString("pt-BR") + " linhas lidas. O real × previsto aparece na leitura geral depois de Iniciar.", "ok");
+        return null;
+      }
       if (r && r.tipo === "operacoes") {
         usarOperacoes({ nome: f.name, aba: r.aba, talhoes: r.talhoes, nLinhas: r.nLinhas }, true);
         stMsg("Essa é a planilha de operações: " + r.nLinhas.toLocaleString("pt-BR") + " linhas, " + r.talhoes.length.toLocaleString("pt-BR") + " talhões. O TPC aparece no mapa e na tabela depois de Iniciar.", "ok");
@@ -2509,7 +2428,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       var nfr = grupos(farms).length;
       stMsg(farms.length + " fazendas em " + nfr + " frente" + (nfr > 1 ? "s" : "") + " carregadas de <b>" + esc(f.name) + "</b>" + (r.aba ? " (aba " + esc(r.aba) + ")" : "") + ". Agora marque o que quer consultar.", "ok");
     }).catch(function (err) {
-      stMsg("Não consegui ler a planilha: " + esc(err.message) + ". Outra opção: copie as colunas no Excel e cole em “Lista completa de fazendas”, no fim do painel.", "err");
+      stMsg("Não consegui ler a planilha: " + esc(err.message) + ". Confira se a planilha tem uma coluna com o nome da fazenda e outra com as coordenadas.", "err");
     });
   }
   document.getElementById("xlsFile").addEventListener("change", function (e) { var f = e.target.files && e.target.files[0]; if (f) importarArquivo(f); e.target.value = ""; });
@@ -2947,11 +2866,16 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     var tipos = [];
     for (var i = 0; i < arqs.length; i++) {
       if (!/\.(xlsx|csv)$/i.test(arqs[i].f.name)) continue;
-      try { var c = await percorrerPlanilha(arqs[i].f, ["fazendas", "operacoes"], true); if (c) tipos.push({ x: arqs[i], tipo: c.tipo }); } catch (e) { /* não é planilha do painel */ }
+      try { var c = await percorrerPlanilha(arqs[i].f, ["fazendas", "transporte", "operacoes"], true); if (c) tipos.push({ x: arqs[i], tipo: c.tipo }); } catch (e) { /* não é planilha do painel */ }
     }
     var candF = tipos.filter(function (t) { return t.tipo === "fazendas"; }).sort(function (a, b) { return /fazend/i.test(b.x.f.name) - /fazend/i.test(a.x.f.name); });
     var candO = tipos.filter(function (t) { return t.tipo === "operacoes"; }).sort(function (a, b) { return b.x.f.lastModified - a.x.f.lastModified; });
-    var lista = null, ops = null;
+    var candT = tipos.filter(function (t) { return t.tipo === "transporte"; }).sort(function (a, b) { return b.x.f.lastModified - a.x.f.lastModified; });
+    var lista = null, ops = null, transp = null;
+    if (candT.length) {
+      try { var rt = await percorrerPlanilha(candT[0].x.f, ["transporte"]); if (rt) transp = { nome: candT[0].x.caminho, aba: rt.aba, unidade: rt.unidade, linhas: rt.linhas, nLinhas: rt.nLinhas, temData: rt.temData, temGrupo: rt.temGrupo }; }
+      catch (e) { erros.push(candT[0].x.caminho + ": " + e.message); }
+    }
     if (candF.length) {
       try { var rf = await percorrerPlanilha(candF[0].x.f, ["fazendas"]); if (rf && parseTalhoes(rf.texto).length) lista = { texto: rf.texto, nome: candF[0].x.caminho }; }
       catch (e) { erros.push(candF[0].x.caminho + ": " + e.message); }
@@ -2972,7 +2896,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     for (var j = 0; j < outros.length; j++) {
       try { feats = feats.concat(await lerArquivosDeArea([outros[j].f], aceitar)); } catch (e) { erros.push(outros[j].caminho + ": " + e.message); }
     }
-    return { mudou: true, lista: lista, feats: feats, ops: ops, erros: erros, nArq: arqs.length };
+    return { mudou: true, lista: lista, feats: feats, ops: ops, transp: transp, erros: erros, nArq: arqs.length };
   }
   function aplicarPasta(r) {
     var partes = [];
@@ -2986,6 +2910,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       if (mudouLista && startOpen) renderStart(false);
       if (mudouLista && started && !startOpen) refresh(state.demo);
     }
+    if (r.transp) { usarTransporte(r.transp, true); partes.push("transporte de " + esc(r.transp.nome)); }
     if (r.ops) {
       usarOperacoes(Object.assign({ campoProj: OPS ? OPS.campoProj : "", campoTalh: OPS ? OPS.campoTalh : "" }, r.ops), true);
       partes.push(r.ops.talhoes.length + " talhões de " + esc(r.ops.nome));
@@ -3366,13 +3291,13 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
 
   // ---------- mapa grande ----------
   function aplicarMapaGrande() {
+    if (!document.getElementById("btnWide")) { setTimeout(function () { if (LM) LM.invalidateSize({ pan: false }); }, 100); return; }
     document.querySelector(".over").classList.toggle("wide", !!state.mapWide);
     var b = document.getElementById("btnWide");
     b.innerHTML = state.mapWide ? "⇥ Mostrar leitura geral" : "⇤ Expandir mapa";
     b.setAttribute("aria-pressed", !!state.mapWide);
     setTimeout(function () { if (LM) LM.invalidateSize({ pan: false }); }, 380);
   }
-  document.getElementById("btnWide").onclick = function () { state.mapWide = !state.mapWide; save(); aplicarMapaGrande(); };
 
   // =================== estradas cascalhadas (linhas), em camada separada ===================
   var ESTRADAS = { geo: null, nome: "" }, estradasLayer = null, ctlCamadas = null;
@@ -3511,7 +3436,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       }
     };
   }
-  var LEITORES = { fazendas: leitorFazendas, operacoes: leitorOperacoes };
+  var LEITORES = { fazendas: leitorFazendas, operacoes: leitorOperacoes, transporte: leitorTransporte };
   // procura o cabeçalho nas 15 primeiras linhas e passa o resto para o leitor certo
   function novoPercurso(tipos, soCabecalho) {
     var vistas = 0, leitor = null;
@@ -3619,6 +3544,123 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   };
   if (SEGURO) setTimeout(function () { setMsg("Modo seguro: o painel abriu sem carregar os shapes, a planilha de operações e a pasta guardados. Para apagar o que está guardado, use <b>Apagar dados guardados</b> no fim da página.", "", 15000); }, 1500);
 
+  // =================== ritmo de transporte: real × previsto ===================
+  var TRANSP = null; // { nome, aba, unidade, linhas: [{ d: data|null, g: grupo, p: previsto, r: real }] }
+  function leitorTransporte(cab) {
+    var cP = acharCol(cab, [/previst/, /planej/, /^meta/, /program/, /orcad/]), cR = acharCol(cab, [/^real/, /realiz/, /execut/, /\breal\b/]);
+    if (cP < 0 || cR < 0 || cP === cR) return null;
+    var cD = acharCol(cab, [/^data/, /^dia$/, /data/]), cG = acharCol(cab, [/frente/, /fazenda/, /projeto/, /modulo/, /^base/, /regiao/]);
+    var nomes = cab[cP] + " " + cab[cR], unidade = /m3|m³/.test(nomes) ? "m³" : /\bton|\(t\)/.test(nomes) ? "t" : /viag/.test(nomes) ? "viagens" : "";
+    var mapa = {}, n = 0;
+    return {
+      tipo: "transporte",
+      linha: function (l) {
+        var p = num(l[cP]), r = num(l[cR]);
+        if (isNaN(p) && isNaN(r)) return;
+        var d = cD >= 0 ? dataDe(l[cD]) : null, g = cG >= 0 ? String(l[cG] || "").trim() : "";
+        var k = (d ? +d : "") + "|" + g, o = mapa[k] || (mapa[k] = { d: d ? +d : null, g: g, p: 0, r: 0 });
+        if (!isNaN(p)) o.p += p;
+        if (!isNaN(r)) o.r += r;
+        n++;
+      },
+      resultado: function () {
+        var linhas = Object.keys(mapa).map(function (k) { return mapa[k]; });
+        return linhas.length ? { linhas: linhas, unidade: unidade, nLinhas: n, temData: cD >= 0, temGrupo: cG >= 0 } : null;
+      }
+    };
+  }
+
+  var COR_RITMO = { bom: "#2e9e44", atencao: "#f2c230", ruim: "#d93a2b" };
+  function ritmo(p, r) { var pct = p > 0 ? r / p * 100 : null; return { pct: pct, st: pct == null ? null : pct >= 100 ? "bom" : pct >= 90 ? "atencao" : "ruim" }; }
+  function chipRitmo(p, r) {
+    var x = ritmo(p, r); if (x.pct == null) return "<span class='src'>–</span>";
+    return '<span class="rchip ' + x.st + '">' + fNum(x.pct, 0) + "%</span>";
+  }
+  function usarTransporte(dados, guardar) {
+    TRANSP = dados;
+    renderTransporte();
+    if (guardar) idbKv("transporte", "put", dados);
+  }
+  function renderTransporte() {
+    var corpo = document.getElementById("trCorpo");
+    document.getElementById("trOff").hidden = !TRANSP;
+    var per = state.trPer || "7";
+    document.querySelectorAll("#trPer button").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-p") === per); b.disabled = !TRANSP; });
+    if (!TRANSP) {
+      corpo.innerHTML = '<p class="tr-vazio">Carregue a planilha de transporte, ou deixe-a na pasta conectada. Ela precisa de uma coluna de <b>previsto</b> e uma de <b>real</b>; se tiver <b>data</b> e <b>frente</b> (ou fazenda), o painel separa por dia e por frente.</p>';
+      return;
+    }
+    var u = TRANSP.unidade ? " " + TRANSP.unidade : "", linhas = TRANSP.linhas;
+    // com uma frente escolhida no topo, mostra só ela (quando a planilha tem a coluna de frente)
+    if (state.region !== "Todas" && TRANSP.temGrupo) {
+      var alvo = normTxt(state.region), so = linhas.filter(function (l) { var g = normTxt(l.g); return g === alvo || g.indexOf(alvo) >= 0; });
+      if (so.length) linhas = so;
+    }
+    var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    var datas = linhas.filter(function (l) { return l.d != null; }).map(function (l) { return l.d; });
+    var ultimo = datas.length ? Math.max.apply(null, datas) : null;
+    var ref = ultimo != null && ultimo < +hoje ? ultimo : +hoje;
+    function dentro(l, p) {
+      if (l.d == null) return true;
+      if (p === "hoje") return l.d === ref;
+      if (p === "7") return l.d > ref - 7 * 864e5 && l.d <= ref;
+      var a = new Date(ref), b = new Date(l.d);
+      return b.getMonth() === a.getMonth() && b.getFullYear() === a.getFullYear() && l.d <= ref;
+    }
+    function soma(p) { return linhas.filter(function (l) { return dentro(l, p); }).reduce(function (a, l) { a.p += l.p; a.r += l.r; return a; }, { p: 0, r: 0 }); }
+    var nomeRef = ref === +hoje ? "Hoje" : "Último dia (" + fData(ref) + ")";
+    var html = '<div class="tr-kpis">' + [["hoje", nomeRef], ["7", "Últimos 7 dias"], ["mes", "Mês"]].map(function (k) {
+      var s = soma(k[0]), x = ritmo(s.p, s.r);
+      return '<div class="tr-kpi' + (k[0] === per ? " on" : "") + '"><div class="k">' + k[1] + '</div><div class="v">' + fNum(s.r, 0) + '<span class="of"> de ' + fNum(s.p, 0) + u + "</span></div>" +
+        '<div class="s">' + (x.pct == null ? "sem previsto" : chipRitmo(s.p, s.r) + " do previsto · " + (s.r - s.p >= 0 ? "+" : "") + fNum(s.r - s.p, 0) + u) + "</div></div>";
+    }).join("") + "</div>";
+    // gráfico dos últimos 14 dias: barra clara = previsto, barra cheia = real (cor pelo ritmo)
+    if (TRANSP.temData && datas.length) {
+      var dias = [];
+      for (var i = 13; i >= 0; i--) {
+        var dd = ref - i * 864e5, s = linhas.filter(function (l) { return l.d === dd; }).reduce(function (a, l) { a.p += l.p; a.r += l.r; return a; }, { p: 0, r: 0 });
+        dias.push({ d: dd, p: s.p, r: s.r });
+      }
+      var W = Math.max(320, Math.round(corpo.clientWidth || 700)), H = 170, L = 54, R = 8, T = 10, B = 24, bruto = Math.max(1, Math.max.apply(null, dias.map(function (x) { return Math.max(x.p, x.r); })));
+      var passo = Math.pow(10, Math.floor(Math.log10(bruto))), max = Math.ceil(bruto / passo * 2) * passo / 2;
+      var cw = (W - L - R) / dias.length, bw = Math.min(26, cw * .62), Y = function (v) { return T + (H - T - B) * (1 - v / max); };
+      var svg = '<svg class="tr-graf" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Transporte real e previsto por dia">';
+      [0, .5, 1].forEach(function (f) { var v = max * f; svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="var(--' + (f ? "line" : "line-2") + ')"/><text x="' + (L - 5) + '" y="' + (Y(v) + 3.5) + '" text-anchor="end">' + fNum(v, 0) + "</text>"; });
+      dias.forEach(function (x, j) {
+        var cx = L + cw * j + cw / 2, st = ritmo(x.p, x.r).st;
+        if (x.p > 0) svg += '<rect x="' + (cx - bw / 2) + '" y="' + Y(x.p) + '" width="' + bw + '" height="' + (Y(0) - Y(x.p)) + '" rx="3" fill="var(--dry)" stroke="var(--line-2)"/>';
+        if (x.r > 0) svg += '<rect x="' + (cx - bw * .3) + '" y="' + Y(x.r) + '" width="' + bw * .6 + '" height="' + (Y(0) - Y(x.r)) + '" rx="2" fill="' + (st ? COR_RITMO[st] : "var(--brand)") + '"/>';
+        svg += '<text x="' + cx + '" y="' + (H - 8) + '" text-anchor="middle"' + (x.d === ref ? ' style="fill:var(--ink);font-weight:600"' : "") + ">" + new Date(x.d).getDate() + "</text>";
+        svg += '<rect x="' + (L + cw * j) + '" y="' + T + '" width="' + cw + '" height="' + (H - T) + '" fill="transparent" data-tip="' + attr("<b>" + fData(x.d) + "</b><br>Previsto: " + fNum(x.p, 0) + u + "<br>Real: " + fNum(x.r, 0) + u + (x.p > 0 ? "<br>" + fNum(x.r / x.p * 100, 0) + "% do previsto" : "")) + '"/>';
+      });
+      html += svg + '</svg><div class="tr-leg"><span><i style="background:var(--dry);border:1px solid var(--line-2)"></i>Previsto</span><span><i style="background:' + COR_RITMO.bom + '"></i>Real ≥ 100%</span><span><i style="background:' + COR_RITMO.atencao + '"></i>90 a 99%</span><span><i style="background:' + COR_RITMO.ruim + '"></i>abaixo de 90%</span></div>';
+    }
+    // por frente (ou fazenda) no período escolhido
+    if (TRANSP.temGrupo) {
+      var g = {};
+      linhas.filter(function (l) { return dentro(l, per); }).forEach(function (l) { var o = g[l.g || "—"] || (g[l.g || "—"] = { p: 0, r: 0 }); o.p += l.p; o.r += l.r; });
+      var nomesG = Object.keys(g).sort(function (a, b) { return (ritmo(g[a].p, g[a].r).pct || 0) - (ritmo(g[b].p, g[b].r).pct || 0); });
+      html += '<div class="scrollx"><table class="optab tr-tab"><thead><tr><th>Frente / fazenda</th><th>Previsto</th><th>Real</th><th>Diferença</th><th>Ritmo</th></tr></thead><tbody>' +
+        nomesG.map(function (k) { var o = g[k]; return "<tr><td><b>" + esc(k) + "</b></td><td class='num r'>" + fNum(o.p, 0) + "</td><td class='num r'>" + fNum(o.r, 0) + "</td><td class='num r'>" + (o.r - o.p >= 0 ? "+" : "") + fNum(o.r - o.p, 0) + "</td><td>" + chipRitmo(o.p, o.r) + "</td></tr>"; }).join("") +
+        "</tbody></table></div>";
+    }
+    html += '<p class="src">Planilha: ' + esc(TRANSP.nome) + (TRANSP.aba ? " (aba " + esc(TRANSP.aba) + ")" : "") + " · " + TRANSP.nLinhas.toLocaleString("pt-BR") + " linhas" + (u ? " · unidade:" + u : "") + "</p>";
+    corpo.innerHTML = html;
+  }
+  document.getElementById("trPer").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b || b.disabled) return;
+    state.trPer = b.getAttribute("data-p"); save(); renderTransporte();
+  });
+  document.getElementById("trFile").addEventListener("change", function (e) {
+    var f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
+    document.getElementById("trCorpo").innerHTML = '<p class="tr-vazio">Lendo ' + esc(f.name) + "…</p>";
+    percorrerPlanilha(f, ["transporte"]).then(function (r) {
+      if (!r) throw new Error("não achei as colunas. A planilha precisa de uma coluna de previsto e uma de real");
+      usarTransporte({ nome: f.name, aba: r.aba, unidade: r.unidade, linhas: r.linhas, nLinhas: r.nLinhas, temData: r.temData, temGrupo: r.temGrupo }, true);
+    }).catch(function (err) { renderTransporte(); setMsg("Não consegui ler a planilha de transporte: " + esc(err.message) + ".", "err", 10000); });
+  });
+  document.getElementById("trOff").onclick = function () { TRANSP = null; idbKv("transporte", "del"); renderTransporte(); };
+
   // ---------- logo ----------
   function paintLogo() {
     var box = document.getElementById("logoBox");
@@ -3646,28 +3688,9 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
 
   // ---------- arquivo do mês ----------
   var MES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-  document.getElementById("btnExport").onclick = function () {
-    state.text = document.getElementById("txtFarms").value;
-    var farms = parseTalhoes(state.text);
-    if (!farms.length) { setMsg("A lista não tem nenhuma fazenda com coordenada válida.", "err", 5000); return; }
-    var now = new Date();
-    var nome = (document.getElementById("expName").value.trim() || MES[now.getMonth()] + "-" + now.getFullYear()).replace(/[^\w\-]+/g, "-");
-    var cfg = { stamp: now.toISOString(), text: state.text, params: state.params, logo: state.logo, sel: state.sel };
-    if (OPS) cfg.ops = opsParaGuardar();
-    if (ESTRADAS.geo && JSON.stringify(ESTRADAS.geo).length < 4e6) cfg.estradas = { geo: ESTRADAS.geo, nome: ESTRADAS.nome };
-    if (AREAS.geo) { var aj = JSON.stringify(AREAS.geo); if (aj.length < 6e6) cfg.areas = { geo: AREAS.geo, nome: AREAS.nome, campo: AREAS.campo }; else setMsg("As áreas são grandes demais para ir dentro do arquivo do mês. Quem abrir vai precisar carregá-las de novo.", "", 8000); }
-    var json = JSON.stringify(cfg).replace(/</g, "\\u003c");
-    var html = PRISTINE.replace(/(<script type="application\/json" id="painel-config">)[\s\S]*?(<\/script>)/, function (_, a, b) { return a + json + b; });
-    var url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
-    var a = document.createElement("a"); a.href = url; a.download = "painel-chuva-" + nome + ".html";
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-    setMsg("Arquivo <b>painel-chuva-" + esc(nome) + ".html</b> gerado com " + farms.length + " fazendas. Ele está na pasta Downloads.", "", 7000);
-  };
 
   load();
   paintLogo();
-  (function () { var n = new Date(); document.getElementById("expName").value = MES[n.getMonth()] + "-" + n.getFullYear(); })();
   document.getElementById("txtFarms").value = state.text;
   state.wantDemo = /[?&]demo/.test(location.search);
   openStart();
@@ -3677,7 +3700,8 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     return !!(d && d.geo);
   });
   painelPasta();
-  pintarModoCor(); aplicarMapaGrande(); painelOps(); aplicarCfgMapa(); painelEstradas();
+  pintarModoCor(); aplicarMapaGrande(); painelOps(); aplicarCfgMapa(); painelEstradas(); renderTransporte();
+  idbKv("transporte", "get").then(function (d) { if (d && d.linhas) usarTransporte(d, false); });
   (state.cfgEst ? Promise.resolve(state.cfgEst).then(function (d) { idbKv("estradas", "put", d); return d; }) : idbKv("estradas", "get")).then(function (d) {
     if (d && d.geo) usarEstradas(d, false);
   });

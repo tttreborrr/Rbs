@@ -10,6 +10,14 @@ Usa os dados gratuitos da [Open-Meteo](https://open-meteo.com/), a mesma fonte d
 
 Ele já vem com as 16 fazendas e busca a previsão sozinho, de novo a cada 30 minutos.
 
+## Arquivo sem dados
+
+O `painel-chuva.html` não leva nenhuma fazenda, coordenada ou planilha dentro. Na primeira vez, cada usuário carrega as planilhas (lista de fazendas, operações, transporte) e os shapes, pela tela inicial, pelas configurações do mapa ou pela pasta conectada. Tudo fica guardado só no navegador daquele computador e continua lá nas próximas aberturas.
+
+## Leitura geral e ritmo de transporte
+
+No topo, os quatro números de chuva ficam numa linha. Logo abaixo, **Ajustes** (recolhido) tem as regras de chuva, a logo e o botão para apagar os dados guardados. Embaixo, **Ritmo de transporte · real × previsto** lê uma planilha com colunas de **previsto** e **real** (e, se houver, **data** e **frente**/fazenda): mostra hoje (ou o último dia com dado), últimos 7 dias e mês, um gráfico dos últimos 14 dias (verde ≥ 100% do previsto, amarelo 90–99%, vermelho < 90%) e a tabela por frente. Escolhendo uma frente no topo, mostra só ela.
+
 ## Tela inicial
 
 Ao abrir, aparece a tela para escolher **frentes** e **fazendas**. Clique no nome da frente para marcar todas dela, ou em cada fazenda. Depois clique em **Iniciar**: o painel busca e mostra só as marcadas. O botão **Trocar fazendas** (no topo) volta para essa tela. A escolha fica salva.

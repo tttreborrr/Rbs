@@ -16,7 +16,7 @@ O `painel-chuva.html` não leva nenhuma fazenda, coordenada ou planilha dentro. 
 
 ## Leitura geral e ritmo de transporte
 
-No topo, os quatro números de chuva ficam numa linha. Logo abaixo, **Ajustes** (recolhido) tem as regras de chuva, a logo e o botão para apagar os dados guardados. Embaixo, **Ritmo de transporte · real × previsto** lê uma planilha com colunas de **previsto** e **real** (e, se houver, **data** e **frente**/fazenda): mostra hoje (ou o último dia com dado), últimos 7 dias e mês, um gráfico dos últimos 14 dias (verde ≥ 100% do previsto, amarelo 90–99%, vermelho < 90%) e a tabela por frente. Escolhendo uma frente no topo, mostra só ela.
+No topo, os quatro números de chuva ficam numa linha. Logo abaixo, **Ajustes** (recolhido) tem as regras de chuva, a logo e o botão para apagar os dados guardados. Embaixo, **Ritmo de transporte · real × previsto** lê uma planilha com colunas de **previsto** e **real** (e, se houver, **data** e **frente**/fazenda): mostra hoje (ou o último dia com dado), últimos 7 dias e mês, um gráfico dos últimos 14 dias (verde ≥ 100% do previsto, amarelo 90–99%, vermelho < 90%) e uma tabela que pode ser vista **por dia, frente, fazenda, talhão ou operação** (conforme as colunas que a planilha tiver: Data, Frente, Fazenda/Projeto, Talhão, Operação). Clicando numa linha (uma fazenda, por exemplo), os números e o gráfico passam a mostrar só ela, e dá para ver o dia a dia dela escolhendo "Dia". Escolhendo uma frente no topo, mostra só ela; se a planilha não tiver a coluna Frente, a frente vem da lista de fazendas.
 
 ## Tela inicial
 

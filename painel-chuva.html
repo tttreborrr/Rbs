@@ -874,6 +874,14 @@ details.ajustes .rules { max-width: 640px; }
 .transp-h .btn { font-size: 12.5px; padding: 5px 10px; cursor: pointer; }
 .transp-h .seg button { padding: 4px 10px; font-size: 12px; }
 .transp-h .seg button:disabled { opacity: .45; cursor: not-allowed; }
+.transp-h .lbl { font-family: var(--font-display); font-stretch: 78%; text-transform: uppercase; letter-spacing: .08em; font-size: 11px; color: var(--muted); font-weight: 700; }
+#trAgr button { padding: 4px 10px; font-size: 12px; }
+#trAgr:empty { display: none; }
+.tr-filtro { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; padding: 6px 10px; border-radius: 8px; background: color-mix(in srgb, var(--lime) 22%, transparent); }
+.tr-filtro .btn { font-size: 12px; padding: 3px 10px; cursor: pointer; }
+.tr-tab tr.clic { cursor: pointer; }
+.tr-tab tr.clic:hover { background: color-mix(in srgb, var(--bg) 60%, transparent); }
+.tr-scroll { max-height: 420px; }
 .tr-vazio { margin: 0; color: var(--ink-2); font-size: 13px; max-width: 80ch; }
 .tr-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 @media (max-width: 700px) { .tr-kpis { grid-template-columns: 1fr; } }
@@ -1219,7 +1227,8 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       <div class="transp-h">
         <h3>Ritmo de transporte · real × previsto</h3>
         <span class="grp">
-          <span class="seg" id="trPer"><button type="button" data-p="hoje">Hoje</button><button type="button" data-p="7">7 dias</button><button type="button" data-p="mes">Mês</button></span>
+          <span class="lbl">Período</span><span class="seg" id="trPer"><button type="button" data-p="hoje">Hoje</button><button type="button" data-p="7">7 dias</button><button type="button" data-p="mes">Mês</button></span>
+          <span class="lbl">Ver por</span><span class="seg" id="trAgr"></span>
           <label class="btn" for="trFile">Carregar planilha de transporte</label>
           <input type="file" id="trFile" accept=".xlsx,.csv,.txt" hidden>
           <button class="btn" id="trOff" type="button" hidden>Tirar</button>
@@ -1378,7 +1387,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     state.sort = (s && s.sort) || "rain";
     state.modelSel = (s && s.modelSel) || "ecmwf";
     state.areaOp = s && s.areaOpV2 != null ? s.areaOpV2 : 1;
-    state.cfgMapa = !!(s && s.cfgMapa); state.areasSo = s && s.areasSo != null ? s.areasSo : true; state.pastaAssin = (s && s.pastaAssin) || ""; state.fusoSemPrj = (s && s.fusoSemPrj) || ""; state.trPer = (s && s.trPer) || "7"; state.mapaBase = (s && s.mapaBase) || "satelite"; state.verAreas = s ? s.verAreas : true; state.verEstradas = s ? s.verEstradas : true;
+    state.cfgMapa = !!(s && s.cfgMapa); state.areasSo = s && s.areasSo != null ? s.areasSo : true; state.pastaAssin = (s && s.pastaAssin) || ""; state.fusoSemPrj = (s && s.fusoSemPrj) || ""; state.trPer = (s && s.trPer) || "7"; state.trAgr = (s && s.trAgr) || "fz"; state.mapaBase = (s && s.mapaBase) || "satelite"; state.verAreas = s ? s.verAreas : true; state.verEstradas = s ? s.verEstradas : true;
     state.cfgAreas = useCfg && CFG.areas && CFG.areas.geo ? CFG.areas : null;
     state.cfgOps = useCfg && CFG.ops && CFG.ops.talhoes ? CFG.ops : null;
     state.cfgEst = useCfg && CFG.estradas && CFG.estradas.geo ? CFG.estradas : null;
@@ -1391,7 +1400,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     else { var cat = parseTalhoes(state.text); state.sel = cat.length <= 30 ? cat.map(key) : []; }
   }
   function save() {
-    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp, sel: state.sel, areaOpV2: state.areaOp, cfgMapa: state.cfgMapa, areasSo: state.areasSo, pastaAssin: state.pastaAssin, fusoSemPrj: state.fusoSemPrj, trPer: state.trPer, mapaBase: state.mapaBase, verAreas: state.verAreas, verEstradas: state.verEstradas, corAreas: state.corAreas, opSort: state.opSort, mapWide: state.mapWide })); } catch (e) {}
+    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp, sel: state.sel, areaOpV2: state.areaOp, cfgMapa: state.cfgMapa, areasSo: state.areasSo, pastaAssin: state.pastaAssin, fusoSemPrj: state.fusoSemPrj, trPer: state.trPer, trAgr: state.trAgr, mapaBase: state.mapaBase, verAreas: state.verAreas, verEstradas: state.verEstradas, corAreas: state.corAreas, opSort: state.opSort, mapWide: state.mapWide })); } catch (e) {}
   }
 
   // ---------- números ----------
@@ -2412,7 +2421,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     stMsg("Lendo " + esc(f.name) + "… (planilhas grandes podem levar alguns segundos)");
     percorrerPlanilha(f, ["fazendas", "transporte", "operacoes"]).then(function (r) {
       if (r && r.tipo === "transporte") {
-        usarTransporte({ nome: f.name, aba: r.aba, unidade: r.unidade, linhas: r.linhas, nLinhas: r.nLinhas, temData: r.temData, temGrupo: r.temGrupo }, true);
+        usarTransporte({ nome: f.name, aba: r.aba, unidade: r.unidade, linhas: r.linhas, nLinhas: r.nLinhas, dims: r.dims }, true);
         stMsg("Essa é a planilha de transporte: " + r.nLinhas.toLocaleString("pt-BR") + " linhas lidas. O real × previsto aparece na leitura geral depois de Iniciar.", "ok");
         return null;
       }
@@ -2881,7 +2890,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     var candT = tipos.filter(function (t) { return t.tipo === "transporte"; }).sort(function (a, b) { return b.x.f.lastModified - a.x.f.lastModified; });
     var lista = null, ops = null, transp = null;
     if (candT.length) {
-      try { var rt = await percorrerPlanilha(candT[0].x.f, ["transporte"]); if (rt) transp = { nome: candT[0].x.caminho, aba: rt.aba, unidade: rt.unidade, linhas: rt.linhas, nLinhas: rt.nLinhas, temData: rt.temData, temGrupo: rt.temGrupo }; }
+      try { var rt = await percorrerPlanilha(candT[0].x.f, ["transporte"]); if (rt) transp = { nome: candT[0].x.caminho, aba: rt.aba, unidade: rt.unidade, linhas: rt.linhas, nLinhas: rt.nLinhas, dims: rt.dims }; }
       catch (e) { erros.push(candT[0].x.caminho + ": " + e.message); }
     }
     if (candF.length) {
@@ -3565,57 +3574,117 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   if (SEGURO) setTimeout(function () { setMsg("Modo seguro: o painel abriu sem carregar os shapes, a planilha de operações e a pasta guardados. Para apagar o que está guardado, use <b>Apagar dados guardados</b> no fim da página.", "", 15000); }, 1500);
 
   // =================== ritmo de transporte: real × previsto ===================
-  var TRANSP = null; // { nome, aba, unidade, linhas: [{ d: data|null, g: grupo, p: previsto, r: real }] }
+  // linhas guardadas já somadas por dia + frente + fazenda + talhão + operação
+  var TRANSP = null; // { nome, aba, unidade, nLinhas, dims: {data, frente, fazenda, talhao, operacao}, linhas: [{ d, fr, fz, tl, op, p, r }] }
+  var DIMS_TR = [
+    { k: "dia", t: "Dia", precisa: "data" },
+    { k: "fr", t: "Frente", precisa: "frente" },
+    { k: "fz", t: "Fazenda", precisa: "fazenda" },
+    { k: "tl", t: "Talhão", precisa: "talhao" },
+    { k: "op", t: "Operação", precisa: "operacao" }
+  ];
   function leitorTransporte(cab) {
     var cP = acharCol(cab, [/previst/, /planej/, /^meta/, /program/, /orcad/]), cR = acharCol(cab, [/^real/, /realiz/, /execut/, /\breal\b/]);
     if (cP < 0 || cR < 0 || cP === cR) return null;
-    var cD = acharCol(cab, [/^data/, /^dia$/, /data/]), cG = acharCol(cab, [/frente/, /fazenda/, /projeto/, /modulo/, /^base/, /regiao/]);
+    var cD = acharCol(cab, [/^data/, /^dia$/, /data/]);
+    var cFr = acharCol(cab, [/frente/, /modulo/, /^base/, /regiao/]);
+    var cFz = acharCol(cab, [/fazenda/, /projeto/, /^id.?faz/, /^cod.*faz/]);
+    var cTl = acharCol(cab, [/talh/]);
+    var cOp = acharCol(cab, [/^operac/, /atividade/, /servico/, /^tipo/]);
     var nomes = cab[cP] + " " + cab[cR], unidade = /m3|m³/.test(nomes) ? "m³" : /\bton|\(t\)/.test(nomes) ? "t" : /viag/.test(nomes) ? "viagens" : "";
     var mapa = {}, n = 0;
+    function txt(i, l) { return i >= 0 ? String(l[i] == null ? "" : l[i]).trim() : ""; }
     return {
       tipo: "transporte",
       linha: function (l) {
         var p = num(l[cP]), r = num(l[cR]);
         if (isNaN(p) && isNaN(r)) return;
-        var d = cD >= 0 ? dataDe(l[cD]) : null, g = cG >= 0 ? String(l[cG] || "").trim() : "";
-        var k = (d ? +d : "") + "|" + g, o = mapa[k] || (mapa[k] = { d: d ? +d : null, g: g, p: 0, r: 0 });
+        var d = cD >= 0 ? dataDe(l[cD]) : null, fr = txt(cFr, l), fz = txt(cFz, l), tl = txt(cTl, l), op = txt(cOp, l);
+        var k = (d ? +d : "") + "|" + fr + "|" + fz + "|" + tl + "|" + op;
+        var o = mapa[k] || (mapa[k] = { d: d ? +d : null, fr: fr, fz: fz, tl: tl, op: op, p: 0, r: 0 });
         if (!isNaN(p)) o.p += p;
         if (!isNaN(r)) o.r += r;
         n++;
       },
       resultado: function () {
         var linhas = Object.keys(mapa).map(function (k) { return mapa[k]; });
-        return linhas.length ? { linhas: linhas, unidade: unidade, nLinhas: n, temData: cD >= 0, temGrupo: cG >= 0 } : null;
+        return linhas.length ? { linhas: linhas, unidade: unidade, nLinhas: n,
+          dims: { data: cD >= 0, frente: cFr >= 0, fazenda: cFz >= 0, talhao: cTl >= 0, operacao: cOp >= 0 } } : null;
       }
     };
   }
-
   var COR_RITMO = { bom: "#2e9e44", atencao: "#f2c230", ruim: "#d93a2b" };
   function ritmo(p, r) { var pct = p > 0 ? r / p * 100 : null; return { pct: pct, st: pct == null ? null : pct >= 100 ? "bom" : pct >= 90 ? "atencao" : "ruim" }; }
   function chipRitmo(p, r) {
     var x = ritmo(p, r); if (x.pct == null) return "<span class='src'>–</span>";
     return '<span class="rchip ' + x.st + '">' + fNum(x.pct, 0) + "%</span>";
   }
-  function usarTransporte(dados, guardar) {
-    TRANSP = dados;
-    renderTransporte();
-    if (guardar) idbKv("transporte", "put", dados);
+  // nome da fazenda e frente a partir da lista de fazendas (quando a planilha traz só o código)
+  var cacheFaz = { txt: null, idx: null };
+  function infoFazenda(v) {
+    if (!v) return null;
+    if (cacheFaz.txt !== state.text) {
+      var idx = {};
+      parseTalhoes(state.text).forEach(function (t) {
+        if (t.id) idx["#" + normProj(t.id)] = t;
+        idx[normTxt(t.nome)] = t; idx[normTxt(t.nome.replace(/\s-\s*[^-]+$/, ""))] = t;
+      });
+      cacheFaz = { txt: state.text, idx: idx };
+    }
+    return cacheFaz.idx["#" + normProj(v)] || cacheFaz.idx[normTxt(v)] || null;
   }
+  function frenteDe(l) { if (l.fr) return l.fr; var f = infoFazenda(l.fz); return f ? f.regiao : ""; }
+  function nomeFz(v) { var f = infoFazenda(v); return f ? f.nome.replace(/\s-\s*[^-]+$/, "") + (/^\d+$/.test(String(v).trim()) ? " #" + String(v).trim() : "") : String(v); }
+  function normalizarTransp(d) {
+    if (d.dims) return d;
+    // formato antigo (uma só coluna de agrupamento)
+    return { nome: d.nome, aba: d.aba, unidade: d.unidade, nLinhas: d.nLinhas, dims: { data: !!d.temData, frente: !!d.temGrupo, fazenda: false, talhao: false, operacao: false },
+      linhas: (d.linhas || []).map(function (l) { return { d: l.d, fr: l.g || "", fz: "", tl: "", op: "", p: l.p, r: l.r }; }) };
+  }
+  function usarTransporte(dados, guardar) {
+    TRANSP = normalizarTransp(dados);
+    state.trFiltro = null;
+    renderTransporte();
+    if (guardar) idbKv("transporte", "put", TRANSP);
+  }
+  function chaveDim(l, dim) {
+    if (dim === "dia") return l.d == null ? "" : String(l.d);
+    if (dim === "fr") return frenteDe(l);
+    if (dim === "fz") return l.fz;
+    if (dim === "tl") return l.fz + "\u0001" + l.tl;
+    return l.op;
+  }
+  function rotuloDim(chave, dim) {
+    if (dim === "dia") return chave ? fData(+chave) : "sem data";
+    if (dim === "fz") return chave ? nomeFz(chave) : "—";
+    if (dim === "tl") { var p = chave.split("\u0001"); return (p[0] ? nomeFz(p[0]) + " · " : "") + "talhão " + (p[1] || "—"); }
+    return chave || "—";
+  }
+  var trLimite = 300;
   function renderTransporte() {
     var corpo = document.getElementById("trCorpo");
     document.getElementById("trOff").hidden = !TRANSP;
     var per = state.trPer || "7";
     document.querySelectorAll("#trPer button").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-p") === per); b.disabled = !TRANSP; });
+    var segAgr = document.getElementById("trAgr");
     if (!TRANSP) {
-      corpo.innerHTML = '<p class="tr-vazio">Carregue a planilha de transporte, ou deixe-a na pasta conectada. Ela precisa de uma coluna de <b>previsto</b> e uma de <b>real</b>; se tiver <b>data</b> e <b>frente</b> (ou fazenda), o painel separa por dia e por frente.</p>';
+      segAgr.innerHTML = "";
+      corpo.innerHTML = '<p class="tr-vazio">Carregue a planilha de transporte, ou deixe-a na pasta conectada. Ela precisa de uma coluna de <b>previsto</b> e uma de <b>real</b>. Se tiver <b>data</b>, <b>frente</b>, <b>fazenda</b>, <b>talhão</b> ou <b>operação</b>, dá para ver por cada um deles.</p>';
       return;
     }
+    var dims = TRANSP.dims, disp = DIMS_TR.filter(function (x) { return dims[x.precisa] || (x.k === "fr" && dims.fazenda); });
+    if (!disp.some(function (x) { return x.k === state.trAgr; })) state.trAgr = disp.length ? (disp.filter(function (x) { return x.k === "fz"; })[0] || disp[0]).k : "fr";
+    var agr = state.trAgr;
+    segAgr.innerHTML = disp.map(function (x) { return '<button type="button" data-a="' + x.k + '" class="' + (x.k === agr ? "on" : "") + '">' + x.t + "</button>"; }).join("");
     var u = TRANSP.unidade ? " " + TRANSP.unidade : "", linhas = TRANSP.linhas;
-    // com uma frente escolhida no topo, mostra só ela (quando a planilha tem a coluna de frente)
-    if (state.region !== "Todas" && TRANSP.temGrupo) {
-      var alvo = normTxt(state.region), so = linhas.filter(function (l) { var g = normTxt(l.g); return g === alvo || g.indexOf(alvo) >= 0; });
+    // frente escolhida no topo
+    if (state.region !== "Todas") {
+      var alvo = normTxt(state.region), so = linhas.filter(function (l) { var g = normTxt(frenteDe(l)); return g === alvo || (g && g.indexOf(alvo) >= 0); });
       if (so.length) linhas = so;
     }
+    // item escolhido na tabela (fazenda, talhão…): o resto do bloco mostra só ele
+    var filtro = state.trFiltro;
+    if (filtro) linhas = linhas.filter(function (l) { return chaveDim(l, filtro.dim) === filtro.chave; });
     var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     var datas = linhas.filter(function (l) { return l.d != null; }).map(function (l) { return l.d; });
     var ultimo = datas.length ? Math.max.apply(null, datas) : null;
@@ -3627,21 +3696,21 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       var a = new Date(ref), b = new Date(l.d);
       return b.getMonth() === a.getMonth() && b.getFullYear() === a.getFullYear() && l.d <= ref;
     }
-    function soma(p) { return linhas.filter(function (l) { return dentro(l, p); }).reduce(function (a, l) { a.p += l.p; a.r += l.r; return a; }, { p: 0, r: 0 }); }
+    function soma(ls) { return ls.reduce(function (a, l) { a.p += l.p; a.r += l.r; return a; }, { p: 0, r: 0 }); }
+    var html = "";
+    if (filtro) html += '<div class="tr-filtro">Mostrando só: <b>' + esc(rotuloDim(filtro.chave, filtro.dim)) + '</b> <button type="button" class="btn" id="trLimpar">Ver tudo</button></div>';
     var nomeRef = ref === +hoje ? "Hoje" : "Último dia (" + fData(ref) + ")";
-    var html = '<div class="tr-kpis">' + [["hoje", nomeRef], ["7", "Últimos 7 dias"], ["mes", "Mês"]].map(function (k) {
-      var s = soma(k[0]), x = ritmo(s.p, s.r);
+    html += '<div class="tr-kpis">' + [["hoje", nomeRef], ["7", "Últimos 7 dias"], ["mes", "Mês"]].map(function (k) {
+      var s = soma(linhas.filter(function (l) { return dentro(l, k[0]); })), x = ritmo(s.p, s.r);
       return '<div class="tr-kpi' + (k[0] === per ? " on" : "") + '"><div class="k">' + k[1] + '</div><div class="v">' + fNum(s.r, 0) + '<span class="of"> de ' + fNum(s.p, 0) + u + "</span></div>" +
         '<div class="s">' + (x.pct == null ? "sem previsto" : chipRitmo(s.p, s.r) + " do previsto · " + (s.r - s.p >= 0 ? "+" : "") + fNum(s.r - s.p, 0) + u) + "</div></div>";
     }).join("") + "</div>";
-    // gráfico dos últimos 14 dias: barra clara = previsto, barra cheia = real (cor pelo ritmo)
-    if (TRANSP.temData && datas.length) {
+    // gráfico dos últimos 14 dias
+    if (dims.data && datas.length) {
       var dias = [];
-      for (var i = 13; i >= 0; i--) {
-        var dd = ref - i * 864e5, s = linhas.filter(function (l) { return l.d === dd; }).reduce(function (a, l) { a.p += l.p; a.r += l.r; return a; }, { p: 0, r: 0 });
-        dias.push({ d: dd, p: s.p, r: s.r });
-      }
-      var W = Math.max(320, Math.round(corpo.clientWidth || 700)), H = 170, L = 54, R = 8, T = 10, B = 24, bruto = Math.max(1, Math.max.apply(null, dias.map(function (x) { return Math.max(x.p, x.r); })));
+      for (var i = 13; i >= 0; i--) { var dd = ref - i * 864e5, s = soma(linhas.filter(function (l) { return l.d === dd; })); dias.push({ d: dd, p: s.p, r: s.r }); }
+      var W = Math.max(320, Math.round(corpo.clientWidth || 700)), H = 170, L = 54, R = 8, T = 10, B = 24;
+      var bruto = Math.max(1, Math.max.apply(null, dias.map(function (x) { return Math.max(x.p, x.r); })));
       var passo = Math.pow(10, Math.floor(Math.log10(bruto))), max = Math.ceil(bruto / passo * 2) * passo / 2;
       var cw = (W - L - R) / dias.length, bw = Math.min(26, cw * .62), Y = function (v) { return T + (H - T - B) * (1 - v / max); };
       var svg = '<svg class="tr-graf" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Transporte real e previsto por dia">';
@@ -3655,15 +3724,23 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       });
       html += svg + '</svg><div class="tr-leg"><span><i style="background:var(--dry);border:1px solid var(--line-2)"></i>Previsto</span><span><i style="background:' + COR_RITMO.bom + '"></i>Real ≥ 100%</span><span><i style="background:' + COR_RITMO.atencao + '"></i>90 a 99%</span><span><i style="background:' + COR_RITMO.ruim + '"></i>abaixo de 90%</span></div>';
     }
-    // por frente (ou fazenda) no período escolhido
-    if (TRANSP.temGrupo) {
-      var g = {};
-      linhas.filter(function (l) { return dentro(l, per); }).forEach(function (l) { var o = g[l.g || "—"] || (g[l.g || "—"] = { p: 0, r: 0 }); o.p += l.p; o.r += l.r; });
-      var nomesG = Object.keys(g).sort(function (a, b) { return (ritmo(g[a].p, g[a].r).pct || 0) - (ritmo(g[b].p, g[b].r).pct || 0); });
-      html += '<div class="scrollx"><table class="optab tr-tab"><thead><tr><th>Frente / fazenda</th><th>Previsto</th><th>Real</th><th>Diferença</th><th>Ritmo</th></tr></thead><tbody>' +
-        nomesG.map(function (k) { var o = g[k]; return "<tr><td><b>" + esc(k) + "</b></td><td class='num r'>" + fNum(o.p, 0) + "</td><td class='num r'>" + fNum(o.r, 0) + "</td><td class='num r'>" + (o.r - o.p >= 0 ? "+" : "") + fNum(o.r - o.p, 0) + "</td><td>" + chipRitmo(o.p, o.r) + "</td></tr>"; }).join("") +
-        "</tbody></table></div>";
-    }
+    // tabela pelo agrupamento escolhido, no período escolhido
+    var g = {};
+    linhas.filter(function (l) { return dentro(l, per); }).forEach(function (l) {
+      var c = chaveDim(l, agr), o = g[c] || (g[c] = { p: 0, r: 0 }); o.p += l.p; o.r += l.r;
+    });
+    var chaves = Object.keys(g);
+    if (agr === "dia") chaves.sort(function (a, b) { return (+b || 0) - (+a || 0); });
+    else chaves.sort(function (a, b) { return (ritmo(g[a].p, g[a].r).pct || 0) - (ritmo(g[b].p, g[b].r).pct || 0); });
+    var titulo = (DIMS_TR.filter(function (x) { return x.k === agr; })[0] || {}).t || "";
+    var vis = chaves.slice(0, trLimite);
+    html += '<div class="scrollx tr-scroll"><table class="optab tr-tab"><thead><tr><th>' + titulo + "</th><th>Previsto</th><th>Real</th><th>Diferença</th><th>Ritmo</th></tr></thead><tbody>" +
+      vis.map(function (k) {
+        var o = g[k], clic = agr !== "dia";
+        return "<tr" + (clic ? ' class="clic" data-c="' + attr(k) + '" title="Ver o dia a dia só deste item"' : "") + "><td><b>" + esc(rotuloDim(k, agr)) + "</b></td><td class='num r'>" + fNum(o.p, 0) + "</td><td class='num r'>" + fNum(o.r, 0) + "</td><td class='num r'>" + (o.r - o.p >= 0 ? "+" : "") + fNum(o.r - o.p, 0) + "</td><td>" + chipRitmo(o.p, o.r) + "</td></tr>";
+      }).join("") + "</tbody></table></div>";
+    if (chaves.length > trLimite) html += '<div class="opmais"><button type="button" class="btn" id="trMais">Mostrar todos os ' + chaves.length + "</button></div>";
+    if (agr !== "dia" && chaves.length) html += '<p class="src">Clique numa linha para ver o dia a dia só dela.</p>';
     html += '<p class="src">Planilha: ' + esc(TRANSP.nome) + (TRANSP.aba ? " (aba " + esc(TRANSP.aba) + ")" : "") + " · " + TRANSP.nLinhas.toLocaleString("pt-BR") + " linhas" + (u ? " · unidade:" + u : "") + "</p>";
     corpo.innerHTML = html;
   }
@@ -3671,12 +3748,25 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     var b = e.target.closest("button"); if (!b || b.disabled) return;
     state.trPer = b.getAttribute("data-p"); save(); renderTransporte();
   });
+  document.getElementById("trAgr").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    state.trAgr = b.getAttribute("data-a"); trLimite = 300; save(); renderTransporte();
+  });
+  document.getElementById("trCorpo").addEventListener("click", function (e) {
+    if (e.target.id === "trLimpar") { state.trFiltro = null; renderTransporte(); return; }
+    if (e.target.id === "trMais") { trLimite = 1e9; renderTransporte(); return; }
+    var tr = e.target.closest("tr.clic"); if (!tr) return;
+    var c = tr.getAttribute("data-c");
+    state.trFiltro = state.trFiltro && state.trFiltro.chave === c && state.trFiltro.dim === state.trAgr ? null : { dim: state.trAgr, chave: c };
+    renderTransporte();
+    document.getElementById("transp").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  });
   document.getElementById("trFile").addEventListener("change", function (e) {
     var f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
     document.getElementById("trCorpo").innerHTML = '<p class="tr-vazio">Lendo ' + esc(f.name) + "…</p>";
     percorrerPlanilha(f, ["transporte"]).then(function (r) {
       if (!r) throw new Error("não achei as colunas. A planilha precisa de uma coluna de previsto e uma de real");
-      usarTransporte({ nome: f.name, aba: r.aba, unidade: r.unidade, linhas: r.linhas, nLinhas: r.nLinhas, temData: r.temData, temGrupo: r.temGrupo }, true);
+      usarTransporte({ nome: f.name, aba: r.aba, unidade: r.unidade, linhas: r.linhas, nLinhas: r.nLinhas, dims: r.dims }, true);
     }).catch(function (err) { renderTransporte(); setMsg("Não consegui ler a planilha de transporte: " + esc(err.message) + ".", "err", 10000); });
   });
   document.getElementById("trOff").onclick = function () { TRANSP = null; idbKv("transporte", "del"); renderTransporte(); };

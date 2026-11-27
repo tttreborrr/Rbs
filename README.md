@@ -16,7 +16,7 @@ O `painel-chuva.html` não leva nenhuma fazenda, coordenada ou planilha dentro. 
 
 ## Leitura geral e ritmo de transporte
 
-No topo, os quatro números de chuva ficam numa linha. Logo abaixo, **Ajustes** (recolhido) tem as regras de chuva, a logo e o botão para apagar os dados guardados. Embaixo, **Ritmo de transporte · real × previsto** lê uma planilha com colunas de **previsto** e **real** (e, se houver, **data** e **frente**/fazenda): mostra hoje (ou o último dia com dado), últimos 7 dias e mês, um gráfico dos últimos 14 dias (verde ≥ 100% do previsto, amarelo 90–99%, vermelho < 90%) e uma tabela que pode ser vista **por dia, frente, fazenda, talhão ou operação** (conforme as colunas que a planilha tiver: Data, Frente, Fazenda/Projeto, Talhão, Operação). Clicando numa linha (uma fazenda, por exemplo), os números e o gráfico passam a mostrar só ela, e dá para ver o dia a dia dela escolhendo "Dia". Escolhendo uma frente no topo, mostra só ela; se a planilha não tiver a coluna Frente, a frente vem da lista de fazendas.
+No topo fica uma faixa estreita de **Chuva**: os quatro números lado a lado (chovendo agora, com chuva hoje, próximas 24 h, últimos 7 dias) e, logo abaixo, **Ajustes** (recolhido) com as regras de chuva. Embaixo, o **mapa** fica à esquerda e o **Ritmo de transporte · real × previsto** à direita, com mais espaço para análise (em telas estreitas, um embaixo do outro). O ritmo lê uma planilha com colunas de **previsto** e **real** (e, se houver, **data** e **frente**/fazenda): mostra hoje (ou o último dia com dado), últimos 7 dias e mês, um gráfico dos últimos 14 dias (verde ≥ 100% do previsto, amarelo 90–99%, vermelho < 90%) e uma tabela que pode ser vista **por dia, frente, fazenda, talhão ou operação** (conforme as colunas que a planilha tiver: Data, Frente, Fazenda/Projeto, Talhão, Operação). Clicando numa linha (uma fazenda, por exemplo), os números e o gráfico passam a mostrar só ela, e dá para ver o dia a dia dela escolhendo "Dia". Escolhendo uma frente no topo, mostra só ela; se a planilha não tiver a coluna Frente, a frente vem da lista de fazendas.
 
 ## Tela inicial
 
@@ -50,7 +50,7 @@ O navegador lembra a pasta. Em cada visita ele pede uma confirmação (o clique 
 
 Cada talhão é ligado ao shape pelo código do projeto + código do talhão (007-01, 7-01 e 00701 valem igual) ou pelo ID completo (6194007-01). Se a ligação automática falhar, escolha as colunas do shape em "Ligar talhões".
 
-No mapa, **Colorir: Chuva / TPC** troca a cor dos talhões. TPC: **vermelho** abaixo de 30 dias, **amarelo** de 30 a 45 dias, **verde** acima de 45 dias (contorno branco para destacar do satélite). A madeira segura aparece na tabela e ao passar o mouse. Passando o mouse aparecem volume, madeira segura, TPC e datas. A tabela **Madeira nos talhões** ordena por fazenda, talhão, madeira segura, volume, TPC, última operação ou chuva; o botão **Ver** leva o mapa até o talhão. **Expandir mapa** recolhe a leitura geral e aumenta o mapa.
+No mapa, **Colorir: Chuva / TPC** troca a cor dos talhões. TPC: **vermelho** abaixo de 30 dias, **amarelo** de 30 a 45 dias, **verde** acima de 45 dias (contorno branco para destacar do satélite). A madeira segura aparece na tabela e ao passar o mouse. Passando o mouse aparecem volume, madeira segura, TPC e datas. A tabela **Madeira nos talhões** ordena por fazenda, talhão, madeira segura, volume, TPC, última operação ou chuva; o botão **Ver** leva o mapa até o talhão. 
 
 O componente do mapa (Leaflet 1.9.4, licença BSD-2) vem embutido no arquivo; da internet vêm só as imagens do satélite e das ruas (server.arcgisonline.com). Para o mapa continuar leve, os contornos são simplificados ao carregar (tolerância de cerca de 1 metro) e desenhados em canvas.
 
@@ -67,7 +67,7 @@ Os botões de carregar talhões, estradas, pasta e planilha de operações ficam
 - **Mapa**: mapa de verdade, com zoom, satélite e nomes de estradas (Esri). As fazendas são pintadas pela chuva do momento escolhido; fazenda com chuva pulsa. Se a rede bloquear o mapa, aparece um mapa simples no lugar.
 - **Momento**: Agora, Hoje, Amanhã e os próximos dias. O botão ▶ passa os dias um a um, como um radar.
 - **Frente**: filtra as frentes de carregamento RRP, CPG, ACL etc. (o que vem depois do " - " no nome).
-- **Leitura geral**: quantas fazendas estão com chuva agora, no dia escolhido, nas próximas 24 h e quanto choveu nos últimos 7 dias.
+- **Chuva** (faixa do topo): quantas fazendas estão com chuva agora, no dia escolhido, nas próximas 24 h e quanto choveu nos últimos 7 dias.
 - **Fazendas**: para cada uma, se está chovendo agora, a chuva hora a hora nas próximas 24 h, a previsão dos próximos 7 dias e o total dos últimos 7 dias.
   Clique numa fazenda para abrir as próximas 48 h, o histórico e o ajuste manual.
 

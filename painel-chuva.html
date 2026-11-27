@@ -731,7 +731,7 @@ button { cursor: pointer; }
 .top { padding-block: 16px 14px; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
 .brand { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .logo { display: flex; align-items: center; min-height: 44px; padding-right: 16px; border-right: 1px solid rgba(255,255,255,.28); }
-.logo img { display: block; max-height: 46px; max-width: 220px; }
+.logo img { display: block; max-height: 46px; max-width: 220px; filter: brightness(0) invert(1); }
 .logo .wm { font-family: var(--font-display); font-weight: 800; font-style: italic; font-size: 26px; letter-spacing: -0.01em; white-space: nowrap; }
 .logo .wm span { color: var(--lime); }
 .brand h1 { margin: 0; font-family: var(--font-display); font-stretch: 78%; font-weight: 800; font-size: 30px; letter-spacing: 0.01em; text-transform: uppercase; line-height: 1; }
@@ -815,6 +815,7 @@ button { cursor: pointer; }
 .msbar { display: inline-block; width: 70px; height: 8px; border-radius: 4px; background: var(--dry); overflow: hidden; vertical-align: middle; margin-right: 8px; }
 .msbar i { display: block; height: 100%; border-radius: 4px; }
 .tpcchip { display: inline-block; min-width: 36px; text-align: center; padding: 2px 8px; border-radius: 999px; font: 600 12px var(--font-data); color: #12201a; border: 1px solid var(--line-2); }
+.tag-col { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 4px; background: #3d4340; color: #fff; font: 600 10.5px var(--font-body); }
 .dc.mini { display: inline-block; padding: 2px 8px; font-size: 11.5px; font-weight: 600; border-radius: 5px; }
 .opmais { padding: 10px; text-align: center; }
 .opmais:empty { display: none; }
@@ -862,6 +863,8 @@ details.ajustes { border-top: 1px solid var(--line); }
 details.ajustes summary { cursor: pointer; padding: 10px 0; font-family: var(--font-display); font-stretch: 78%; text-transform: uppercase; letter-spacing: .06em; font-weight: 800; font-size: 13px; color: var(--ink-2); }
 details.ajustes[open] summary { color: var(--ink); }
 details.ajustes .rules { max-width: 640px; }
+.rodape { margin: 30px 0 40px; padding-top: 12px; border-top: 1px solid var(--line-2); opacity: .85; }
+.rodape .btn { font-size: 12.5px; padding: 5px 10px; cursor: pointer; }
 .aj-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 0; border-top: 1px dashed var(--line); }
 .aj-row h3 { margin: 0; min-width: 140px; font-size: 12px; font-family: var(--font-display); font-stretch: 78%; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 .aj-row .src { color: var(--muted); font-size: 12px; }
@@ -1211,14 +1214,6 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
         <div class="rule"><div class="t">Chuva forte acima de<small>no dia, por fazenda</small></div><div class="step" data-p="hi"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar">+</button></div></div>
         <div class="rule"><div class="t">“Chovendo agora” a partir de<small>intensidade do modelo na hora atual</small></div><div class="step" data-p="now"><button type="button" data-d="-1" aria-label="Diminuir">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar">+</button></div></div>
       </div>
-      <div class="aj-row">
-        <h3>Logo</h3>
-        <span class="grp"><label class="btn" for="logoFile">Escolher imagem da logo</label><input type="file" id="logoFile" accept="image/*" hidden><button class="btn" id="btnLogoOff" type="button">Tirar logo</button></span>
-      </div>
-      <div class="aj-row">
-        <h3>Dados guardados</h3>
-        <span class="grp"><span class="src">As planilhas e os shapes ficam só no navegador deste computador.</span><button class="btn" id="btnLimpar" type="button">Apagar dados guardados neste computador</button></span>
-      </div>
     </details>
     <div class="transp" id="transp">
       <div class="transp-h">
@@ -1314,6 +1309,16 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     <div class="board opbox"><div class="scrollx"><table class="optab" id="opTab"></table></div><div class="opmais" id="opMais"></div></div>
   </section>
 
+  <footer class="rodape" aria-label="Manutenção">
+    <div class="aj-row">
+      <h3>Logo</h3>
+      <span class="grp"><label class="btn" for="logoFile">Trocar logo</label><input type="file" id="logoFile" accept="image/*" hidden><button class="btn" id="btnLogoOff" type="button">Tirar logo</button><span class="src">A logo aparece sempre em branco no cabeçalho verde.</span></span>
+    </div>
+    <div class="aj-row">
+      <h3>Dados guardados</h3>
+      <span class="grp"><span class="src">As planilhas e os shapes ficam só no navegador deste computador.</span><button class="btn" id="btnLimpar" type="button">Apagar dados guardados neste computador</button></span>
+    </div>
+  </footer>
   <textarea id="txtFarms" hidden></textarea>
 </div>
 <div id="tip" role="tooltip"></div>
@@ -1373,7 +1378,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     state.sort = (s && s.sort) || "rain";
     state.modelSel = (s && s.modelSel) || "ecmwf";
     state.areaOp = s && s.areaOpV2 != null ? s.areaOpV2 : 1;
-    state.cfgMapa = !!(s && s.cfgMapa); state.areasSo = s && s.areasSo != null ? s.areasSo : true; state.pastaAssin = (s && s.pastaAssin) || ""; state.fusoSemPrj = (s && s.fusoSemPrj) || ""; state.trPer = (s && s.trPer) || "7"; state.verAreas = s ? s.verAreas : true; state.verEstradas = s ? s.verEstradas : true;
+    state.cfgMapa = !!(s && s.cfgMapa); state.areasSo = s && s.areasSo != null ? s.areasSo : true; state.pastaAssin = (s && s.pastaAssin) || ""; state.fusoSemPrj = (s && s.fusoSemPrj) || ""; state.trPer = (s && s.trPer) || "7"; state.mapaBase = (s && s.mapaBase) || "satelite"; state.verAreas = s ? s.verAreas : true; state.verEstradas = s ? s.verEstradas : true;
     state.cfgAreas = useCfg && CFG.areas && CFG.areas.geo ? CFG.areas : null;
     state.cfgOps = useCfg && CFG.ops && CFG.ops.talhoes ? CFG.ops : null;
     state.cfgEst = useCfg && CFG.estradas && CFG.estradas.geo ? CFG.estradas : null;
@@ -1386,7 +1391,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     else { var cat = parseTalhoes(state.text); state.sel = cat.length <= 30 ? cat.map(key) : []; }
   }
   function save() {
-    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp, sel: state.sel, areaOpV2: state.areaOp, cfgMapa: state.cfgMapa, areasSo: state.areasSo, pastaAssin: state.pastaAssin, fusoSemPrj: state.fusoSemPrj, trPer: state.trPer, verAreas: state.verAreas, verEstradas: state.verEstradas, corAreas: state.corAreas, opSort: state.opSort, mapWide: state.mapWide })); } catch (e) {}
+    try { localStorage.setItem(STORE, JSON.stringify({ text: state.text, params: state.params, manual: state.manual, sort: state.sort, modelSel: state.modelSel, logo: state.logo, baseStamp: state.baseStamp, sel: state.sel, areaOpV2: state.areaOp, cfgMapa: state.cfgMapa, areasSo: state.areasSo, pastaAssin: state.pastaAssin, fusoSemPrj: state.fusoSemPrj, trPer: state.trPer, mapaBase: state.mapaBase, verAreas: state.verAreas, verEstradas: state.verEstradas, corAreas: state.corAreas, opSort: state.opSort, mapWide: state.mapWide })); } catch (e) {}
   }
 
   // ---------- números ----------
@@ -1853,15 +1858,18 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       var ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/";
       var osm = L.tileLayer(ESRI + "World_Street_Map/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Mapa © Esri" });
       var sat = L.tileLayer(ESRI + "World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Imagens © Esri" });
+      var cinza = L.tileLayer(ESRI + "Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", { maxZoom: 16, attribution: "Mapa © Esri" });
       var nomes = L.layerGroup([
         L.tileLayer(ESRI + "Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19 }),
         L.tileLayer(ESRI + "Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19 })
       ]);
-      sat.addTo(LM); nomes.addTo(LM);
+      var bases = { mapa: osm, satelite: sat, cinza: cinza };
+      (bases[state.mapaBase] || sat).addTo(LM); nomes.addTo(LM);
       LM.createPane("areasPane").style.zIndex = 405;
       LM.createPane("estradasPane").style.zIndex = 420;
       rendAreas = L.canvas({ pane: "areasPane", padding: .4 }); rendEstradas = L.canvas({ pane: "estradasPane", padding: .4 });
-      ctlCamadas = L.control.layers({ "Mapa": osm, "Satélite": sat }, { "Nomes e estradas": nomes }, { position: "topright", collapsed: false }).addTo(LM);
+      LM.on("baselayerchange", function (e) { state.mapaBase = e.layer === osm ? "mapa" : e.layer === cinza ? "cinza" : "satelite"; save(); });
+      ctlCamadas = L.control.layers({ "Mapa": osm, "Satélite": sat, "Cinza claro": cinza }, { "Nomes e estradas": nomes }, { position: "topright", collapsed: false }).addTo(LM);
       LM.on("overlayadd overlayremove", function (e) {
         var on = e.type === "overlayadd";
         if (e.layer === estradasLayer) { state.verEstradas = on; save(); }
@@ -3089,11 +3097,20 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
   }
 
   // ---------- cores das áreas conforme o modo escolhido ----------
+  var COR_COLHIDO = "#3d4340";
+  // colhido: a planilha de operações tem status "colhido/concluído" para o talhão, ou o próprio shape diz isso
+  function areaColhida(f, t) {
+    if (t && t.colhido) return true;
+    if (f.__col == null) { var p = f.properties || {}; f.__col = Object.keys(p).some(function (c) { return RE_COLHIDO.test(normTxt(p[c])); }); }
+    return f.__col;
+  }
   function estiloArea(f) {
     if (state.corAreas === "chuva" || !OPS) return estiloChuva(f);
     var t = f.__t ? OPS.idx[f.__t] : null, esc = ESCALA[state.corAreas];
     var v = !t ? null : state.corAreas === "madeira" ? t.ms : tpcDe(t, "max");
-    if (v == null || (state.corAreas === "madeira" && !(v >= 0.5))) return { fill: false, color: "#ffffff", weight: .8, opacity: .45 };
+    var op = Math.max(.06, state.areaOp);
+    if (areaColhida(f, t)) return { fill: true, color: "#ffffff", weight: 1.2, opacity: .9, fillColor: COR_COLHIDO, fillOpacity: op };
+    if (v == null || (state.corAreas === "madeira" && !(v >= 0.5))) return { fill: true, color: "#8f9893", weight: 1, opacity: .9, fillColor: "#ffffff", fillOpacity: op };
     var c = esc.cores[classeDe(esc, v)];
     return { fill: true, color: "#ffffff", weight: 1.6, opacity: .95, fillColor: c, fillOpacity: Math.max(.06, state.areaOp) };
   }
@@ -3104,7 +3121,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       "<br>Madeira segura: <b>" + (t.ms == null ? "–" : fNum(t.ms, 0) + "%") + "</b>" +
       "<br>Volume ajustado: <b>" + fNum(t.vol, 1) + "</b> (" + t.n + " registro" + (t.n > 1 ? "s" : "") + ")" +
       "<br>TPC: <b>" + (tpcDe(t, "max") == null ? "–" : tpcDe(t, "max") + " dias") + "</b>" + (t.dMin != null && t.dMin !== t.dMax ? " (a mais recente: " + tpcDe(t, "min") + ")" : "") +
-      "<br>Operação: " + fData(t.dMin) + (t.dMax !== t.dMin ? " a " + fData(t.dMax) : "");
+      "<br>Operação: " + fData(t.dMin) + (t.dMax !== t.dMin ? " a " + fData(t.dMax) : "") + (areaColhida(f, t) ? "<br><b>Colhido</b>" : "");
   }
   function legendaAreas() {
     var box = document.getElementById("legendOps"), leg = document.getElementById("legendChuva");
@@ -3113,7 +3130,8 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
     if (modo === "chuva") return;
     var e = ESCALA[modo];
     box.innerHTML = "<b>" + e.titulo + "</b>" + e.cores.map(function (c, i) { return '<span><span class="sw" style="background:' + c + ';border-color:' + c + '"></span>' + e.rotulos[i] + "</span>"; }).join("") +
-      '<span><span class="sw" style="background:transparent;border:1px dashed var(--muted)"></span>' + (modo === "madeira" ? "sem madeira segura" : "sem dado") + "</span>";
+      '<span><span class="sw" style="background:#ffffff;border:1px solid #8f9893"></span>' + (modo === "madeira" ? "sem madeira segura" : "sem TPC") + "</span>" +
+      '<span><span class="sw" style="background:' + COR_COLHIDO + ';border-color:' + COR_COLHIDO + '"></span>colhido</span>';
   }
   function pintarModoCor() {
     document.querySelectorAll("#corModo button").forEach(function (b) {
@@ -3176,7 +3194,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       var st = x.r ? viewStatus(x.r, state.view) : null;
       return '<tr data-k="' + attr(t.chave) + '"' + (x.mapa ? ' class="temmapa"' : "") + ">" +
         "<td><b>" + esc(x.nome) + "</b><br><span class='src'>projeto " + esc(t.proj) + "</span></td>" +
-        "<td class='num'>" + esc(t.talhao) + "</td>" +
+        "<td class='num'>" + esc(t.talhao) + (t.colhido ? " <span class='tag-col'>colhido</span>" : "") + "</td>" +
         "<td><span class='msbar'><i style='width:" + Math.max(0, Math.min(100, t.ms || 0)) + "%;background:" + msC + "'></i></span><span class='num'>" + (t.ms == null ? "–" : fNum(t.ms, 0) + "%") + "</span></td>" +
         "<td class='num r'>" + fNum(t.vol, 1) + "<br><span class='src'>" + t.n + " reg.</span></td>" +
         "<td><span class='tpcchip' style='background:" + tpcC + (x.tpc != null ? ";border-color:transparent" + (ESCALA.tpc.textoEscuro[classeDe(ESCALA.tpc, x.tpc)] ? "" : ";color:#fff") : "") + "'>" + (x.tpc == null ? "–" : x.tpc) + "</span></td>" +
@@ -3404,10 +3422,11 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
       resultado: function () { return { texto: out.join("\n") }; }
     };
   }
+  var RE_COLHIDO = /colhid|conclu|finaliz|encerr/;
   function leitorOperacoes(cab) {
     var cT = acharCol(cab, [/talh/]), cM = acharCol(cab, [/madeira/, /segura/]), cV = acharCol(cab, [/volume/, /^vlr/]);
     if (cT < 0 || (cM < 0 && cV < 0)) return null;
-    var cP = acharCol(cab, [/projeto/, /^id.?faz/, /^cod.*faz/, /fazenda/]), cId = acharCol(cab, [/^id$/]), cD = acharCol(cab, [/data/]), cTpc = acharCol(cab, [/^tpc$/, /^tcp$/, /tpc/]);
+    var cP = acharCol(cab, [/projeto/, /^id.?faz/, /^cod.*faz/, /fazenda/]), cId = acharCol(cab, [/^id$/]), cD = acharCol(cab, [/data/]), cTpc = acharCol(cab, [/^tpc$/, /^tcp$/, /tpc/]), cS = acharCol(cab, [/^status/, /situa/, /^etapa/]);
     var mapa = {}, nLin = 0;
     return {
       tipo: "operacoes",
@@ -3417,7 +3436,7 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
         var proj = cP >= 0 ? l[cP] : "";
         if (!proj && cId >= 0 && l[cId]) { var dg = String(l[cId]).replace(/\D/g, ""); proj = dg.slice(0, Math.max(0, dg.length - String(talh).replace(/\D/g, "").length)); }
         var k = normProj(proj) + "|" + normTalh(talh);
-        var t = mapa[k] || (mapa[k] = { proj: String(proj).trim(), talhao: String(talh).trim(), ids: {}, vol: 0, volMs: 0, msW: 0, msS: 0, msN: 0, n: 0, dMin: null, dMax: null, tpcCol: null });
+        var t = mapa[k] || (mapa[k] = { proj: String(proj).trim(), talhao: String(talh).trim(), ids: {}, vol: 0, volMs: 0, msW: 0, msS: 0, msN: 0, n: 0, dMin: null, dMax: null, tpcCol: null, colhido: false });
         var vol = cV >= 0 ? num(l[cV]) : NaN, ms = cM >= 0 ? pctDe(l[cM]) : null, d = cD >= 0 ? dataDe(l[cD]) : null, tpc = cTpc >= 0 ? num(l[cTpc]) : NaN;
         t.n++;
         if (cId >= 0 && l[cId]) t.ids[String(l[cId]).trim()] = 1;
@@ -3425,11 +3444,12 @@ body.reveal .board-head { animation-delay: .1s; } body.reveal .board { animation
         if (ms != null) { t.msS += ms; t.msN++; }
         if (d) { if (t.dMin == null || +d < t.dMin) t.dMin = +d; if (t.dMax == null || +d > t.dMax) t.dMax = +d; }
         if (!isNaN(tpc)) t.tpcCol = t.tpcCol == null ? tpc : Math.max(t.tpcCol, tpc);
+        if (cS >= 0 && RE_COLHIDO.test(normTxt(l[cS]))) t.colhido = true;
       },
       resultado: function () {
         var talhoes = Object.keys(mapa).map(function (k) {
           var t = mapa[k];
-          return { chave: k, proj: t.proj, talhao: t.talhao, ids: Object.keys(t.ids), vol: t.vol, n: t.n, dMin: t.dMin, dMax: t.dMax, tpcCol: t.tpcCol,
+          return { chave: k, proj: t.proj, talhao: t.talhao, ids: Object.keys(t.ids), vol: t.vol, n: t.n, dMin: t.dMin, dMax: t.dMax, tpcCol: t.tpcCol, colhido: t.colhido,
             ms: t.msN ? (t.volMs > 0 ? t.msW / t.volMs : t.msS / t.msN) : null };
         });
         return talhoes.length ? { talhoes: talhoes, nLinhas: nLin } : null;
